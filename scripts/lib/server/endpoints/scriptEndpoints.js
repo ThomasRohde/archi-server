@@ -121,6 +121,22 @@
                 return;
             }
 
+            // Enforce script code length limit
+            var maxCodeLen = 51200; // 50 KB default
+            if (typeof serverConfig !== "undefined" && serverConfig.request && serverConfig.request.maxScriptCodeLength) {
+                maxCodeLen = serverConfig.request.maxScriptCodeLength;
+            }
+            if (request.body.code.length > maxCodeLen) {
+                response.statusCode = 413;
+                response.body = {
+                    error: {
+                        code: "PayloadTooLarge",
+                        message: "Script code exceeds maximum length of " + maxCodeLen + " characters (" + request.body.code.length + " provided)"
+                    }
+                };
+                return;
+            }
+
             // Initialize global result containers BEFORE any output is captured
             // These must be on globalThis to survive across load() boundary
             globalThis.__apiScriptOutput = [];

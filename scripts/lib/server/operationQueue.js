@@ -247,7 +247,7 @@
 
                     // Mark operation as in-progress with start time
                     operation.status = "processing";
-                    operation.startedAt = Date.now();
+                    operation.startedAt = new Date().toISOString();
 
                     try {
                         if (loggingQueue) {
@@ -267,9 +267,9 @@
                         // Mark operation as complete
                         operation.status = "complete";
                         operation.result = results;
-                        operation.completedAt = Date.now();
+                        operation.completedAt = new Date().toISOString();
 
-                        var duration = operation.completedAt - operation.startedAt;
+                        var duration = new Date(operation.completedAt).getTime() - new Date(operation.startedAt).getTime();
                         if (loggingQueue) {
                             loggingQueue.log("Operation completed: " + operation.id +
                                            " (" + results.length + " changes, " + duration + "ms) [UNDOABLE]");
@@ -293,7 +293,7 @@
 
                         operation.status = "error";
                         operation.error = String(e);
-                        operation.completedAt = Date.now();
+                        operation.completedAt = new Date().toISOString();
                     }
 
                     processed++;
@@ -327,7 +327,7 @@
             for (var opId in this.pendingOperations) {
                 var op = this.pendingOperations[opId];
                 if (op.status === "processing" && op.startedAt) {
-                    var elapsed = now - op.startedAt;
+                    var elapsed = now - new Date(op.startedAt).getTime();
                     if (elapsed > config.timeoutMs) {
                         if (loggingQueue) {
                             loggingQueue.error("Operation timed out: " + opId +
@@ -335,7 +335,7 @@
                         }
                         op.status = "error";
                         op.error = "Operation timed out after " + Math.round(elapsed / 1000) + " seconds";
-                        op.completedAt = now;
+                        op.completedAt = new Date().toISOString();
                     }
                 }
             }
@@ -365,7 +365,7 @@
                 var op = this.pendingOperations[opId];
                 if ((op.status === "complete" || op.status === "error") &&
                     op.completedAt &&
-                    op.completedAt < cutoffTime) {
+                    new Date(op.completedAt).getTime() < cutoffTime) {
                     toDelete.push(opId);
                 }
             }

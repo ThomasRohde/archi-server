@@ -45,7 +45,8 @@
          */
         request: {
             maxBodySize: 1048576,       // 1 MB max request body
-            maxChangesPerRequest: 1000  // Max changes in single apply request
+            maxChangesPerRequest: 1000, // Max changes in single apply request
+            maxScriptCodeLength: 51200  // 50 KB max script code length for /scripts/run
         },
 
         /**

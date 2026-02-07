@@ -112,29 +112,22 @@
     }
 
     /**
-     * Layout a view using Dagre algorithm (EMF-only, no $() context)
+     * Compute layout positions without applying them (for undoable operations)
      * @param {Object} view - EMF view object
-     * @param {Object} [options] - Layout options
-     * @param {string} [options.rankdir='TB'] - Layout direction ('TB', 'BT', 'LR', 'RL')
-     * @param {number} [options.nodesep=50] - Pixels between nodes
-     * @param {number} [options.ranksep=50] - Pixels between ranks
-     * @param {number} [options.edgesep=10] - Pixels between edges
-     * @param {number} [options.marginx=20] - Left/right margin
-     * @param {number} [options.marginy=20] - Top/bottom margin
-     * @returns {Object} Layout result { nodesPositioned, edgesRouted }
+     * @param {Object} [options] - Layout options (same as layoutView)
+     * @returns {Object} { nodes: [{element, oldBounds, newBounds}], connections: [{connection, oldBendpoints}] }
      */
-    function layoutView(view, options) {
+    function computeLayout(view, options) {
         options = options || {};
 
         if (!dagre) {
             throw new Error("Dagre library not loaded");
         }
 
-        // Collect elements from view
         var graphData = collectGraphElements(view);
-        
+
         if (graphData.nodes.length === 0) {
-            return { nodesPositioned: 0, edgesRouted: 0 };
+            return { nodes: [], connections: [] };
         }
 
         // Create Dagre graph
@@ -168,39 +161,87 @@
         // Run layout
         dagre.layout(g);
 
-        // Apply positions to view elements
-        var nodesPositioned = 0;
+        // Collect position changes (without applying)
+        var nodeChanges = [];
         g.nodes().forEach(function(nodeId) {
             var layoutNode = g.node(nodeId);
             var viewNode = graphData.nodeMap[nodeId];
-            
+
             if (viewNode && viewNode.element && layoutNode) {
                 var newX = Math.round(layoutNode.x - layoutNode.width / 2);
                 var newY = Math.round(layoutNode.y - layoutNode.height / 2);
 
-                // Create new bounds
+                // Capture old bounds
+                var oldBounds = viewNode.element.getBounds();
+
+                // Create new bounds object
                 var newBounds = factory.createBounds();
                 newBounds.setX(newX);
                 newBounds.setY(newY);
                 newBounds.setWidth(viewNode.width);
                 newBounds.setHeight(viewNode.height);
-                
-                viewNode.element.setBounds(newBounds);
-                nodesPositioned++;
+
+                nodeChanges.push({
+                    element: viewNode.element,
+                    oldBounds: oldBounds,
+                    newBounds: newBounds
+                });
             }
         });
 
-        // Clear bendpoints from connections (Dagre positions make straight lines optimal)
-        var edgesRouted = 0;
+        // Collect bendpoint changes (without applying)
+        var connectionChanges = [];
         graphData.edges.forEach(function(edge) {
             var conn = edge.connection;
             if (conn && typeof conn.getBendpoints === "function") {
                 var bendpoints = conn.getBendpoints();
                 if (bendpoints && bendpoints.size() > 0) {
-                    bendpoints.clear();
-                    edgesRouted++;
+                    // Capture old bendpoints as array
+                    var oldBendpoints = [];
+                    for (var bpi = 0; bpi < bendpoints.size(); bpi++) {
+                        oldBendpoints.push(bendpoints.get(bpi));
+                    }
+                    connectionChanges.push({
+                        connection: conn,
+                        oldBendpoints: oldBendpoints
+                    });
                 }
             }
+        });
+
+        return {
+            nodes: nodeChanges,
+            connections: connectionChanges
+        };
+    }
+
+    /**
+     * Layout a view using Dagre algorithm (EMF-only, no $() context)
+     * @param {Object} view - EMF view object
+     * @param {Object} [options] - Layout options
+     * @param {string} [options.rankdir='TB'] - Layout direction ('TB', 'BT', 'LR', 'RL')
+     * @param {number} [options.nodesep=50] - Pixels between nodes
+     * @param {number} [options.ranksep=50] - Pixels between ranks
+     * @param {number} [options.edgesep=10] - Pixels between edges
+     * @param {number} [options.marginx=20] - Left/right margin
+     * @param {number} [options.marginy=20] - Top/bottom margin
+     * @returns {Object} Layout result { nodesPositioned, edgesRouted }
+     */
+    function layoutView(view, options) {
+        var layoutResult = computeLayout(view, options);
+
+        // Apply positions to view elements
+        var nodesPositioned = 0;
+        layoutResult.nodes.forEach(function(nodeChange) {
+            nodeChange.element.setBounds(nodeChange.newBounds);
+            nodesPositioned++;
+        });
+
+        // Clear bendpoints from connections
+        var edgesRouted = 0;
+        layoutResult.connections.forEach(function(connChange) {
+            connChange.connection.getBendpoints().clear();
+            edgesRouted++;
         });
 
         return {
@@ -212,6 +253,7 @@
     // Export module
     var layoutDagreHeadless = {
         layoutView: layoutView,
+        computeLayout: computeLayout,
         collectGraphElements: collectGraphElements
     };
 

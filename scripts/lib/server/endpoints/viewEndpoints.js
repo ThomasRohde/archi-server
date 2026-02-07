@@ -494,46 +494,26 @@
                     throw new Error("No model reference available");
                 }
 
-                // Create view using EMF factory
-                var IArchimateFactory = Java.type("com.archimatetool.model.IArchimateFactory");
-                var FolderType = Java.type("com.archimatetool.model.FolderType");
-                var factory = IArchimateFactory.eINSTANCE;
-
-                var newView = factory.createArchimateDiagramModel();
-                newView.setName(viewName);
-
-                if (documentation) {
-                    newView.setDocumentation(documentation);
-                }
-
-                // Find the Views folder and add the view
-                var viewsFolder = null;
-                var folders = modelRef.getFolders();
-                for (var i = 0; i < folders.size(); i++) {
-                    var folder = folders.get(i);
-                    if (folder.getType() === FolderType.DIAGRAMS) {
-                        viewsFolder = folder;
-                        break;
-                    }
-                }
-
-                if (!viewsFolder) {
-                    throw new Error("Could not find Views folder in model");
-                }
-
-                // Add view to folder
-                viewsFolder.getElements().add(newView);
+                // Use undoableCommands for proper undo support
+                var ops = [{
+                    op: "createView",
+                    name: viewName,
+                    documentation: documentation || undefined,
+                    folderId: body.folderId || undefined
+                }];
+                var results = undoableCommands.executeBatch(modelRef, "Create View: " + viewName, ops);
+                var result = results[0];
 
                 var durationMs = Date.now() - startTime;
 
                 if (typeof loggingQueue !== "undefined" && loggingQueue) {
-                    loggingQueue.log("[" + request.requestId + "] View created: " + newView.getId() + " (" + durationMs + "ms)");
+                    loggingQueue.log("[" + request.requestId + "] View created: " + result.viewId + " (" + durationMs + "ms) [UNDOABLE]");
                 }
 
                 response.body = {
                     success: true,
-                    viewId: newView.getId(),
-                    viewName: newView.getName(),
+                    viewId: result.viewId,
+                    viewName: result.viewName,
                     viewType: "archimate-diagram-model",
                     durationMs: durationMs
                 };
@@ -764,11 +744,13 @@
                 }
 
                 var viewName = view.getName() || '';
-                var EcoreUtil = Java.type("org.eclipse.emf.ecore.util.EcoreUtil");
-                EcoreUtil.delete(view, true);
+
+                // Use undoableCommands for proper undo support
+                var ops = [{ op: "deleteView", viewId: viewId }];
+                undoableCommands.executeBatch(serverState.modelRef, "Delete View: " + viewName, ops);
 
                 if (typeof loggingQueue !== "undefined" && loggingQueue) {
-                    loggingQueue.log("[" + request.requestId + "] Deleted view: " + viewName);
+                    loggingQueue.log("[" + request.requestId + "] Deleted view: " + viewName + " [UNDOABLE]");
                 }
 
                 response.body = {
@@ -833,29 +815,21 @@
                     return;
                 }
 
-                // Deep copy view using EcoreUtil
-                var EcoreUtil = Java.type("org.eclipse.emf.ecore.util.EcoreUtil");
-                var newView = EcoreUtil.copy(view);
-                
-                // Set new name
+                // Use undoableCommands for proper undo support
                 var newName = body.name || (view.getName() + " (Copy)");
-                newView.setName(newName);
-
-                // Add to same folder as original
-                var parentFolder = view.eContainer();
-                if (parentFolder && typeof parentFolder.getElements === 'function') {
-                    parentFolder.getElements().add(newView);
-                }
+                var ops = [{ op: "duplicateView", viewId: viewId, name: newName }];
+                var results = undoableCommands.executeBatch(serverState.modelRef, "Duplicate View: " + newName, ops);
+                var result = results[0];
 
                 if (typeof loggingQueue !== "undefined" && loggingQueue) {
-                    loggingQueue.log("[" + request.requestId + "] Duplicated view: " + newView.getId());
+                    loggingQueue.log("[" + request.requestId + "] Duplicated view: " + result.newViewId + " [UNDOABLE]");
                 }
 
                 response.body = {
                     success: true,
                     sourceViewId: viewId,
-                    newViewId: newView.getId(),
-                    newViewName: newView.getName()
+                    newViewId: result.newViewId,
+                    newViewName: result.newViewName
                 };
 
             } catch (e) {
@@ -937,9 +911,9 @@
                     return;
                 }
 
-                // Set router type (0 = bendpoint/manual, 1 = manhattan)
-                var routerValue = routerType === "manhattan" ? 1 : 0;
-                view.setConnectionRouterType(routerValue);
+                // Use undoableCommands for proper undo support
+                var ops = [{ op: "setViewRouter", viewId: viewId, routerType: routerType }];
+                undoableCommands.executeBatch(serverState.modelRef, "Set Router: " + routerType, ops);
 
                 response.body = {
                     success: true,
@@ -1026,13 +1000,24 @@
                     marginy: body.marginy || 20
                 };
 
-                // Apply layout
-                var layoutResult = layoutDagreHeadless.layoutView(view, options);
+                // Apply layout via undoableCommands for proper undo support
+                var ops = [{
+                    op: "layoutView",
+                    viewId: viewId,
+                    rankdir: options.rankdir,
+                    nodesep: options.nodesep,
+                    ranksep: options.ranksep,
+                    edgesep: options.edgesep,
+                    marginx: options.marginx,
+                    marginy: options.marginy
+                }];
+                var results = undoableCommands.executeBatch(serverState.modelRef, "Layout View", ops);
+                var layoutResult = results[0];
                 var durationMs = Date.now() - startTime;
 
                 if (typeof loggingQueue !== "undefined" && loggingQueue) {
                     loggingQueue.log("[" + request.requestId + "] Layout applied: " + 
-                        layoutResult.nodesPositioned + " nodes (" + durationMs + "ms)");
+                        layoutResult.nodesPositioned + " nodes (" + durationMs + "ms) [UNDOABLE]");
                 }
 
                 response.body = {

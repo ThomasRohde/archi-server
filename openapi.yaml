@@ -381,6 +381,12 @@ paths:
         - **Read-only operations** (queries, exports, analysis)
         - **File generation** (PNG/JPG export, JSON export)
         - **Operations using `undoableCommands`** directly (advanced)
+        
+        **⚠️ BLOCKING RISK:** Scripts execute synchronously on the SWT UI thread. 
+        An infinite loop or long-running computation will freeze the entire Archi application 
+        and block all other API requests. There is no timeout or cancellation mechanism.
+        Keep scripts short and well-tested. Maximum code size is limited by the server's 
+        request body size limit (default 1MB).
       operationId: postScriptsRun
       requestBody:
         required: true
@@ -1140,6 +1146,13 @@ components:
         id:
           type: string
           description: Element or relationship ID to delete
+        cascade:
+          type: boolean
+          default: true
+          description: |
+            If true (default), also removes all relationships where this element is
+            source or target, and all visual references across all views.
+            If false, only removes the element from its parent folder.
 
     AddToViewOp:
       type: object
@@ -1483,9 +1496,11 @@ components:
           type: string
           enum: [queued, processing, complete, error]
         result:
-          type: object
+          type: array
           nullable: true
-          description: Operation result (when status is complete)
+          items:
+            type: object
+          description: Array of operation results (when status is complete)
         error:
           type: string
           nullable: true
@@ -1507,6 +1522,7 @@ components:
         durationMs:
           type: integer
           nullable: true
+          description: Duration in milliseconds (included for both complete and error status)
 
     ErrorResponse:
       type: object

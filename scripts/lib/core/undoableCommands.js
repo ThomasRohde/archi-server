@@ -518,30 +518,162 @@
     }
 
     /**
-     * Delete element (undoable)
+     * Delete element (undoable via manual cascade)
+     * Removes all visual references and relationships before removing the element itself.
+     * Uses the same cascade approach as executeBatch's deleteElement op.
      * @param {Object} model - IArchimateModel
      * @param {Object} element - Element to delete
+     * @param {Object} [options] - Delete options
+     * @param {boolean} [options.cascade=true] - If true, also removes relationships and visual refs
      */
-    function deleteElement(model, element) {
-        var DeleteCommand = Java.extend(GEFCommand, {
-            execute: function() {
-                EcoreUtil.delete(element, true);
-            },
-            undo: function() {
-                throw new Error("Undo of delete not yet implemented");
-            },
-            canExecute: function() {
-                return true;
-            },
-            canUndo: function() {
-                return false; // TODO: Implement proper undo for delete
-            },
-            getLabel: function() {
-                return "Delete " + element.getName();
-            }
-        });
+    function deleteElement(model, element, options) {
+        options = options || {};
+        var doCascade = options.cascade !== false;
+        var elemId = element.getId();
+        var elemName = element.getName ? element.getName() : '';
 
-        executeCommand(model, new DeleteCommand());
+        var compound = new CompoundCommand("Delete " + elemName);
+
+        if (doCascade) {
+            // Step 1: Find and remove all relationships where this element is source or target
+            var relRefs = findRelationshipsForElement(model, elemId);
+            for (var ri = 0; ri < relRefs.length; ri++) {
+                var relRef = relRefs[ri];
+                var rel = relRef.relationship;
+                var relFolder = relRef.parentFolder;
+
+                // Step 1a: Remove all visual connections for this relationship across all views
+                var allViews = findAllViews(model);
+                for (var vi = 0; vi < allViews.length; vi++) {
+                    var connRefs = findConnectionsForRelationship(allViews[vi], rel.getId());
+                    for (var ci = 0; ci < connRefs.length; ci++) {
+                        (function(capturedConn, capturedSrc, capturedTgt) {
+                            var RemoveConnCmd = Java.extend(GEFCommand, {
+                                execute: function() {
+                                    if (capturedSrc && typeof capturedSrc.getSourceConnections === 'function') {
+                                        capturedSrc.getSourceConnections().remove(capturedConn);
+                                    }
+                                    if (capturedTgt && typeof capturedTgt.getTargetConnections === 'function') {
+                                        capturedTgt.getTargetConnections().remove(capturedConn);
+                                    }
+                                },
+                                undo: function() {
+                                    if (capturedSrc && typeof capturedSrc.getSourceConnections === 'function') {
+                                        capturedSrc.getSourceConnections().add(capturedConn);
+                                    }
+                                    if (capturedTgt && typeof capturedTgt.getTargetConnections === 'function') {
+                                        capturedTgt.getTargetConnections().add(capturedConn);
+                                    }
+                                },
+                                canExecute: function() { return true; },
+                                canUndo: function() { return true; },
+                                getLabel: function() { return "Remove connection from view"; }
+                            });
+                            compound.add(new RemoveConnCmd());
+                        })(connRefs[ci].connection, connRefs[ci].source, connRefs[ci].target);
+                    }
+                }
+
+                // Step 1b: Remove the relationship from its folder
+                (function(capturedRel, capturedFolder) {
+                    var RemoveRelCmd = Java.extend(GEFCommand, {
+                        execute: function() {
+                            if (capturedFolder && typeof capturedFolder.getElements === 'function') {
+                                capturedFolder.getElements().remove(capturedRel);
+                            }
+                        },
+                        undo: function() {
+                            if (capturedFolder && typeof capturedFolder.getElements === 'function') {
+                                capturedFolder.getElements().add(capturedRel);
+                            }
+                        },
+                        canExecute: function() { return true; },
+                        canUndo: function() { return true; },
+                        getLabel: function() { return "Remove relationship"; }
+                    });
+                    compound.add(new RemoveRelCmd());
+                })(rel, relFolder);
+            }
+
+            // Step 2: Remove all visual objects for this element across all views
+            var allViewsForElem = findAllViews(model);
+            for (var vei = 0; vei < allViewsForElem.length; vei++) {
+                var visualRefs = findVisualsForElement(allViewsForElem[vei], elemId);
+                for (var vri = 0; vri < visualRefs.length; vri++) {
+                    // First remove any connections attached to this visual
+                    var attachedConns = findConnectionsForVisual(visualRefs[vri].visual);
+                    for (var aci = 0; aci < attachedConns.length; aci++) {
+                        (function(capturedConn, capturedSrc, capturedTgt) {
+                            var RemoveAttConnCmd = Java.extend(GEFCommand, {
+                                execute: function() {
+                                    if (capturedSrc && typeof capturedSrc.getSourceConnections === 'function') {
+                                        capturedSrc.getSourceConnections().remove(capturedConn);
+                                    }
+                                    if (capturedTgt && typeof capturedTgt.getTargetConnections === 'function') {
+                                        capturedTgt.getTargetConnections().remove(capturedConn);
+                                    }
+                                },
+                                undo: function() {
+                                    if (capturedSrc && typeof capturedSrc.getSourceConnections === 'function') {
+                                        capturedSrc.getSourceConnections().add(capturedConn);
+                                    }
+                                    if (capturedTgt && typeof capturedTgt.getTargetConnections === 'function') {
+                                        capturedTgt.getTargetConnections().add(capturedConn);
+                                    }
+                                },
+                                canExecute: function() { return true; },
+                                canUndo: function() { return true; },
+                                getLabel: function() { return "Remove attached connection"; }
+                            });
+                            compound.add(new RemoveAttConnCmd());
+                        })(attachedConns[aci].connection, attachedConns[aci].source, attachedConns[aci].target);
+                    }
+
+                    // Then remove the visual object from its parent
+                    (function(capturedVisual, capturedContainer) {
+                        var RemoveVisualCmd = Java.extend(GEFCommand, {
+                            execute: function() {
+                                if (capturedContainer && typeof capturedContainer.getChildren === 'function') {
+                                    capturedContainer.getChildren().remove(capturedVisual);
+                                }
+                            },
+                            undo: function() {
+                                if (capturedContainer && typeof capturedContainer.getChildren === 'function') {
+                                    capturedContainer.getChildren().add(capturedVisual);
+                                }
+                            },
+                            canExecute: function() { return true; },
+                            canUndo: function() { return true; },
+                            getLabel: function() { return "Remove visual from view"; }
+                        });
+                        compound.add(new RemoveVisualCmd());
+                    })(visualRefs[vri].visual, visualRefs[vri].parent);
+                }
+            }
+        }
+
+        // Step 3: Remove the element itself from its parent folder
+        var parentFolder = element.eContainer();
+        (function(capturedElem, capturedParent) {
+            var DeleteCmd = Java.extend(GEFCommand, {
+                execute: function() {
+                    if (capturedParent && typeof capturedParent.getElements === 'function') {
+                        capturedParent.getElements().remove(capturedElem);
+                    }
+                },
+                undo: function() {
+                    if (capturedParent && typeof capturedParent.getElements === 'function') {
+                        capturedParent.getElements().add(capturedElem);
+                    }
+                },
+                canExecute: function() { return true; },
+                canUndo: function() { return true; },
+                getLabel: function() { return "Delete " + elemName; }
+            });
+            compound.add(new DeleteCmd());
+        })(element, parentFolder);
+
+        executeCommand(model, compound);
     }
 
     /**
@@ -661,6 +793,177 @@
      *   { op: "createRelationship", type: "assignment-relationship", sourceId: "t1", targetId: "t2" }
      *   { op: "setProperty", id: "element-id", key: "ServiceNow ID", value: "sys123" }
      */
+
+    // =========================================================================
+    // View traversal helpers for cross-reference discovery
+    // =========================================================================
+
+    /**
+     * Find all views in the model by traversing folder structure
+     * @param {Object} model - IArchimateModel
+     * @returns {Array} Array of view objects
+     */
+    function findAllViews(model) {
+        var views = [];
+        function searchFolder(folder) {
+            var elements = folder.getElements();
+            for (var i = 0; i < elements.size(); i++) {
+                var element = elements.get(i);
+                // Views have getChildren() method
+                if (typeof element.getChildren === "function") {
+                    views.push(element);
+                }
+            }
+            var subfolders = folder.getFolders();
+            for (var j = 0; j < subfolders.size(); j++) {
+                searchFolder(subfolders.get(j));
+            }
+        }
+        var folders = model.getFolders();
+        for (var k = 0; k < folders.size(); k++) {
+            searchFolder(folders.get(k));
+        }
+        return views;
+    }
+
+    /**
+     * Find all visual objects in a view that reference a given ArchiMate element
+     * @param {Object} view - EMF view object
+     * @param {string} elementId - ArchiMate element ID
+     * @returns {Array} Array of {visual, parent} objects
+     */
+    function findVisualsForElement(view, elementId) {
+        var results = [];
+        function search(container) {
+            var children = container.getChildren();
+            for (var i = 0; i < children.size(); i++) {
+                var child = children.get(i);
+                // Check if this visual references the target element
+                if (typeof child.getArchimateElement === "function") {
+                    var archEl = child.getArchimateElement();
+                    if (archEl && archEl.getId() === elementId) {
+                        results.push({ visual: child, parent: container });
+                    }
+                }
+                // Recurse into nested children (groups, etc.)
+                if (typeof child.getChildren === "function") {
+                    search(child);
+                }
+            }
+        }
+        search(view);
+        return results;
+    }
+
+    /**
+     * Find all visual connections in a view that reference a given ArchiMate relationship
+     * @param {Object} view - EMF view object
+     * @param {string} relationshipId - ArchiMate relationship ID
+     * @returns {Array} Array of {connection, source, target} objects
+     */
+    function findConnectionsForRelationship(view, relationshipId) {
+        var results = [];
+        function search(container) {
+            var children = container.getChildren();
+            for (var i = 0; i < children.size(); i++) {
+                var child = children.get(i);
+                // Check source connections on this visual
+                if (typeof child.getSourceConnections === "function") {
+                    var conns = child.getSourceConnections();
+                    for (var c = 0; c < conns.size(); c++) {
+                        var conn = conns.get(c);
+                        if (typeof conn.getArchimateRelationship === "function") {
+                            var archRel = conn.getArchimateRelationship();
+                            if (archRel && archRel.getId() === relationshipId) {
+                                results.push({
+                                    connection: conn,
+                                    source: conn.getSource(),
+                                    target: conn.getTarget()
+                                });
+                            }
+                        }
+                    }
+                }
+                // Recurse into nested children
+                if (typeof child.getChildren === "function") {
+                    search(child);
+                }
+            }
+        }
+        search(view);
+        return results;
+    }
+
+    /**
+     * Find all connections attached to a visual object (as source or target)
+     * @param {Object} visual - Visual object in a view
+     * @returns {Array} Array of {connection, source, target} objects
+     */
+    function findConnectionsForVisual(visual) {
+        var results = [];
+        // Outgoing connections
+        if (typeof visual.getSourceConnections === "function") {
+            var srcConns = visual.getSourceConnections();
+            for (var i = 0; i < srcConns.size(); i++) {
+                var conn = srcConns.get(i);
+                results.push({
+                    connection: conn,
+                    source: conn.getSource(),
+                    target: conn.getTarget()
+                });
+            }
+        }
+        // Incoming connections
+        if (typeof visual.getTargetConnections === "function") {
+            var tgtConns = visual.getTargetConnections();
+            for (var j = 0; j < tgtConns.size(); j++) {
+                var conn2 = tgtConns.get(j);
+                results.push({
+                    connection: conn2,
+                    source: conn2.getSource(),
+                    target: conn2.getTarget()
+                });
+            }
+        }
+        return results;
+    }
+
+    /**
+     * Find all relationships in the model where a given element is source or target.
+     * Searches the Relations folder and its subfolders.
+     * @param {Object} model - IArchimateModel
+     * @param {string} elementId - Element ID
+     * @returns {Array} Array of {relationship, parentFolder} objects
+     */
+    function findRelationshipsForElement(model, elementId) {
+        var results = [];
+        function searchFolder(folder) {
+            var elements = folder.getElements();
+            for (var i = 0; i < elements.size(); i++) {
+                var el = elements.get(i);
+                // Check if it's a relationship with source/target matching
+                if (typeof el.getSource === "function" && typeof el.getTarget === "function") {
+                    var src = el.getSource();
+                    var tgt = el.getTarget();
+                    if ((src && src.getId() === elementId) || (tgt && tgt.getId() === elementId)) {
+                        results.push({ relationship: el, parentFolder: folder });
+                    }
+                }
+            }
+            var subfolders = folder.getFolders();
+            for (var j = 0; j < subfolders.size(); j++) {
+                searchFolder(subfolders.get(j));
+            }
+        }
+        // Search all folders (relationships could be in any folder)
+        var folders = model.getFolders();
+        for (var k = 0; k < folders.size(); k++) {
+            searchFolder(folders.get(k));
+        }
+        return results;
+    }
+
+    // =========================================================================
     function executeBatch(model, label, operations) {
         var compound = new CompoundCommand(label);
         var results = [];
@@ -1192,7 +1495,7 @@
                 });
             }
             else if (operation.op === "deleteElement") {
-                // Delete element or relationship with optional cascading
+                // Delete element with full undo support via manual cascade
                 var elemToDelete = idMap[operation.id] || findElementById(model, operation.id);
                 if (!elemToDelete) {
                     throw new Error("Cannot find element to delete: " + operation.id);
@@ -1200,33 +1503,142 @@
 
                 var elemName = elemToDelete.getName ? elemToDelete.getName() : '';
                 var elemId = elemToDelete.getId();
-                
-                // Capture parent folder for undo
+                var doCascade = operation.cascade !== false;
+
+                if (doCascade) {
+                    // Step 1: Find and remove all relationships where this element is source or target
+                    var relRefs = findRelationshipsForElement(model, elemId);
+                    for (var ri = 0; ri < relRefs.length; ri++) {
+                        var relRef = relRefs[ri];
+                        var rel = relRef.relationship;
+                        var relFolder = relRef.parentFolder;
+
+                        // Step 1a: Remove all visual connections for this relationship across all views
+                        var allViews = findAllViews(model);
+                        for (var vi = 0; vi < allViews.length; vi++) {
+                            var connRefs = findConnectionsForRelationship(allViews[vi], rel.getId());
+                            for (var ci = 0; ci < connRefs.length; ci++) {
+                                (function(capturedConn, capturedSrc, capturedTgt) {
+                                    var RemoveConnCmd = Java.extend(GEFCommand, {
+                                        execute: function() {
+                                            if (capturedSrc && typeof capturedSrc.getSourceConnections === 'function') {
+                                                capturedSrc.getSourceConnections().remove(capturedConn);
+                                            }
+                                            if (capturedTgt && typeof capturedTgt.getTargetConnections === 'function') {
+                                                capturedTgt.getTargetConnections().remove(capturedConn);
+                                            }
+                                        },
+                                        undo: function() {
+                                            if (capturedSrc && typeof capturedSrc.getSourceConnections === 'function') {
+                                                capturedSrc.getSourceConnections().add(capturedConn);
+                                            }
+                                            if (capturedTgt && typeof capturedTgt.getTargetConnections === 'function') {
+                                                capturedTgt.getTargetConnections().add(capturedConn);
+                                            }
+                                        },
+                                        canExecute: function() { return true; },
+                                        canUndo: function() { return true; },
+                                        getLabel: function() { return "Remove connection from view"; }
+                                    });
+                                    compound.add(new RemoveConnCmd());
+                                })(connRefs[ci].connection, connRefs[ci].source, connRefs[ci].target);
+                            }
+                        }
+
+                        // Step 1b: Remove the relationship from its folder
+                        (function(capturedRel, capturedFolder) {
+                            var RemoveRelCmd = Java.extend(GEFCommand, {
+                                execute: function() {
+                                    if (capturedFolder && typeof capturedFolder.getElements === 'function') {
+                                        capturedFolder.getElements().remove(capturedRel);
+                                    }
+                                },
+                                undo: function() {
+                                    if (capturedFolder && typeof capturedFolder.getElements === 'function') {
+                                        capturedFolder.getElements().add(capturedRel);
+                                    }
+                                },
+                                canExecute: function() { return true; },
+                                canUndo: function() { return true; },
+                                getLabel: function() { return "Remove relationship"; }
+                            });
+                            compound.add(new RemoveRelCmd());
+                        })(rel, relFolder);
+                    }
+
+                    // Step 2: Remove all visual objects for this element across all views
+                    var allViewsForElem = findAllViews(model);
+                    for (var vei = 0; vei < allViewsForElem.length; vei++) {
+                        var visualRefs = findVisualsForElement(allViewsForElem[vei], elemId);
+                        for (var vri = 0; vri < visualRefs.length; vri++) {
+                            // First remove any connections attached to this visual
+                            var attachedConns = findConnectionsForVisual(visualRefs[vri].visual);
+                            for (var aci = 0; aci < attachedConns.length; aci++) {
+                                (function(capturedConn, capturedSrc, capturedTgt) {
+                                    var RemoveAttConnCmd = Java.extend(GEFCommand, {
+                                        execute: function() {
+                                            if (capturedSrc && typeof capturedSrc.getSourceConnections === 'function') {
+                                                capturedSrc.getSourceConnections().remove(capturedConn);
+                                            }
+                                            if (capturedTgt && typeof capturedTgt.getTargetConnections === 'function') {
+                                                capturedTgt.getTargetConnections().remove(capturedConn);
+                                            }
+                                        },
+                                        undo: function() {
+                                            if (capturedSrc && typeof capturedSrc.getSourceConnections === 'function') {
+                                                capturedSrc.getSourceConnections().add(capturedConn);
+                                            }
+                                            if (capturedTgt && typeof capturedTgt.getTargetConnections === 'function') {
+                                                capturedTgt.getTargetConnections().add(capturedConn);
+                                            }
+                                        },
+                                        canExecute: function() { return true; },
+                                        canUndo: function() { return true; },
+                                        getLabel: function() { return "Remove attached connection"; }
+                                    });
+                                    compound.add(new RemoveAttConnCmd());
+                                })(attachedConns[aci].connection, attachedConns[aci].source, attachedConns[aci].target);
+                            }
+
+                            // Then remove the visual object from its parent
+                            (function(capturedVisual, capturedContainer) {
+                                var RemoveVisualCmd = Java.extend(GEFCommand, {
+                                    execute: function() {
+                                        if (capturedContainer && typeof capturedContainer.getChildren === 'function') {
+                                            capturedContainer.getChildren().remove(capturedVisual);
+                                        }
+                                    },
+                                    undo: function() {
+                                        if (capturedContainer && typeof capturedContainer.getChildren === 'function') {
+                                            capturedContainer.getChildren().add(capturedVisual);
+                                        }
+                                    },
+                                    canExecute: function() { return true; },
+                                    canUndo: function() { return true; },
+                                    getLabel: function() { return "Remove visual from view"; }
+                                });
+                                compound.add(new RemoveVisualCmd());
+                            })(visualRefs[vri].visual, visualRefs[vri].parent);
+                        }
+                    }
+                }
+
+                // Step 3: Remove the element itself from its parent folder
                 var parentFolder = elemToDelete.eContainer();
-                
-                // Use IIFE to capture variables
                 (function(capturedElem, capturedParent, capturedId) {
                     var DeleteCmd = Java.extend(GEFCommand, {
-                        _removedConnections: null,
                         execute: function() {
-                            // If cascading, also remove from views
-                            if (operation.cascade !== false) {
-                                EcoreUtil.delete(capturedElem, true);
-                            } else {
-                                // Just remove from parent folder
-                                if (capturedParent && typeof capturedParent.getElements === 'function') {
-                                    capturedParent.getElements().remove(capturedElem);
-                                }
+                            if (capturedParent && typeof capturedParent.getElements === 'function') {
+                                capturedParent.getElements().remove(capturedElem);
                             }
                         },
                         undo: function() {
-                            // Re-add to parent folder
                             if (capturedParent && typeof capturedParent.getElements === 'function') {
                                 capturedParent.getElements().add(capturedElem);
                             }
                         },
                         canExecute: function() { return true; },
-                        canUndo: function() { return operation.cascade === false; }, // Full cascade delete not undoable
+                        canUndo: function() { return true; },
                         getLabel: function() { return "Delete " + capturedId; }
                     });
                     compound.add(new DeleteCmd());
@@ -1236,11 +1648,11 @@
                     op: "deleteElement",
                     id: elemId,
                     name: elemName,
-                    cascade: operation.cascade !== false
+                    cascade: doCascade
                 });
             }
             else if (operation.op === "deleteRelationship") {
-                // Delete relationship (alias for deleteElement with relationship)
+                // Delete relationship with full undo support via manual cascade
                 var relToDelete = idMap[operation.id] || findElementById(model, operation.id);
                 if (!relToDelete) {
                     throw new Error("Cannot find relationship to delete: " + operation.id);
@@ -1248,12 +1660,47 @@
 
                 var relName = relToDelete.getName ? relToDelete.getName() : '';
                 var relId = relToDelete.getId();
+
+                // Step 1: Remove all visual connections for this relationship across all views
+                var allViewsForRel = findAllViews(model);
+                for (var vrdi = 0; vrdi < allViewsForRel.length; vrdi++) {
+                    var relConnRefs = findConnectionsForRelationship(allViewsForRel[vrdi], relId);
+                    for (var vrci = 0; vrci < relConnRefs.length; vrci++) {
+                        (function(capturedConn, capturedSrc, capturedTgt) {
+                            var RemoveRelConnCmd = Java.extend(GEFCommand, {
+                                execute: function() {
+                                    if (capturedSrc && typeof capturedSrc.getSourceConnections === 'function') {
+                                        capturedSrc.getSourceConnections().remove(capturedConn);
+                                    }
+                                    if (capturedTgt && typeof capturedTgt.getTargetConnections === 'function') {
+                                        capturedTgt.getTargetConnections().remove(capturedConn);
+                                    }
+                                },
+                                undo: function() {
+                                    if (capturedSrc && typeof capturedSrc.getSourceConnections === 'function') {
+                                        capturedSrc.getSourceConnections().add(capturedConn);
+                                    }
+                                    if (capturedTgt && typeof capturedTgt.getTargetConnections === 'function') {
+                                        capturedTgt.getTargetConnections().add(capturedConn);
+                                    }
+                                },
+                                canExecute: function() { return true; },
+                                canUndo: function() { return true; },
+                                getLabel: function() { return "Remove connection from view"; }
+                            });
+                            compound.add(new RemoveRelConnCmd());
+                        })(relConnRefs[vrci].connection, relConnRefs[vrci].source, relConnRefs[vrci].target);
+                    }
+                }
+
+                // Step 2: Remove the relationship from its parent folder
                 var relParent = relToDelete.eContainer();
-                
                 (function(capturedRel, capturedParent, capturedId) {
                     var DeleteRelCmd = Java.extend(GEFCommand, {
                         execute: function() {
-                            EcoreUtil.delete(capturedRel, true);
+                            if (capturedParent && typeof capturedParent.getElements === 'function') {
+                                capturedParent.getElements().remove(capturedRel);
+                            }
                         },
                         undo: function() {
                             if (capturedParent && typeof capturedParent.getElements === 'function') {
@@ -1261,7 +1708,7 @@
                             }
                         },
                         canExecute: function() { return true; },
-                        canUndo: function() { return false; },
+                        canUndo: function() { return true; },
                         getLabel: function() { return "Delete Relationship " + capturedId; }
                     });
                     compound.add(new DeleteRelCmd());
@@ -1717,6 +2164,235 @@
                     tempId: operation.tempId || null,
                     groupId: group.getId(),
                     viewId: viewForGroup.getId()
+                });
+            }
+            // ================================================================
+            // View management operations (Finding 3 fix)
+            // ================================================================
+            else if (operation.op === "createView") {
+                // Create a new ArchiMate diagram view (undoable)
+                var viewName = operation.name;
+                if (!viewName) {
+                    throw new Error("createView: missing 'name' field");
+                }
+
+                var newView = factory.createArchimateDiagramModel();
+                newView.setName(viewName);
+                if (operation.documentation) {
+                    newView.setDocumentation(operation.documentation);
+                }
+
+                // Find target folder (Views/Diagrams folder by default)
+                var targetViewFolder = null;
+                if (operation.folderId) {
+                    targetViewFolder = findElementById(model, operation.folderId);
+                    if (!targetViewFolder) {
+                        // Also check for folder by searching folders
+                        targetViewFolder = findFolderById(model, operation.folderId);
+                    }
+                }
+                if (!targetViewFolder) {
+                    var modelFolders = model.getFolders();
+                    for (var vfi = 0; vfi < modelFolders.size(); vfi++) {
+                        if (modelFolders.get(vfi).getType() === FolderType.DIAGRAMS) {
+                            targetViewFolder = modelFolders.get(vfi);
+                            break;
+                        }
+                    }
+                }
+                if (!targetViewFolder) {
+                    throw new Error("createView: could not find Views folder in model");
+                }
+
+                (function(capturedView, capturedFolder) {
+                    var CreateViewCmd = Java.extend(GEFCommand, {
+                        execute: function() { capturedFolder.getElements().add(capturedView); },
+                        undo: function() { capturedFolder.getElements().remove(capturedView); },
+                        canExecute: function() { return true; },
+                        canUndo: function() { return true; },
+                        getLabel: function() { return "Create View"; }
+                    });
+                    compound.add(new CreateViewCmd());
+                })(newView, targetViewFolder);
+
+                if (operation.tempId) {
+                    idMap[operation.tempId] = newView;
+                }
+
+                results.push({
+                    op: "createView",
+                    tempId: operation.tempId || null,
+                    viewId: newView.getId(),
+                    viewName: newView.getName()
+                });
+            }
+            else if (operation.op === "deleteView") {
+                // Delete a view (undoable) - removes view from its parent folder
+                var viewToDelete = idMap[operation.viewId] || findViewById(model, operation.viewId);
+                if (!viewToDelete) {
+                    throw new Error("deleteView: cannot find view: " + operation.viewId);
+                }
+
+                var delViewName = viewToDelete.getName ? viewToDelete.getName() : '';
+                var delViewId = viewToDelete.getId();
+                var delViewParent = viewToDelete.eContainer();
+
+                (function(capturedView, capturedParent) {
+                    var DeleteViewCmd = Java.extend(GEFCommand, {
+                        execute: function() {
+                            if (capturedParent && typeof capturedParent.getElements === 'function') {
+                                capturedParent.getElements().remove(capturedView);
+                            }
+                        },
+                        undo: function() {
+                            if (capturedParent && typeof capturedParent.getElements === 'function') {
+                                capturedParent.getElements().add(capturedView);
+                            }
+                        },
+                        canExecute: function() { return true; },
+                        canUndo: function() { return true; },
+                        getLabel: function() { return "Delete View"; }
+                    });
+                    compound.add(new DeleteViewCmd());
+                })(viewToDelete, delViewParent);
+
+                results.push({
+                    op: "deleteView",
+                    viewId: delViewId,
+                    viewName: delViewName
+                });
+            }
+            else if (operation.op === "duplicateView") {
+                // Deep-copy a view (undoable)
+                var viewToDup = idMap[operation.viewId] || findViewById(model, operation.viewId);
+                if (!viewToDup) {
+                    throw new Error("duplicateView: cannot find view: " + operation.viewId);
+                }
+
+                var dupNewView = EcoreUtil.copy(viewToDup);
+                var dupNewName = operation.name || (viewToDup.getName() + " (Copy)");
+                dupNewView.setName(dupNewName);
+
+                var dupParent = viewToDup.eContainer();
+
+                (function(capturedNewView, capturedParent) {
+                    var DuplicateViewCmd = Java.extend(GEFCommand, {
+                        execute: function() {
+                            if (capturedParent && typeof capturedParent.getElements === 'function') {
+                                capturedParent.getElements().add(capturedNewView);
+                            }
+                        },
+                        undo: function() {
+                            if (capturedParent && typeof capturedParent.getElements === 'function') {
+                                capturedParent.getElements().remove(capturedNewView);
+                            }
+                        },
+                        canExecute: function() { return true; },
+                        canUndo: function() { return true; },
+                        getLabel: function() { return "Duplicate View"; }
+                    });
+                    compound.add(new DuplicateViewCmd());
+                })(dupNewView, dupParent);
+
+                results.push({
+                    op: "duplicateView",
+                    sourceViewId: viewToDup.getId(),
+                    newViewId: dupNewView.getId(),
+                    newViewName: dupNewView.getName()
+                });
+            }
+            else if (operation.op === "setViewRouter") {
+                // Set connection router type on a view (undoable)
+                var routerView = idMap[operation.viewId] || findViewById(model, operation.viewId);
+                if (!routerView) {
+                    throw new Error("setViewRouter: cannot find view: " + operation.viewId);
+                }
+
+                var routerValue = operation.routerType === "manhattan" ? 1 : 0;
+
+                (function(capturedView, capturedNewRouter) {
+                    var oldRouter = capturedView.getConnectionRouterType();
+                    var SetRouterCmd = Java.extend(GEFCommand, {
+                        execute: function() { capturedView.setConnectionRouterType(capturedNewRouter); },
+                        undo: function() { capturedView.setConnectionRouterType(oldRouter); },
+                        canExecute: function() { return true; },
+                        canUndo: function() { return true; },
+                        getLabel: function() { return "Set View Router"; }
+                    });
+                    compound.add(new SetRouterCmd());
+                })(routerView, routerValue);
+
+                results.push({
+                    op: "setViewRouter",
+                    viewId: routerView.getId(),
+                    routerType: operation.routerType
+                });
+            }
+            else if (operation.op === "layoutView") {
+                // Apply Dagre layout to a view (undoable)
+                var layoutView = idMap[operation.viewId] || findViewById(model, operation.viewId);
+                if (!layoutView) {
+                    throw new Error("layoutView: cannot find view: " + operation.viewId);
+                }
+
+                // Compute layout without applying it
+                if (typeof layoutDagreHeadless === "undefined" || !layoutDagreHeadless) {
+                    throw new Error("layoutView: Dagre layout module not loaded");
+                }
+
+                var layoutResult = layoutDagreHeadless.computeLayout(layoutView, {
+                    rankdir: operation.rankdir || 'TB',
+                    nodesep: operation.nodesep || 50,
+                    ranksep: operation.ranksep || 50,
+                    edgesep: operation.edgesep || 10,
+                    marginx: operation.marginx || 20,
+                    marginy: operation.marginy || 20
+                });
+
+                // Create undoable commands for each node position change
+                var nodesPositioned = 0;
+                for (var lni = 0; lni < layoutResult.nodes.length; lni++) {
+                    var nodeInfo = layoutResult.nodes[lni];
+                    (function(capturedElement, capturedOldBounds, capturedNewBounds) {
+                        var LayoutNodeCmd = Java.extend(GEFCommand, {
+                            execute: function() { capturedElement.setBounds(capturedNewBounds); },
+                            undo: function() { capturedElement.setBounds(capturedOldBounds); },
+                            canExecute: function() { return true; },
+                            canUndo: function() { return true; },
+                            getLabel: function() { return "Layout Node"; }
+                        });
+                        compound.add(new LayoutNodeCmd());
+                    })(nodeInfo.element, nodeInfo.oldBounds, nodeInfo.newBounds);
+                    nodesPositioned++;
+                }
+
+                // Create undoable commands for clearing bendpoints
+                var edgesRouted = 0;
+                for (var lei = 0; lei < layoutResult.connections.length; lei++) {
+                    var connInfo = layoutResult.connections[lei];
+                    (function(capturedConn, capturedOldBendpoints) {
+                        var ClearBendpointsCmd = Java.extend(GEFCommand, {
+                            execute: function() { capturedConn.getBendpoints().clear(); },
+                            undo: function() {
+                                var bp = capturedConn.getBendpoints();
+                                for (var bpi = 0; bpi < capturedOldBendpoints.length; bpi++) {
+                                    bp.add(capturedOldBendpoints[bpi]);
+                                }
+                            },
+                            canExecute: function() { return true; },
+                            canUndo: function() { return true; },
+                            getLabel: function() { return "Clear Bendpoints"; }
+                        });
+                        compound.add(new ClearBendpointsCmd());
+                    })(connInfo.connection, connInfo.oldBendpoints);
+                    edgesRouted++;
+                }
+
+                results.push({
+                    op: "layoutView",
+                    viewId: layoutView.getId(),
+                    nodesPositioned: nodesPositioned,
+                    edgesRouted: edgesRouted
                 });
             }
         }

@@ -356,6 +356,12 @@
                     "Change " + index + " (deleteElement): missing 'id' field"
                 );
             }
+            // cascade is optional boolean, defaults to true
+            if (change.cascade !== undefined && typeof change.cascade !== 'boolean') {
+                throw this.createValidationError(
+                    "Change " + index + " (deleteElement): 'cascade' must be a boolean"
+                );
+            }
         },
 
         /**

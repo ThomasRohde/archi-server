@@ -62,7 +62,7 @@
                     startedAt: operation.startedAt,
                     completedAt: operation.completedAt,
                     durationMs: operation.completedAt && operation.startedAt ?
-                        operation.completedAt - operation.startedAt : null
+                        new Date(operation.completedAt).getTime() - new Date(operation.startedAt).getTime() : null
                 };
             } else if (operation.status === "error") {
                 response.body = {
@@ -71,7 +71,9 @@
                     error: operation.error,
                     createdAt: operation.createdAt,
                     startedAt: operation.startedAt,
-                    completedAt: operation.completedAt
+                    completedAt: operation.completedAt,
+                    durationMs: operation.completedAt && operation.startedAt ?
+                        new Date(operation.completedAt).getTime() - new Date(operation.startedAt).getTime() : null
                 };
             } else {
                 response.body = {
