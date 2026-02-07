@@ -17,7 +17,7 @@ export function expectValidElement(element) {
   expect(element).toHaveProperty('id');
   expect(element).toHaveProperty('type');
   expect(element).toHaveProperty('name');
-  expect(element.id).toMatch(/^[a-f0-9-]+$/);
+  expect(element.id).toMatch(/^id-[a-f0-9]+$/);
   expect(typeof element.type).toBe('string');
   expect(typeof element.name).toBe('string');
 }
@@ -31,7 +31,7 @@ export function expectValidView(view) {
   expect(view).toHaveProperty('id');
   expect(view).toHaveProperty('name');
   expect(view).toHaveProperty('type');
-  expect(view.id).toMatch(/^[a-f0-9-]+$/);
+  expect(view.id).toMatch(/^id-[a-f0-9]+$/);
   expect(typeof view.name).toBe('string');
   expect(view.type).toBe('archimate-diagram-model');
 }

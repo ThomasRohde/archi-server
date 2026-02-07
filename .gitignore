@@ -27,8 +27,6 @@ yarn-error.log*
 
 # Dependencies (if any)
 node_modules/
-package-lock.json
-yarn.lock
 
 # Temporary files
 *.tmp

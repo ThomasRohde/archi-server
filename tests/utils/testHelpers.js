@@ -17,6 +17,24 @@ export function generateUniqueName(prefix) {
 }
 
 /**
+ * Build a tempId→realId mapping from an operation result array.
+ * The /ops/status result field is an array of { tempId, realId, ... } objects.
+ * @param {Array} resultArray - The result array from a completed operation
+ * @returns {Object} Map of tempId to realId
+ */
+export function buildIdMap(resultArray) {
+  const map = {};
+  if (Array.isArray(resultArray)) {
+    for (const entry of resultArray) {
+      if (entry.tempId && entry.realId) {
+        map[entry.tempId] = entry.realId;
+      }
+    }
+  }
+  return map;
+}
+
+/**
  * Clean up created elements by deleting them
  * @param {Array<string>} elementIds - Array of element IDs to delete
  * @returns {Promise<void>}

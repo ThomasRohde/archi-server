@@ -11,6 +11,38 @@ This test suite provides:
 - **OpenAPI Schema Validation** - All responses validated against openapi.yaml
 - **Modern Tooling** - Vitest with watch mode, UI mode, and coverage reporting
 
+## Current Test Results
+
+```
+ Test Files  5 passed (5)
+      Tests  54 passed | 1 skipped (55)
+   Duration  ~10s
+```
+
+| Suite | Tests | Status |
+|-------|------:|--------|
+| health-simple.test.js | 3/3 | ✅ |
+| health.test.js | 12/12 (1 skipped) | ✅ |
+| model-query.test.js | 7/7 | ✅ |
+| model-apply.test.js | 15/15 | ✅ |
+| views.test.js | 18/18 | ✅ |
+
+> The 1 skipped test is `POST /shutdown` which is intentionally skipped to avoid stopping the server during test runs.
+
+### Known Issues
+
+- **Unit tests** (`serverConfig.test.js`, `operationValidation.test.js`) use `createRequire` to load GraalVM IIFE modules but have import compatibility issues with the Node.js/Vitest environment. These are excluded from the default integration test run. Focus on integration tests for validation.
+
+## API Response Format Notes
+
+Key learnings about actual server response structures:
+
+- **Element/View IDs**: Use `id-` prefix followed by hex (e.g., `id-392c0e5c672c4282af92a4dceb7f99ca`), not plain UUIDs.
+- **Memory fields**: `memory.totalMB`, `memory.freeMB`, `memory.usedMB`, `memory.maxMB` (MB suffix, not bare names).
+- **Operations fields**: `operations.error` (not `failed`), plus `queueSize`, `queued`, `processing`, `completed`, `total`.
+- **Operation results**: `/ops/status` returns `result` as an **array** of `{ op, tempId, realId, name, type }` objects, not an object with an `idMap`. Use the `buildIdMap()` helper from `testHelpers.js` to convert.
+- **GET /test message**: `"Handler running on UI thread! Thread: main Model: <name>"` (not "display thread").
+
 ## Prerequisites
 
 ### 1. Install Node.js
@@ -148,6 +180,8 @@ tests/
 ## Writing New Tests
 
 ### Unit Test Example
+
+> **Note:** Unit tests for GraalVM IIFE modules (e.g., `serverConfig.js`, `operationValidation.js`) require special handling with `createRequire` and may have import issues. These are a known limitation—focus on integration tests for reliable validation.
 
 ```javascript
 // tests/suites/unit/myModule.test.js

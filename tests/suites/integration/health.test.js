@@ -55,11 +55,11 @@ describe('Health Endpoints', () => {
 
       expect(response.body.operations).toHaveProperty('queued');
       expect(response.body.operations).toHaveProperty('completed');
-      expect(response.body.operations).toHaveProperty('failed');
+      expect(response.body.operations).toHaveProperty('error');
 
       expect(typeof response.body.operations.queued).toBe('number');
       expect(typeof response.body.operations.completed).toBe('number');
-      expect(typeof response.body.operations.failed).toBe('number');
+      expect(typeof response.body.operations.error).toBe('number');
     });
 
     it('returns valid model information', async () => {
@@ -81,15 +81,15 @@ describe('Health Endpoints', () => {
     it('returns valid memory information', async () => {
       const response = await httpClient.get('/health');
 
-      expect(response.body.memory).toHaveProperty('total');
-      expect(response.body.memory).toHaveProperty('free');
-      expect(response.body.memory).toHaveProperty('used');
-      expect(response.body.memory).toHaveProperty('max');
+      expect(response.body.memory).toHaveProperty('totalMB');
+      expect(response.body.memory).toHaveProperty('freeMB');
+      expect(response.body.memory).toHaveProperty('usedMB');
+      expect(response.body.memory).toHaveProperty('maxMB');
 
-      expect(typeof response.body.memory.total).toBe('number');
-      expect(typeof response.body.memory.free).toBe('number');
-      expect(typeof response.body.memory.used).toBe('number');
-      expect(typeof response.body.memory.max).toBe('number');
+      expect(typeof response.body.memory.totalMB).toBe('number');
+      expect(typeof response.body.memory.freeMB).toBe('number');
+      expect(typeof response.body.memory.usedMB).toBe('number');
+      expect(typeof response.body.memory.maxMB).toBe('number');
     });
 
     it('returns valid timestamp', async () => {
@@ -124,7 +124,7 @@ describe('Health Endpoints', () => {
       expect(response.body).toHaveProperty('message');
       expect(response.body.success).toBe(true);
       expect(typeof response.body.message).toBe('string');
-      expect(response.body.message.toLowerCase()).toContain('display');
+      expect(response.body.message.toLowerCase()).toContain('ui thread');
     });
   });
 

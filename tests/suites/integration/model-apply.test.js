@@ -9,7 +9,7 @@ import * as httpClient from '../../infrastructure/httpClient.js';
 import { ensureServerRunning } from '../../infrastructure/archiServer.js';
 import { expectSuccessResponse, expectOperationSuccess, expectErrorResponse } from '../../infrastructure/assertions.js';
 import { createElementPayload, createRelationshipPayload, createApplyRequest } from '../../infrastructure/fixtures.js';
-import { generateUniqueName, cleanupElements } from '../../utils/testHelpers.js';
+import { generateUniqueName, cleanupElements, buildIdMap } from '../../utils/testHelpers.js';
 import { waitForOperation } from '../../utils/waitFor.js';
 
 describe('Model Apply Endpoint', () => {
@@ -42,12 +42,12 @@ describe('Model Apply Endpoint', () => {
       expect(response.body).toHaveProperty('operationId');
 
       const result = await waitForOperation(response.body.operationId);
+      const idMap = buildIdMap(result.result);
 
       expect(result.status).toBe('complete');
-      expect(result.result).toHaveProperty('idMap');
-      expect(result.result.idMap[tempId]).toBeDefined();
+      expect(idMap[tempId]).toBeDefined();
 
-      createdElementIds.push(result.result.idMap[tempId]);
+      createdElementIds.push(idMap[tempId]);
     });
 
     it('creates an application component element', async () => {
@@ -63,11 +63,12 @@ describe('Model Apply Endpoint', () => {
 
       const response = await httpClient.post('/model/apply', payload);
       const result = await waitForOperation(response.body.operationId);
+      const idMap = buildIdMap(result.result);
 
       expect(result.status).toBe('complete');
-      expect(result.result.idMap[tempId]).toBeDefined();
+      expect(idMap[tempId]).toBeDefined();
 
-      createdElementIds.push(result.result.idMap[tempId]);
+      createdElementIds.push(idMap[tempId]);
     });
 
     it('creates multiple elements in single request', async () => {
@@ -79,16 +80,17 @@ describe('Model Apply Endpoint', () => {
 
       const response = await httpClient.post('/model/apply', payload);
       const result = await waitForOperation(response.body.operationId);
+      const idMap = buildIdMap(result.result);
 
       expect(result.status).toBe('complete');
-      expect(result.result.idMap['temp-1']).toBeDefined();
-      expect(result.result.idMap['temp-2']).toBeDefined();
-      expect(result.result.idMap['temp-3']).toBeDefined();
+      expect(idMap['temp-1']).toBeDefined();
+      expect(idMap['temp-2']).toBeDefined();
+      expect(idMap['temp-3']).toBeDefined();
 
       createdElementIds.push(
-        result.result.idMap['temp-1'],
-        result.result.idMap['temp-2'],
-        result.result.idMap['temp-3']
+        idMap['temp-1'],
+        idMap['temp-2'],
+        idMap['temp-3']
       );
     });
 
@@ -100,9 +102,10 @@ describe('Model Apply Endpoint', () => {
 
       const response = await httpClient.post('/model/apply', payload);
       const result = await waitForOperation(response.body.operationId);
+      const idMap = buildIdMap(result.result);
 
       expect(result.status).toBe('complete');
-      createdElementIds.push(result.result.idMap['temp-1']);
+      createdElementIds.push(idMap['temp-1']);
     });
 
     it('rejects invalid element type', async () => {
@@ -157,9 +160,10 @@ describe('Model Apply Endpoint', () => {
 
       const createResponse = await httpClient.post('/model/apply', createApplyRequest([actor, service]));
       const createResult = await waitForOperation(createResponse.body.operationId);
+      const createIdMap = buildIdMap(createResult.result);
 
-      const actorId = createResult.result.idMap['temp-actor'];
-      const serviceId = createResult.result.idMap['temp-service'];
+      const actorId = createIdMap['temp-actor'];
+      const serviceId = createIdMap['temp-service'];
 
       createdElementIds.push(actorId, serviceId);
 
@@ -171,9 +175,10 @@ describe('Model Apply Endpoint', () => {
 
       const relResponse = await httpClient.post('/model/apply', createApplyRequest([relationship]));
       const relResult = await waitForOperation(relResponse.body.operationId);
+      const relIdMap = buildIdMap(relResult.result);
 
       expect(relResult.status).toBe('complete');
-      expect(relResult.result.idMap['temp-rel']).toBeDefined();
+      expect(relIdMap['temp-rel']).toBeDefined();
     });
 
     it('rejects invalid relationship type', async () => {
@@ -238,7 +243,8 @@ describe('Model Apply Endpoint', () => {
 
       // Wait for completion
       const result = await waitForOperation(opId);
-      createdElementIds.push(result.result.idMap['temp-1']);
+      const idMap = buildIdMap(result.result);
+      createdElementIds.push(idMap['temp-1']);
     });
 
     it('returns 400 for missing operation ID', async () => {
