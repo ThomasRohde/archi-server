@@ -2,21 +2,27 @@
  * Unit Tests for serverConfig.js
  *
  * Tests validation and normalization logic without requiring a running server.
+ *
+ * Note: The source module is a GraalVM IIFE that sets globalThis.serverConfig.
+ * Because package.json has "type": "module", Node.js treats .js files as ESM,
+ * so the IIFE's `module.exports` assignment is ignored. We require() the file
+ * to execute the IIFE, then read from globalThis.
  */
 
 import { createRequire } from 'module';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 const require = createRequire(import.meta.url);
 
 let serverConfig;
 
 beforeAll(() => {
-  // Load the module using CommonJS require
-  serverConfig = require('../../../scripts/lib/server/serverConfig.js');
+  // require() executes the IIFE which sets globalThis.serverConfig.
+  // In ESM context ("type": "module"), module.exports isn't set, so we read from globalThis.
+  require('../../../scripts/lib/server/serverConfig.js');
+  serverConfig = globalThis.serverConfig;
+  if (!serverConfig) {
+    throw new Error('Failed to load serverConfig from globalThis after require()');
+  }
 });
 
 describe('serverConfig', () => {

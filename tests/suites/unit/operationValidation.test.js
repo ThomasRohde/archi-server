@@ -2,6 +2,11 @@
  * Unit Tests for operationValidation.js
  *
  * Tests validation logic for API operations without requiring a running server.
+ *
+ * Note: The source modules are GraalVM IIFEs that set globalThis properties.
+ * Because package.json has "type": "module", Node.js treats .js files as ESM,
+ * so the IIFE's `module.exports` assignment is ignored. We require() the files
+ * to execute the IIFEs, then read from globalThis.
  */
 
 import { createRequire } from 'module';
@@ -11,9 +16,19 @@ const require = createRequire(import.meta.url);
 let serverConfig, operationValidation;
 
 beforeAll(() => {
-  // Load dependencies using CommonJS require
-  serverConfig = require('../../../scripts/lib/server/serverConfig.js');
-  operationValidation = require('../../../scripts/lib/server/operationValidation.js');
+  // require() executes the IIFEs which set globalThis properties.
+  // In ESM context ("type": "module"), module.exports isn't set, so we read from globalThis.
+  // serverConfig must be loaded first (operationValidation depends on it as a global)
+  require('../../../scripts/lib/server/serverConfig.js');
+  serverConfig = globalThis.serverConfig;
+  require('../../../scripts/lib/server/operationValidation.js');
+  operationValidation = globalThis.operationValidation;
+  if (!serverConfig) {
+    throw new Error('Failed to load serverConfig from globalThis after require()');
+  }
+  if (!operationValidation) {
+    throw new Error('Failed to load operationValidation from globalThis after require()');
+  }
 });
 
 describe('operationValidation', () => {

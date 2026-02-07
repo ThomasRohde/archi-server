@@ -5,7 +5,7 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     setupFiles: ['./tests/infrastructure/setup.js'],
-    testTimeout: 30000, // 30s timeout (server operations can be slow)
+    testTimeout: 120000, // 120s timeout (accounts for rate limit throttling in full suite)
     hookTimeout: 10000,
     coverage: {
       provider: 'v8',

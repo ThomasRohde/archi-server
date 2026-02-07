@@ -10,6 +10,23 @@ import { getServerUrl } from './archiServer.js';
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000;
 const REQUEST_TIMEOUT = 30000;
+const RATE_LIMIT_MAX_RETRIES = 2;
+
+/**
+ * Shared queue to throttle requests and avoid hitting rate limits.
+ * Ensures a minimum gap between consecutive requests.
+ */
+const MIN_REQUEST_GAP_MS = 300; // ~3.3 req/s, stays under 200 req/min rate limit
+let lastRequestTime = 0;
+
+async function throttle() {
+  const now = Date.now();
+  const elapsed = now - lastRequestTime;
+  if (elapsed < MIN_REQUEST_GAP_MS) {
+    await new Promise(resolve => setTimeout(resolve, MIN_REQUEST_GAP_MS - elapsed));
+  }
+  lastRequestTime = Date.now();
+}
 
 /**
  * Make an HTTP request to the Archi server
@@ -31,9 +48,12 @@ export async function request(method, path, body = null, options = {}) {
 
   const url = `${getServerUrl()}${path}`;
   let lastError;
+  let rateLimitRetries = 0;
 
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
+      await throttle();
+
       const fetchOptions = {
         method,
         headers: {
@@ -56,6 +76,16 @@ export async function request(method, path, body = null, options = {}) {
         responseBody = await response.json();
       } else {
         responseBody = await response.text();
+      }
+
+      // Handle 429 Rate Limit — always retry regardless of skipRetryOn4xx
+      if (response.status === 429 && rateLimitRetries < RATE_LIMIT_MAX_RETRIES) {
+        rateLimitRetries++;
+        const retryAfterSec = parseInt(response.headers.get('retry-after') || '10', 10);
+        const waitMs = Math.min(retryAfterSec * 1000, 65000); // cap at 65s
+        await new Promise(resolve => setTimeout(resolve, waitMs));
+        attempt--; // don't consume a normal retry for rate limiting
+        continue;
       }
 
       // Don't retry on client errors (4xx) unless specified

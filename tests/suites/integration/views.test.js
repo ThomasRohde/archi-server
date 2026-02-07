@@ -200,6 +200,8 @@ describe('View Endpoints', () => {
 
       const response = await httpClient.get(`/views/${viewId}/validate`);
 
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('checks');
       expect(response.body.checks.length).toBeGreaterThan(0);
 
       const check = response.body.checks[0];

@@ -2,7 +2,13 @@
  * Simple Health Test - Minimal version to verify test infrastructure
  */
 
+import { ensureServerRunning } from '../../infrastructure/archiServer.js';
+
 describe('Health Endpoint (Simple)', () => {
+  beforeAll(async () => {
+    await ensureServerRunning();
+  });
+
   it('returns OK status', async () => {
     const response = await fetch('http://localhost:8765/health');
     const data = await response.json();

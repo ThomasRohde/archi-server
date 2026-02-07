@@ -23,11 +23,18 @@ export function sleep(ms) {
  * @returns {Promise<Object>} Completed operation result
  * @throws {Error} If operation fails or times out
  */
-export async function waitForOperation(operationId, timeoutMs = 10000, pollInterval = 200) {
+export async function waitForOperation(operationId, timeoutMs = 30000, pollInterval = 500) {
   const startTime = Date.now();
 
   while (Date.now() - startTime < timeoutMs) {
     const response = await httpClient.get(`/ops/status?opId=${operationId}`);
+
+    // If rate-limited even after httpClient retries, wait and retry polling
+    if (response.status === 429) {
+      const retryAfterSec = parseInt(response.headers?.get?.('retry-after') || '10', 10);
+      await sleep(Math.min(retryAfterSec * 1000, 65000));
+      continue;
+    }
 
     if (response.status !== 200) {
       throw new Error(
