@@ -4,8 +4,20 @@
  * Tests validation and normalization logic without requiring a running server.
  */
 
-import { describe, it, expect } from 'vitest';
-import serverConfig from '../../../scripts/lib/server/serverConfig.js';
+import { createRequire } from 'module';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const require = createRequire(import.meta.url);
+
+let serverConfig;
+
+beforeAll(() => {
+  // Load the module using CommonJS require
+  serverConfig = require('../../../scripts/lib/server/serverConfig.js');
+});
 
 describe('serverConfig', () => {
   describe('normalizeElementType', () => {

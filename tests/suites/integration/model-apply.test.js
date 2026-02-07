@@ -5,7 +5,6 @@
  * Requires the Archi server to be running with a model loaded.
  */
 
-import { describe, it, expect, beforeAll, afterEach } from 'vitest';
 import * as httpClient from '../../infrastructure/httpClient.js';
 import { ensureServerRunning } from '../../infrastructure/archiServer.js';
 import { expectSuccessResponse, expectOperationSuccess, expectErrorResponse } from '../../infrastructure/assertions.js';

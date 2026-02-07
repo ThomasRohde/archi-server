@@ -4,7 +4,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
-    setupFiles: ['./infrastructure/setup.js'],
+    setupFiles: ['./tests/infrastructure/setup.js'],
     testTimeout: 30000, // 30s timeout (server operations can be slow)
     hookTimeout: 10000,
     coverage: {

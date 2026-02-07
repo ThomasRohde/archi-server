@@ -4,18 +4,16 @@
  * Tests validation logic for API operations without requiring a running server.
  */
 
-import { describe, it, expect, beforeAll } from 'vitest';
+import { createRequire } from 'module';
 
-// Load dependencies in correct order
+const require = createRequire(import.meta.url);
+
 let serverConfig, operationValidation;
 
-beforeAll(async () => {
-  // Dynamically import the modules (GraalVM IIFE modules need global exposure)
-  const serverConfigModule = await import('../../../scripts/lib/server/serverConfig.js');
-  const operationValidationModule = await import('../../../scripts/lib/server/operationValidation.js');
-
-  serverConfig = serverConfigModule.default || globalThis.serverConfig;
-  operationValidation = operationValidationModule.default || globalThis.operationValidation;
+beforeAll(() => {
+  // Load dependencies using CommonJS require
+  serverConfig = require('../../../scripts/lib/server/serverConfig.js');
+  operationValidation = require('../../../scripts/lib/server/operationValidation.js');
 });
 
 describe('operationValidation', () => {
