@@ -1,0 +1,33 @@
+{
+  "name": "archi-server-tests",
+  "version": "1.1.0",
+  "description": "Test suite for ArchiMate Model API Server",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "test:unit": "vitest run --dir tests/suites/unit",
+    "test:integration": "vitest run --dir tests/suites/integration",
+    "test:e2e": "vitest run --dir tests/suites/e2e",
+    "test:coverage": "vitest run --coverage"
+  },
+  "keywords": ["archimate", "test", "vitest", "api-testing"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "vitest": "^1.3.0",
+    "@vitest/ui": "^1.3.0",
+    "@vitest/coverage-v8": "^1.3.0",
+    "ajv": "^8.12.0",
+    "ajv-formats": "^2.1.1",
+    "openapi-types": "^12.1.3",
+    "js-yaml": "^4.1.0",
+    "chai": "^5.0.0",
+    "chai-json-schema": "^1.5.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

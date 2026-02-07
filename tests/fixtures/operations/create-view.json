@@ -1,0 +1,18 @@
+{
+  "description": "Sample view creation payloads",
+  "examples": [
+    {
+      "name": "Business Process Overview",
+      "documentation": "High-level view of key business processes"
+    },
+    {
+      "name": "Application Architecture",
+      "documentation": "Application layer components and their relationships",
+      "folder": "folder-id-optional"
+    },
+    {
+      "name": "Technology Infrastructure",
+      "documentation": "Infrastructure and deployment view"
+    }
+  ]
+}

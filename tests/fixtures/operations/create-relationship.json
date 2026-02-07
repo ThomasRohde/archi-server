@@ -1,0 +1,38 @@
+{
+  "description": "Sample createRelationship operation payloads",
+  "examples": [
+    {
+      "op": "createRelationship",
+      "type": "serving-relationship",
+      "sourceId": "element-id-1",
+      "targetId": "element-id-2",
+      "tempId": "temp-rel-1",
+      "name": "serves",
+      "documentation": "Service relationship between components"
+    },
+    {
+      "op": "createRelationship",
+      "type": "composition-relationship",
+      "sourceId": "parent-element-id",
+      "targetId": "child-element-id",
+      "tempId": "temp-rel-2",
+      "documentation": "Parent-child composition relationship"
+    },
+    {
+      "op": "createRelationship",
+      "type": "realization-relationship",
+      "sourceId": "implementation-id",
+      "targetId": "interface-id",
+      "tempId": "temp-rel-3",
+      "name": "realizes"
+    },
+    {
+      "op": "createRelationship",
+      "type": "assignment-relationship",
+      "sourceId": "actor-id",
+      "targetId": "role-id",
+      "tempId": "temp-rel-4",
+      "name": "assigned to"
+    }
+  ]
+}
