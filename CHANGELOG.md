@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0](https://github.com/ThomasRohde/archi-server/compare/v1.1.0...v1.2.0) (2026-02-07)
+
+
+### Features
+
+* add release automation and commit linting ([609f936](https://github.com/ThomasRohde/archi-server/commit/609f93659f5479f7b68741317ee12d953b0ce98b))
+* make standalone deleteElement use undoable manual cascade ([a1690cf](https://github.com/ThomasRohde/archi-server/commit/a1690cffbf42295394d122a22aba21f858bd1f1f))
+
 ## [1.1.0] - 2026-02-07
 
 ### Features
