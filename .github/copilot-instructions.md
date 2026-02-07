@@ -134,6 +134,60 @@ undoableCommands.executeBatch(model, "Batch Label", [
 3. Run from Scripts menu
 4. Test: `curl http://localhost:8765/health`
 
+## ArchiMate Modeling via API
+
+This project includes AI agent skills (in `.claude/skills/`) that enable automated ArchiMate modeling through the API. These skills work with any AI agent that can run terminal commands.
+
+### Quick API Modeling Workflow
+
+```
+1. curl -s http://localhost:8765/health                              # Verify server
+2. curl -s -X POST http://localhost:8765/model/search ...            # Search existing
+3. curl -s -X POST http://localhost:8765/model/apply ...             # Create elements + relationships
+4. curl -s "http://localhost:8765/ops/status?opId=OP_ID"             # Poll for IDs
+5. curl -s -X POST http://localhost:8765/views ...                   # Create view
+6. curl -s -X POST http://localhost:8765/model/apply ...             # Add to view
+7. curl -s "http://localhost:8765/ops/status?opId=OP_ID"             # Poll for visual IDs
+8. curl -s -X POST http://localhost:8765/model/apply ...             # Add connections
+9. curl -s -X POST http://localhost:8765/views/VIEW_ID/layout ...    # Auto-layout
+10. curl -s -X POST http://localhost:8765/model/save                 # Save
+```
+
+### Key API Rules
+- `/model/apply` is **async** — always poll `/ops/status?opId=...` for results
+- Use `tempId` to track created elements; results map `tempId → realId`
+- Within one batch, `createRelationship` can reference `tempId` from `createElement`
+- `addConnectionToView` needs **visual object IDs** (from `addToView`), not concept IDs
+- Connections are NOT auto-created when adding elements to a view
+
+### Available Skills (`.claude/skills/`)
+
+Skills follow the [Agent Skills](https://agentskills.io) open standard and are auto-discovered by both Claude Code and GitHub Copilot.
+
+- **archi-server-api** — Central API execution reference with CURL templates and workflows
+- **archimate-modeling** — Element selection with API type mapping
+- **archimate-relationships** — Relationship creation with direction conventions
+- **archimate-patterns** — Executable pattern templates (microservices, CQRS, etc.)
+- **archimate-quality** — Automated audit queries and fixes
+
+### Claude Code Commands (`.claude/commands/`)
+- **/element** — Select and create an ArchiMate element
+- **/pattern** — Instantiate an architecture pattern with view
+- **/view** — Create a view from existing or new elements
+- **/audit** — Model quality audit with optional fixes
+
+### Copilot Prompt Files (`.github/prompts/`)
+- **/element** — Select and create an ArchiMate element
+- **/pattern** — Instantiate an architecture pattern with view
+- **/view** — Create a view from existing or new elements
+- **/audit** — Model quality audit with optional fixes
+
+### Claude Code Agent (`.claude/agents/`)
+- **archimate-modeler** — Full modeling agent: analyze descriptions → create elements → build views
+
+### Copilot Agent (`.github/agents/`)
+- **@archimate-modeler** — Full modeling agent: analyze descriptions → create elements → build views
+
 ## References
 
 - **API Spec**: [openapi.yaml](../openapi.yaml)

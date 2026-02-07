@@ -152,3 +152,118 @@ The canonical layered view shows service chains connecting layers:
 
 For detailed relationship patterns and advanced cross-layer guidance:
 - **`references/relationship-patterns.md`** - Complete relationship pattern catalog with examples
+
+---
+
+## Creating Relationships via the API
+
+To create relationships in Archi, use the Archi Model API Server. Load the **archi-server-api** skill for full API workflow details.
+
+### Relationship Type to API Type Mapping
+
+All relationship types use **kebab-case with `-relationship` suffix** in the API:
+
+| Relationship | API `type` | Key Fields |
+|-------------|-----------|------------|
+| Composition | `composition-relationship` | `sourceId`, `targetId` |
+| Aggregation | `aggregation-relationship` | `sourceId`, `targetId` |
+| Assignment | `assignment-relationship` | `sourceId`, `targetId` |
+| Realization | `realization-relationship` | `sourceId`, `targetId` |
+| Serving | `serving-relationship` | `sourceId`, `targetId` |
+| Access | `access-relationship` | `sourceId`, `targetId`, `accessType` |
+| Influence | `influence-relationship` | `sourceId`, `targetId` |
+| Triggering | `triggering-relationship` | `sourceId`, `targetId` |
+| Flow | `flow-relationship` | `sourceId`, `targetId`, `name` (label) |
+| Specialization | `specialization-relationship` | `sourceId`, `targetId` |
+| Association | `association-relationship` | `sourceId`, `targetId` |
+
+### Direction Convention in the API
+
+The `sourceId` → `targetId` direction follows ArchiMate direction conventions:
+- **Serving**: source *serves* target (arrow from source to target)
+- **Realization**: source *realizes* target (source is the implementing element)
+- **Assignment**: source *is assigned to* target (source performs target's behavior)
+- **Triggering**: source *triggers* target
+- **Flow**: source *flows to* target (label with `name` field to describe what flows)
+- **Access**: source *accesses* target (data/object)
+- **Composition/Aggregation**: source *contains* target
+
+### Access Relationship Variants
+
+Use the `accessType` field for access relationships:
+
+```bash
+# Read access
+{"op": "createRelationship", "type": "access-relationship", "sourceId": "FUNC_ID", "targetId": "DATA_ID", "accessType": "read", "tempId": "r1"}
+
+# Write access
+{"op": "createRelationship", "type": "access-relationship", "sourceId": "FUNC_ID", "targetId": "DATA_ID", "accessType": "write", "tempId": "r2"}
+
+# Read-write access
+{"op": "createRelationship", "type": "access-relationship", "sourceId": "FUNC_ID", "targetId": "DATA_ID", "accessType": "readwrite", "tempId": "r3"}
+```
+
+### Quick API Examples by Pattern
+
+**Actor-Role-Process (Assignment chain):**
+```bash
+curl -s -X POST http://localhost:8765/model/apply \
+  -H "Content-Type: application/json" \
+  -d '{"changes": [
+    {"op": "createRelationship", "type": "assignment-relationship", "sourceId": "ACTOR_ID", "targetId": "ROLE_ID", "tempId": "r1"},
+    {"op": "createRelationship", "type": "assignment-relationship", "sourceId": "ROLE_ID", "targetId": "PROCESS_ID", "tempId": "r2"}
+  ]}'
+```
+
+**Service Realization:**
+```bash
+curl -s -X POST http://localhost:8765/model/apply \
+  -H "Content-Type: application/json" \
+  -d '{"changes": [
+    {"op": "createRelationship", "type": "realization-relationship", "sourceId": "PROCESS_ID", "targetId": "SERVICE_ID", "tempId": "r1"},
+    {"op": "createRelationship", "type": "assignment-relationship", "sourceId": "INTERFACE_ID", "targetId": "SERVICE_ID", "tempId": "r2"}
+  ]}'
+```
+
+**Cross-Layer (Application serves Business):**
+```bash
+curl -s -X POST http://localhost:8765/model/apply \
+  -H "Content-Type: application/json" \
+  -d '{"changes": [
+    {"op": "createRelationship", "type": "serving-relationship", "sourceId": "APP_SERVICE_ID", "targetId": "BUS_PROCESS_ID", "tempId": "r1"}
+  ]}'
+```
+
+**Process Flow with Labels:**
+```bash
+curl -s -X POST http://localhost:8765/model/apply \
+  -H "Content-Type: application/json" \
+  -d '{"changes": [
+    {"op": "createRelationship", "type": "triggering-relationship", "sourceId": "EVENT_ID", "targetId": "PROCESS1_ID", "tempId": "r1"},
+    {"op": "createRelationship", "type": "flow-relationship", "sourceId": "PROCESS1_ID", "targetId": "PROCESS2_ID", "name": "Order Data", "tempId": "r2"},
+    {"op": "createRelationship", "type": "flow-relationship", "sourceId": "PROCESS2_ID", "targetId": "PROCESS3_ID", "name": "Validated Order", "tempId": "r3"}
+  ]}'
+```
+
+**Deployment Pattern:**
+```bash
+curl -s -X POST http://localhost:8765/model/apply \
+  -H "Content-Type: application/json" \
+  -d '{"changes": [
+    {"op": "createRelationship", "type": "realization-relationship", "sourceId": "ARTIFACT_ID", "targetId": "APP_COMP_ID", "tempId": "r1"},
+    {"op": "createRelationship", "type": "assignment-relationship", "sourceId": "NODE_ID", "targetId": "ARTIFACT_ID", "tempId": "r2"}
+  ]}'
+```
+
+### Validation Before Creating
+
+To validate that a relationship is permitted between two element types, use dry-run:
+```bash
+curl -s -X POST http://localhost:8765/model/plan \
+  -H "Content-Type: application/json" \
+  -d '{"changes": [
+    {"op": "createRelationship", "type": "serving-relationship", "sourceId": "ID_1", "targetId": "ID_2"}
+  ]}'
+```
+
+After each `POST /model/apply`, poll `GET /ops/status?opId=OP_ID` for the real relationship IDs.

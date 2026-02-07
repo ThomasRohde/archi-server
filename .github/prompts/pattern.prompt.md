@@ -1,31 +1,24 @@
 ---
 name: pattern
-description: Look up ArchiMate patterns for specific architecture scenarios — and optionally instantiate them in Archi
+description: Look up ArchiMate patterns for specific architecture scenarios — and instantiate them in Archi
 argument-hint: "[architecture type, e.g., microservices, cloud, API gateway]"
-allowed-tools:
-  - Read
-  - Bash
+tools: ['runInTerminal', 'terminalLastCommand', 'codebase']
+agent: agent
 ---
 
 # ArchiMate Pattern Lookup & Instantiation
 
 Help the user find the right ArchiMate pattern for their architecture scenario, then create it in Archi.
 
-Load the **archi-server-api** skill for API execution details and the **archimate-patterns** skill for pattern knowledge.
+The **archi-server-api** skill (in `.claude/skills/archi-server-api/`) has full API execution details. The **archimate-patterns** skill (in `.claude/skills/archimate-patterns/`) has pattern knowledge and executable templates.
 
 ## Process
 
 1. Identify the architecture pattern from the user's query
-2. Load the archimate-patterns skill if needed for detailed patterns
-3. Present the pattern with:
-   - Element mappings (what ArchiMate elements to use)
-   - Relationship patterns (how to connect them)
-   - Notation examples
-4. **Instantiate the pattern in Archi** — offer to create all elements, relationships, and a view
+2. Present the pattern with element mappings, relationship patterns, and notation examples
+3. **Instantiate the pattern in Archi** — create all elements, relationships, and a view
 
 ## Pattern Instantiation Workflow
-
-After presenting the pattern, execute it:
 
 ### Step 1: Health Check
 ```bash
@@ -63,7 +56,7 @@ curl -s -X POST http://localhost:8765/views \
   -H "Content-Type: application/json" \
   -d '{"name": "PATTERN_NAME Architecture", "documentation": "Generated from PATTERN template"}'
 
-# Add elements to view (use real IDs)
+# Add elements to view (use real IDs from poll)
 curl -s -X POST http://localhost:8765/model/apply \
   -H "Content-Type: application/json" \
   -d '{"changes": [{"op": "addToView", "viewId": "VIEW_ID", "elementId": "REAL_ID", "tempId": "v1"}, ...]}'
@@ -71,7 +64,7 @@ curl -s -X POST http://localhost:8765/model/apply \
 # Poll for visual IDs
 curl -s "http://localhost:8765/ops/status?opId=OP_ID_2"
 
-# Add connections (use visual IDs)
+# Add connections (use visual IDs, NOT concept IDs)
 curl -s -X POST http://localhost:8765/model/apply \
   -H "Content-Type: application/json" \
   -d '{"changes": [{"op": "addConnectionToView", "viewId": "VIEW_ID", "relationshipId": "REL_ID", "sourceVisualId": "VIS_ID_1", "targetVisualId": "VIS_ID_2"}, ...]}'
@@ -91,10 +84,7 @@ List all created elements, relationships, and the view name.
 ## Common Patterns Quick Reference
 
 ### Microservices
-
 **Elements**: Application Components (services), Application Interfaces (APIs), Application Events, Artifacts (containers), Nodes (K8s cluster)
-
-**tempId convention**: `ms-[service]`, `ms-[service]-api`, `ms-evt-[event]`
 
 ```
 [Application Component: Service Name] → [realizes] → [Application Service: Capability]
@@ -103,11 +93,6 @@ List all created elements, relationships, and the view name.
 ```
 
 ### API Gateway
-
-**Elements**: Technology Node (gateway), Technology Service, Application Components (backends)
-
-**tempId convention**: `gw-node`, `gw-svc`, `gw-backend-[n]`
-
 ```
 [Technology Node: API Gateway]
     → [realization] → [Technology Service: API Management]
@@ -115,64 +100,26 @@ List all created elements, relationships, and the view name.
 ```
 
 ### Event-Driven
-
-**Elements**: Application Components (producers/consumers), Application Events
-
-**tempId convention**: `ed-producer-[n]`, `ed-consumer-[n]`, `ed-evt-[name]`
-
 ```
 [Application Component: Producer] → [triggers] → [Application Event: Event Name]
 [Application Event] → [flow] → [Application Component: Consumer]
 ```
 
-### Cloud (IaaS/PaaS/SaaS)
-- IaaS: Technology Service → realizes → Node
-- PaaS: Technology Service → serves → Application Component
-- SaaS: Application Service → serves → Business Actor
-
 ### Capability Mapping
-
-**Elements**: Capabilities, Business Processes, Application Components
-
-**tempId convention**: `cap-[name]`, `cap-proc-[name]`, `cap-app-[name]`
-
 ```
 [Capability] → [realized by] → [Business Process]
 [Capability] → [realized by] → [Application Component]
 ```
 
 ### Value Stream
-
-**Elements**: Value Streams, Capabilities, Outcomes
-
-**tempId convention**: `vs-[name]`, `vs-stage-[n]`, `vs-cap-[name]`
-
 ```
 [Value Stream] → [composition] → [Value Stream Stage]
 [Value Stream Stage] ← [served by] ← [Capability]
 ```
 
 ### Cross-Layer (Business → Application → Technology)
-
-**Elements**: Actors, Roles, Processes, Services, Components, Nodes
-
-**tempId convention**: `b-[name]`, `a-[name]`, `t-[name]`
-
 Full layered pattern with realization chains connecting Business to Application to Technology.
 
-## Pattern Categories
+## Output
 
-If user asks generally, offer categories:
-1. **Application patterns**: Microservices, API, integration, data
-2. **Infrastructure patterns**: Cloud, containers, serverless
-3. **Strategy patterns**: Capability, value stream, course of action
-4. **Security patterns**: IAM, zero-trust, security zones
-5. **Industry patterns**: BIAN (banking), FHIR (healthcare), EIRA (government)
-
-## Output Format
-
-Present patterns as both:
-1. **Notation format** (for quick reference)
-2. **Textual description** (for clarity)
-
-Then **execute the pattern creation** in Archi unless the user explicitly asks not to.
+Present patterns as notation format + textual description, then **execute the pattern creation** in Archi unless the user explicitly asks not to.

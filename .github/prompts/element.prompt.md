@@ -1,17 +1,16 @@
 ---
 name: element
-description: Interactive help choosing the right ArchiMate element type — and optionally create it in Archi
+description: Interactive help choosing the right ArchiMate element type — and optionally create it in Archi via the API
 argument-hint: "[description of what you want to model]"
-allowed-tools:
-  - Read
-  - Bash
+tools: ['runInTerminal', 'terminalLastCommand', 'codebase']
+agent: agent
 ---
 
 # ArchiMate Element Selection & Creation
 
 Help the user select the correct ArchiMate element type for what they want to model, then optionally create it in Archi via the API.
 
-Load the **archi-server-api** skill for API execution details.
+The **archi-server-api** skill (in `.claude/skills/archi-server-api/`) has full API execution details. The **archimate-modeling** skill (in `.claude/skills/archimate-modeling/`) has element selection guidance.
 
 ## Process
 
@@ -25,7 +24,7 @@ Load the **archi-server-api** skill for API execution details.
    - Is this a one-time sequence (process) or ongoing capability (function)?
    - Is this internal behavior or externally visible (service)?
 
-3. Provide the recommendation in this format:
+3. Provide the recommendation:
 
 **Recommended Element:**
 - **Type**: [Element Type]
@@ -35,20 +34,13 @@ Load the **archi-server-api** skill for API execution details.
 
 **Reasoning**: [Why this element type is appropriate]
 
-**Example notation:**
-```
-[Element Type: Example Name]
-```
-
 **Common alternatives:**
 - [Alternative 1]: Use if [condition]
 - [Alternative 2]: Use if [condition]
 
 4. **Create in Archi** — After recommending, offer to create the element:
 
-   "Shall I create this element in Archi? I can also add documentation and custom properties."
-
-   If the user confirms (or didn't say otherwise), execute:
+   Run the following terminal commands:
 
    ```bash
    # Check server health
@@ -62,7 +54,7 @@ Load the **archi-server-api** skill for API execution details.
      -d '{"type": "ELEMENT_TYPE", "namePattern": "ELEMENT_NAME", "limit": 10}'
    ```
 
-   If no duplicates found:
+   If no duplicates:
    ```bash
    curl -s -X POST http://localhost:8765/model/apply \
      -H "Content-Type: application/json" \
@@ -74,13 +66,9 @@ Load the **archi-server-api** skill for API execution details.
    curl -s "http://localhost:8765/ops/status?opId=OP_ID"
    ```
 
-   Report the created element: name, type, and Archi ID.
-
-   If duplicates found, report them and ask whether to reuse or create a new one.
+   Report the created element: name, type, and Archi ID. If duplicates found, report them and ask whether to reuse or create a new one.
 
 ## Quick Reference
-
-Load the archimate-modeling skill for detailed element selection guidance if needed.
 
 ### Active Structure Elements
 | Element | API Type | Description |
@@ -100,7 +88,6 @@ Load the archimate-modeling skill for detailed element selection guidance if nee
 | Business Event | `business-event` | State change that triggers behavior |
 | Application Service | `application-service` | Software-provided service |
 | Application Function | `application-function` | Internal software behavior |
-| Application Process | `application-process` | Application behavior sequence |
 
 ### Passive Structure Elements
 | Element | API Type | Description |
@@ -111,9 +98,9 @@ Load the archimate-modeling skill for detailed element selection guidance if nee
 
 ## Tips
 
-- If they describe a "system" → likely `application-component`
-- If they describe a "database" → likely `data-object` or `artifact` (or `system-software` for the DBMS)
-- If they describe an "API" → likely `application-interface` or `application-service`
-- If they describe a "team" or "department" → likely `business-actor`
-- If they describe a "responsibility" → likely `business-role`
-- If they describe "what we can do" → likely `capability`
+- "system" → likely `application-component`
+- "database" → likely `data-object` or `system-software`
+- "API" → likely `application-interface` or `application-service`
+- "team" or "department" → likely `business-actor`
+- "responsibility" → likely `business-role`
+- "what we can do" → likely `capability`

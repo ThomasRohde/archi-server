@@ -4,7 +4,8 @@
       "Bash(npm install:*)",
       "Bash(npm test:*)",
       "Bash(npx vitest:*)",
-      "Bash(npm run test:integration:*)"
+      "Bash(npm run test:integration:*)",
+      "Bash(curl:*)"
     ]
   }
 }

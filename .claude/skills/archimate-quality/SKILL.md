@@ -155,3 +155,113 @@ Model
 For detailed viewpoint guidance and framework integration:
 - **`references/viewpoints.md`** - Complete ArchiMate viewpoints catalog
 - **`references/framework-integration.md`** - TOGAF, BPMN, IT4IT integration patterns
+
+---
+
+## Automated Model Audit via the API
+
+To audit a model in Archi, use the Archi Model API Server. Load the **archi-server-api** skill for full API workflow details. Use the **/audit** command for a guided audit workflow.
+
+### Querying for Quality Issues
+
+#### Find Orphan Elements (Lonely Components)
+
+Search for elements of each type and check for empty relationship arrays:
+
+```bash
+# Get all business actors
+curl -s -X POST http://localhost:8765/model/search \
+  -H "Content-Type: application/json" \
+  -d '{"type": "business-actor", "limit": 200}'
+
+# Get details for a specific element (includes relationships and views)
+curl -s http://localhost:8765/model/element/ELEMENT_ID
+```
+
+Elements where the `relationships` array is empty are orphans.
+
+#### Check Naming Conventions
+
+Search elements and inspect names against the conventions table above:
+
+```bash
+# Find processes that might not follow Verb+Noun convention
+curl -s -X POST http://localhost:8765/model/search \
+  -H "Content-Type: application/json" \
+  -d '{"type": "business-process", "limit": 200}'
+```
+
+Check each name:
+- Processes should start with a verb ("Handle", "Process", "Submit", "Validate")
+- Structural elements should be singular noun phrases in Title Case
+- Services should be noun/gerund phrases
+
+#### Find Duplicate Elements
+
+```bash
+# Search with a common name fragment
+curl -s -X POST http://localhost:8765/model/search \
+  -H "Content-Type: application/json" \
+  -d '{"namePattern": "Customer", "limit": 100}'
+```
+
+Compare results for same-type elements with identical or near-identical names.
+
+#### Find Dead Elements (Not in Any View)
+
+```bash
+curl -s http://localhost:8765/model/element/ELEMENT_ID
+```
+
+If the `views` array in the response is empty, the element is not on any view.
+
+#### Check for Missing Documentation
+
+Search all elements — those with empty `documentation` field need attention:
+
+```bash
+curl -s -X POST http://localhost:8765/model/search \
+  -H "Content-Type: application/json" \
+  -d '{"limit": 500}'
+```
+
+#### Detect Association Overuse
+
+Search for association relationships and check if a more specific type applies:
+
+```bash
+curl -s -X POST http://localhost:8765/model/search \
+  -H "Content-Type: application/json" \
+  -d '{"type": "association-relationship", "limit": 100}'
+```
+
+### Applying Fixes
+
+#### Rename Elements
+```bash
+curl -s -X POST http://localhost:8765/model/apply \
+  -H "Content-Type: application/json" \
+  -d '{"changes": [
+    {"op": "updateElement", "id": "ELEMENT_ID", "name": "Corrected Name"}
+  ]}'
+```
+
+#### Add Documentation
+```bash
+curl -s -X POST http://localhost:8765/model/apply \
+  -H "Content-Type: application/json" \
+  -d '{"changes": [
+    {"op": "updateElement", "id": "ELEMENT_ID", "documentation": "Purpose and description of this element"}
+  ]}'
+```
+
+#### Remove Orphan Elements
+```bash
+curl -s -X POST http://localhost:8765/model/apply \
+  -H "Content-Type: application/json" \
+  -d '{"changes": [
+    {"op": "deleteElement", "id": "ORPHAN_ID", "cascade": true}
+  ]}'
+```
+
+Always poll `GET /ops/status?opId=OP_ID` after applying changes, then `POST /model/save` to persist.

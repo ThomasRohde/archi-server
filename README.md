@@ -18,6 +18,7 @@
 - [Security](#security)
 - [Examples](#examples)
 - [Troubleshooting](#troubleshooting)
+- [AI Agent Skills](#ai-agent-skills)
 - [Development](#development)
 - [Documentation](#documentation)
 - [Contributing](#contributing)
@@ -32,6 +33,7 @@
 - ✅ **Full Undo Support** - All operations are fully undoable (Ctrl+Z)
 - 🔒 **Production Hardened** - Rate limiting, validation, and timeout protection
 - 🚀 **Zero Dependencies** - Pure JArchi implementation with GraalVM JS
+- 🤖 **AI Agent Skills** - Built-in skills for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) and [GitHub Copilot](https://code.visualstudio.com/docs/copilot) following the [Agent Skills](https://agentskills.io) standard
 
 ## Installation
 
@@ -86,6 +88,19 @@ archi-server/
 │       │       └── viewEndpoints.js
 │       └── vendor/
 │           └── dagre.min.js       # Layout engine
+├── .claude/                       # Claude Code integration
+│   ├── skills/                    # Shared AI agent skills (Agent Skills standard)
+│   │   ├── archi-server-api/      # API execution reference
+│   │   ├── archimate-modeling/    # Element selection guidance
+│   │   ├── archimate-relationships/ # Relationship rules
+│   │   ├── archimate-patterns/    # Architecture pattern templates
+│   │   └── archimate-quality/     # Model quality audit rules
+│   ├── commands/                  # Claude Code slash commands
+│   └── agents/                    # Claude Code agents
+├── .github/
+│   ├── prompts/                   # Copilot prompt files (/element, /pattern, /view, /audit)
+│   ├── agents/                    # Copilot agents (@archimate-modeler)
+│   └── copilot-instructions.md   # Copilot project instructions
 ├── context/                       # Development documentation
 ├── openapi.yaml                   # API specification
 └── README.md
@@ -305,6 +320,47 @@ queryModel();
 **Problem:** "Cannot find lib/..." errors  
 **Solution:** Verify all files are in correct relative paths. The `lib/` folder must be at `scripts/lib/`.
 
+## AI Agent Skills
+
+This project includes portable AI agent skills that enable automated ArchiMate modeling through the API. Skills follow the open [Agent Skills](https://agentskills.io) standard and work with both **Claude Code** and **GitHub Copilot**.
+
+### Skills (shared)
+
+Skills in `.claude/skills/` are auto-discovered by both Claude Code and GitHub Copilot:
+
+| Skill | Description |
+|-------|-------------|
+| **archi-server-api** | Central API execution reference with CURL templates and workflows |
+| **archimate-modeling** | Element selection with API type mapping |
+| **archimate-relationships** | Relationship creation with direction conventions |
+| **archimate-patterns** | Executable pattern templates (microservices, CQRS, etc.) |
+| **archimate-quality** | Automated audit queries and fixes |
+
+### Commands / Prompts
+
+| Command | Claude Code | Copilot | Description |
+|---------|-------------|---------|-------------|
+| `/element` | `.claude/commands/element.md` | `.github/prompts/element.prompt.md` | Select and create an ArchiMate element |
+| `/pattern` | `.claude/commands/pattern.md` | `.github/prompts/pattern.prompt.md` | Instantiate an architecture pattern with view |
+| `/view` | `.claude/commands/view.md` | `.github/prompts/view.prompt.md` | Create a view from existing or new elements |
+| `/audit` | `.claude/commands/audit.md` | `.github/prompts/audit.prompt.md` | Model quality audit with optional fixes |
+
+### Agents
+
+| Agent | Claude Code | Copilot | Description |
+|-------|-------------|---------|-------------|
+| **archimate-modeler** | `.claude/agents/archimate-modeler.md` | `.github/agents/archimate-modeler.agent.md` | Full modeling agent: analyze descriptions → create elements → build views |
+
+### Quick Example
+
+With the server running, use any supported AI agent:
+
+```
+> /pattern microservices order processing with inventory and payment services
+```
+
+The agent will create all elements, relationships, a populated view with auto-layout, and save the model — all via CURL commands to the API.
+
 ## Development
 
 ### Architecture
@@ -336,6 +392,7 @@ Quick start:
 - **Script Development Guide:** [context/Script Development Guide for Agents.md](context/Script%20Development%20Guide%20for%20Agents.md)
 - **jArchi API Reference:** [context/jarchi-1.11-api-reference.md](context/jarchi-1.11-api-reference.md)
 - **GraalJS Compatibility:** [context/graalJS-compatibility.md](context/graalJS-compatibility.md)
+- **Agent Skills Standard:** [agentskills.io](https://agentskills.io)
 
 ## License
 
