@@ -11,7 +11,7 @@
     "test:unit": "vitest run --dir tests/suites/unit",
     "test:integration": "vitest run --dir tests/suites/integration",
     "test:e2e": "vitest run --dir tests/suites/e2e",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --dir tests/suites/unit --coverage"
   },
   "keywords": ["archimate", "test", "vitest", "api-testing"],
   "author": "",
