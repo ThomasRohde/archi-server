@@ -112,11 +112,57 @@
         },
 
         /**
+         * Find duplicate element in model snapshot
+         * @param {Object} modelSnapshot - Model snapshot with elements array
+         * @param {string} name - Element name to search for
+         * @param {string} type - Element type to search for
+         * @returns {Object|null} Existing element or null
+         * @private
+         */
+        _findDuplicateElement: function(modelSnapshot, name, type) {
+            if (!modelSnapshot || !modelSnapshot.elements) {
+                return null;
+            }
+            
+            for (var i = 0; i < modelSnapshot.elements.length; i++) {
+                var el = modelSnapshot.elements[i];
+                if (el.name === name && el.type === type) {
+                    return el;
+                }
+            }
+            return null;
+        },
+
+        /**
+         * Find duplicate relationship in model snapshot
+         * @param {Object} modelSnapshot - Model snapshot with relationships array
+         * @param {string} sourceId - Source element ID
+         * @param {string} targetId - Target element ID
+         * @param {string} type - Relationship type
+         * @returns {Object|null} Existing relationship or null
+         * @private
+         */
+        _findDuplicateRelationship: function(modelSnapshot, sourceId, targetId, type) {
+            if (!modelSnapshot || !modelSnapshot.relationships) {
+                return null;
+            }
+            
+            for (var i = 0; i < modelSnapshot.relationships.length; i++) {
+                var rel = modelSnapshot.relationships[i];
+                if (rel.source === sourceId && rel.target === targetId && rel.type === type) {
+                    return rel;
+                }
+            }
+            return null;
+        },
+
+        /**
          * Validate apply request body
          * @param {Object} body - Request body to validate
+         * @param {Object} modelSnapshot - Current model snapshot (optional, for duplicate checking)
          * @throws {Error} If validation fails with descriptive message
          */
-        validateApplyRequest: function(body) {
+        validateApplyRequest: function(body, modelSnapshot) {
             if (!body) {
                 throw this.createValidationError("Request body is missing");
             }
@@ -137,9 +183,16 @@
                 );
             }
 
+            // Track elements and relationships created within this batch for intra-batch duplicate detection
+            var batchContext = {
+                createdElements: [],  // Array of {name, type, tempId}
+                createdRelationships: [],  // Array of {sourceId, targetId, type, tempId}
+                tempIdMap: {}  // Map tempId to {name, type} for relationship resolution
+            };
+
             // Validate each change
             for (var i = 0; i < body.changes.length; i++) {
-                this.validateChange(body.changes[i], i);
+                this.validateChange(body.changes[i], i, modelSnapshot, batchContext);
             }
         },
 
@@ -147,19 +200,30 @@
          * Validate a single change operation
          * @param {Object} change - Change descriptor to validate
          * @param {number} index - Index in changes array (for error messages)
+         * @param {Object} modelSnapshot - Current model snapshot (optional)
+         * @param {Object} batchContext - Batch-level tracking context (optional)
          * @throws {Error} If validation fails with descriptive message
          */
-        validateChange: function(change, index) {
-            if (!change.op) {
-                throw this.createValidationError("Change " + index + " missing 'op' field");
+        validateChange: function(change, index, modelSnapshot, batchContext) {
+            if (!change) {
+                throw this.createValidationError(
+                    "Change " + index + " is null or undefined"
+                );
             }
 
+            if (!change.op) {
+                throw this.createValidationError(
+                    "Change " + index + " is missing 'op' field"
+                );
+            }
+
+            // Dispatch to specific validator
             switch (change.op) {
                 case "createElement":
-                    this.validateCreateElement(change, index);
+                    this.validateCreateElement(change, index, modelSnapshot, batchContext);
                     break;
                 case "createRelationship":
-                    this.validateCreateRelationship(change, index);
+                    this.validateCreateRelationship(change, index, modelSnapshot, batchContext);
                     break;
                 case "setProperty":
                     this.validateSetProperty(change, index);
@@ -217,9 +281,11 @@
          * Validate createElement operation
          * @param {Object} change - Change descriptor
          * @param {number} index - Index in changes array
+         * @param {Object} modelSnapshot - Current model snapshot (optional)
+         * @param {Object} batchContext - Batch-level tracking context (optional)
          * @throws {Error} If validation fails
          */
-        validateCreateElement: function(change, index) {
+        validateCreateElement: function(change, index, modelSnapshot, batchContext) {
             if (!change.type) {
                 throw this.createValidationError(
                     "Change " + index + " (createElement): missing 'type' field"
@@ -244,15 +310,54 @@
             }
             // Store normalized type back for downstream processing
             change.type = normalizedType;
+
+            // Check for duplicate in existing model
+            if (modelSnapshot) {
+                var existing = this._findDuplicateElement(modelSnapshot, change.name, normalizedType);
+                if (existing) {
+                    throw this.createValidationError(
+                        "Change " + index + " (createElement): element '" + change.name +
+                        "' of type '" + normalizedType + "' already exists (id: " + existing.id + ")"
+                    );
+                }
+            }
+
+            // Check for duplicate within this batch
+            if (batchContext && batchContext.createdElements) {
+                for (var i = 0; i < batchContext.createdElements.length; i++) {
+                    var created = batchContext.createdElements[i];
+                    if (created.name === change.name && created.type === normalizedType) {
+                        throw this.createValidationError(
+                            "Change " + index + " (createElement): element '" + change.name +
+                            "' of type '" + normalizedType + "' already created earlier in this batch (tempId: " + created.tempId + ")"
+                        );
+                    }
+                }
+                // Track this element creation
+                batchContext.createdElements.push({
+                    name: change.name,
+                    type: normalizedType,
+                    tempId: change.tempId || null
+                });
+                // Store in tempId map for relationship resolution
+                if (change.tempId) {
+                    batchContext.tempIdMap[change.tempId] = {
+                        name: change.name,
+                        type: normalizedType
+                    };
+                }
+            }
         },
 
         /**
          * Validate createRelationship operation
          * @param {Object} change - Change descriptor
          * @param {number} index - Index in changes array
+         * @param {Object} modelSnapshot - Current model snapshot (optional)
+         * @param {Object} batchContext - Batch-level tracking context (optional)
          * @throws {Error} If validation fails
          */
-        validateCreateRelationship: function(change, index) {
+        validateCreateRelationship: function(change, index, modelSnapshot, batchContext) {
             if (!change.type) {
                 throw this.createValidationError(
                     "Change " + index + " (createRelationship): missing 'type' field"
@@ -274,6 +379,52 @@
                     "Change " + index + " (createRelationship): invalid relationship type '" + change.type +
                     "'. Valid types: " + this._getValidRelationshipTypesHint()
                 );
+            }
+
+            // For duplicate checking, we need to resolve IDs (tempIds may reference earlier creates)
+            var resolvedSourceId = change.sourceId;
+            var resolvedTargetId = change.targetId;
+            
+            // Note: We can't fully resolve tempIds to real IDs at validation time,
+            // but we can track them for intra-batch duplicate detection
+
+            // Check for duplicate in existing model
+            if (modelSnapshot) {
+                var existing = this._findDuplicateRelationship(
+                    modelSnapshot,
+                    resolvedSourceId,
+                    resolvedTargetId,
+                    change.type
+                );
+                if (existing) {
+                    throw this.createValidationError(
+                        "Change " + index + " (createRelationship): relationship of type '" + change.type +
+                        "' from '" + resolvedSourceId + "' to '" + resolvedTargetId + "' already exists (id: " + existing.id + ")"
+                    );
+                }
+            }
+
+            // Check for duplicate within this batch
+            if (batchContext && batchContext.createdRelationships) {
+                for (var i = 0; i < batchContext.createdRelationships.length; i++) {
+                    var created = batchContext.createdRelationships[i];
+                    if (created.sourceId === resolvedSourceId &&
+                        created.targetId === resolvedTargetId &&
+                        created.type === change.type) {
+                        throw this.createValidationError(
+                            "Change " + index + " (createRelationship): relationship of type '" + change.type +
+                            "' from '" + resolvedSourceId + "' to '" + resolvedTargetId +
+                            "' already created earlier in this batch (tempId: " + created.tempId + ")"
+                        );
+                    }
+                }
+                // Track this relationship creation
+                batchContext.createdRelationships.push({
+                    sourceId: resolvedSourceId,
+                    targetId: resolvedTargetId,
+                    type: change.type,
+                    tempId: change.tempId || null
+                });
             }
         },
 

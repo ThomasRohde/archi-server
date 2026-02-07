@@ -452,8 +452,14 @@
          * @param {Object} serverState - Server state object (unused)
          */
         handleApply: function(request, response, serverState) {
+            // Get current model snapshot for duplicate checking
+            var snapshot = null;
+            if (typeof modelSnapshot !== "undefined" && modelSnapshot) {
+                snapshot = modelSnapshot.getSnapshot();
+            }
+
             try {
-                operationValidation.validateApplyRequest(request.body);
+                operationValidation.validateApplyRequest(request.body, snapshot);
             } catch (e) {
                 response.statusCode = 400;
                 response.body = {

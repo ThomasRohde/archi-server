@@ -377,4 +377,251 @@ describe('operationValidation', () => {
       }
     });
   });
+
+  describe('Duplicate Detection', () => {
+    describe('Element Duplicates', () => {
+      it('detects duplicate element in model snapshot', () => {
+        const modelSnapshot = {
+          elements: [
+            { id: 'existing-1', name: 'Customer', type: 'business-actor' }
+          ],
+          relationships: []
+        };
+
+        const request = {
+          changes: [{
+            op: 'createElement',
+            type: 'business-actor',
+            name: 'Customer'
+          }]
+        };
+
+        expect(() => operationValidation.validateApplyRequest(request, modelSnapshot))
+          .toThrow(/element 'Customer' of type 'business-actor' already exists.*id: existing-1/);
+      });
+
+      it('allows element with same name but different type', () => {
+        const modelSnapshot = {
+          elements: [
+            { id: 'existing-1', name: 'Customer', type: 'business-actor' }
+          ],
+          relationships: []
+        };
+
+        const request = {
+          changes: [{
+            op: 'createElement',
+            type: 'business-role', // Different type
+            name: 'Customer'
+          }]
+        };
+
+        expect(() => operationValidation.validateApplyRequest(request, modelSnapshot))
+          .not.toThrow();
+      });
+
+      it('detects intra-batch duplicate elements', () => {
+        const request = {
+          changes: [
+            { op: 'createElement', type: 'business-actor', name: 'Customer', tempId: 't1' },
+            { op: 'createElement', type: 'business-actor', name: 'Customer', tempId: 't2' }
+          ]
+        };
+
+        expect(() => operationValidation.validateApplyRequest(request))
+          .toThrow(/element 'Customer' of type 'business-actor' already created earlier in this batch.*tempId: t1/);
+      });
+
+      it('allows multiple different elements in same batch', () => {
+        const request = {
+          changes: [
+            { op: 'createElement', type: 'business-actor', name: 'Customer', tempId: 't1' },
+            { op: 'createElement', type: 'business-actor', name: 'Supplier', tempId: 't2' },
+            { op: 'createElement', type: 'application-component', name: 'Customer', tempId: 't3' } // Same name, different type
+          ]
+        };
+
+        expect(() => operationValidation.validateApplyRequest(request))
+          .not.toThrow();
+      });
+
+      it('checks both model and batch for duplicates', () => {
+        const modelSnapshot = {
+          elements: [
+            { id: 'existing-1', name: 'Customer', type: 'business-actor' }
+          ],
+          relationships: []
+        };
+
+        const request = {
+          changes: [
+            { op: 'createElement', type: 'business-actor', name: 'Supplier', tempId: 't1' },
+            { op: 'createElement', type: 'business-actor', name: 'Customer', tempId: 't2' } // Duplicate from model
+          ]
+        };
+
+        expect(() => operationValidation.validateApplyRequest(request, modelSnapshot))
+          .toThrow(/element 'Customer' of type 'business-actor' already exists.*id: existing-1/);
+      });
+    });
+
+    describe('Relationship Duplicates', () => {
+      it('detects duplicate relationship in model snapshot', () => {
+        const modelSnapshot = {
+          elements: [],
+          relationships: [
+            {
+              id: 'rel-1',
+              type: 'serving-relationship',
+              source: 'source-id',
+              target: 'target-id'
+            }
+          ]
+        };
+
+        const request = {
+          changes: [{
+            op: 'createRelationship',
+            type: 'serving-relationship',
+            sourceId: 'source-id',
+            targetId: 'target-id'
+          }]
+        };
+
+        expect(() => operationValidation.validateApplyRequest(request, modelSnapshot))
+          .toThrow(/relationship of type 'serving-relationship' from 'source-id' to 'target-id' already exists.*id: rel-1/);
+      });
+
+      it('allows different relationship type between same elements', () => {
+        const modelSnapshot = {
+          elements: [],
+          relationships: [
+            {
+              id: 'rel-1',
+              type: 'serving-relationship',
+              source: 'source-id',
+              target: 'target-id'
+            }
+          ]
+        };
+
+        const request = {
+          changes: [{
+            op: 'createRelationship',
+            type: 'assignment-relationship', // Different type
+            sourceId: 'source-id',
+            targetId: 'target-id'
+          }]
+        };
+
+        expect(() => operationValidation.validateApplyRequest(request, modelSnapshot))
+          .not.toThrow();
+      });
+
+      it('detects intra-batch duplicate relationships', () => {
+        const request = {
+          changes: [
+            {
+              op: 'createRelationship',
+              type: 'serving-relationship',
+              sourceId: 'source-id',
+              targetId: 'target-id',
+              tempId: 'tr1'
+            },
+            {
+              op: 'createRelationship',
+              type: 'serving-relationship',
+              sourceId: 'source-id',
+              targetId: 'target-id',
+              tempId: 'tr2'
+            }
+          ]
+        };
+
+        expect(() => operationValidation.validateApplyRequest(request))
+          .toThrow(/relationship of type 'serving-relationship' from 'source-id' to 'target-id' already created earlier in this batch.*tempId: tr1/);
+      });
+
+      it('allows multiple different relationships in same batch', () => {
+        const request = {
+          changes: [
+            {
+              op: 'createRelationship',
+              type: 'serving-relationship',
+              sourceId: 'source-id',
+              targetId: 'target-id',
+              tempId: 'tr1'
+            },
+            {
+              op: 'createRelationship',
+              type: 'composition-relationship',
+              sourceId: 'source-id',
+              targetId: 'target-id',
+              tempId: 'tr2'
+            },
+            {
+              op: 'createRelationship',
+              type: 'serving-relationship',
+              sourceId: 'other-source',
+              targetId: 'target-id',
+              tempId: 'tr3'
+            }
+          ]
+        };
+
+        expect(() => operationValidation.validateApplyRequest(request))
+          .not.toThrow();
+      });
+    });
+
+    describe('Helper Functions', () => {
+      it('_findDuplicateElement finds existing element', () => {
+        const modelSnapshot = {
+          elements: [
+            { id: 'id-1', name: 'Actor A', type: 'business-actor' },
+            { id: 'id-2', name: 'Actor B', type: 'business-role' }
+          ]
+        };
+
+        const result = operationValidation._findDuplicateElement(modelSnapshot, 'Actor A', 'business-actor');
+        expect(result).toBeDefined();
+        expect(result.id).toBe('id-1');
+      });
+
+      it('_findDuplicateElement returns null when no match', () => {
+        const modelSnapshot = {
+          elements: [
+            { id: 'id-1', name: 'Actor A', type: 'business-actor' }
+          ]
+        };
+
+        const result = operationValidation._findDuplicateElement(modelSnapshot, 'Actor B', 'business-actor');
+        expect(result).toBeNull();
+      });
+
+      it('_findDuplicateRelationship finds existing relationship', () => {
+        const modelSnapshot = {
+          relationships: [
+            { id: 'rel-1', source: 's1', target: 't1', type: 'serving-relationship' },
+            { id: 'rel-2', source: 's2', target: 't2', type: 'composition-relationship' }
+          ]
+        };
+
+        const result = operationValidation._findDuplicateRelationship(modelSnapshot, 's1', 't1', 'serving-relationship');
+        expect(result).toBeDefined();
+        expect(result.id).toBe('rel-1');
+      });
+
+      it('_findDuplicateRelationship returns null when no match', () => {
+        const modelSnapshot = {
+          relationships: [
+            { id: 'rel-1', source: 's1', target: 't1', type: 'serving-relationship' }
+          ]
+        };
+
+        const result = operationValidation._findDuplicateRelationship(modelSnapshot, 's1', 't1', 'composition-relationship');
+        expect(result).toBeNull();
+      });
+    });
+  });
 });

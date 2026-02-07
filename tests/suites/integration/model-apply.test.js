@@ -260,4 +260,189 @@ describe('Model Apply Endpoint', () => {
       expectErrorResponse(response, 404);
     });
   });
+
+  describe('Duplicate Detection', () => {
+    describe('Element Duplicates', () => {
+      it('rejects duplicate element with same name and type', async () => {
+        const name = generateUniqueName('UniqueActor');
+
+        // Create first element
+        const payload1 = createApplyRequest([
+          createElementPayload('business-actor', name, { tempId: 'temp-1' })
+        ]);
+
+        const response1 = await httpClient.post('/model/apply', payload1);
+        const result1 = await waitForOperation(response1.body.operationId);
+        const idMap1 = buildIdMap(result1.result);
+        createdElementIds.push(idMap1['temp-1']);
+
+        // Try to create duplicate
+        const payload2 = createApplyRequest([
+          createElementPayload('business-actor', name, { tempId: 'temp-2' })
+        ]);
+
+        const response2 = await httpClient.post('/model/apply', payload2);
+
+        expectErrorResponse(response2, 400);
+        expect(response2.body.error.code).toBe('ValidationError');
+        expect(response2.body.error.message).toContain('already exists');
+        expect(response2.body.error.message).toContain(name);
+        expect(response2.body.error.message).toContain('business-actor');
+        expect(response2.body.error.message).toContain(idMap1['temp-1']); // Should include existing ID
+      });
+
+      it('allows element with same name but different type', async () => {
+        const name = generateUniqueName('SameNameActor');
+
+        // Create business actor
+        const payload1 = createApplyRequest([
+          createElementPayload('business-actor', name, { tempId: 'temp-1' })
+        ]);
+
+        const response1 = await httpClient.post('/model/apply', payload1);
+        const result1 = await waitForOperation(response1.body.operationId);
+        const idMap1 = buildIdMap(result1.result);
+        createdElementIds.push(idMap1['temp-1']);
+
+        // Create business role with same name (different type - should succeed)
+        const payload2 = createApplyRequest([
+          createElementPayload('business-role', name, { tempId: 'temp-2' })
+        ]);
+
+        const response2 = await httpClient.post('/model/apply', payload2);
+        expectSuccessResponse(response2);
+
+        const result2 = await waitForOperation(response2.body.operationId);
+        const idMap2 = buildIdMap(result2.result);
+        expect(result2.status).toBe('complete');
+        expect(idMap2['temp-2']).toBeDefined();
+
+        createdElementIds.push(idMap2['temp-2']);
+      });
+
+      it('rejects intra-batch duplicate elements', async () => {
+        const name = generateUniqueName('BatchDuplicateActor');
+
+        const payload = createApplyRequest([
+          createElementPayload('business-actor', name, { tempId: 'temp-1' }),
+          createElementPayload('business-actor', name, { tempId: 'temp-2' }) // Duplicate in same batch
+        ]);
+
+        const response = await httpClient.post('/model/apply', payload);
+
+        expectErrorResponse(response, 400);
+        expect(response.body.error.code).toBe('ValidationError');
+        expect(response.body.error.message).toContain('already created earlier in this batch');
+        expect(response.body.error.message).toContain(name);
+      });
+    });
+
+    describe('Relationship Duplicates', () => {
+      it('rejects duplicate relationship with same source, target, and type', async () => {
+        // Create two elements first
+        const sourcePayload = createApplyRequest([
+          createElementPayload('business-actor', generateUniqueName('Source'), { tempId: 'temp-source' })
+        ]);
+        const sourceResponse = await httpClient.post('/model/apply', sourcePayload);
+        const sourceResult = await waitForOperation(sourceResponse.body.operationId);
+        const sourceIdMap = buildIdMap(sourceResult.result);
+        const sourceId = sourceIdMap['temp-source'];
+        createdElementIds.push(sourceId);
+
+        const targetPayload = createApplyRequest([
+          createElementPayload('business-service', generateUniqueName('Target'), { tempId: 'temp-target' })
+        ]);
+        const targetResponse = await httpClient.post('/model/apply', targetPayload);
+        const targetResult = await waitForOperation(targetResponse.body.operationId);
+        const targetIdMap = buildIdMap(targetResult.result);
+        const targetId = targetIdMap['temp-target'];
+        createdElementIds.push(targetId);
+
+        // Create first relationship
+        const payload1 = createApplyRequest([
+          createRelationshipPayload('serving-relationship', sourceId, targetId, { tempId: 'temp-rel-1' })
+        ]);
+        const response1 = await httpClient.post('/model/apply', payload1);
+        const result1 = await waitForOperation(response1.body.operationId);
+        const relIdMap1 = buildIdMap(result1.result);
+        createdElementIds.push(relIdMap1['temp-rel-1']);
+
+        // Try to create duplicate relationship
+        const payload2 = createApplyRequest([
+          createRelationshipPayload('serving-relationship', sourceId, targetId, { tempId: 'temp-rel-2' })
+        ]);
+
+        const response2 = await httpClient.post('/model/apply', payload2);
+
+        expectErrorResponse(response2, 400);
+        expect(response2.body.error.code).toBe('ValidationError');
+        expect(response2.body.error.message).toContain('already exists');
+        expect(response2.body.error.message).toContain('serving-relationship');
+        expect(response2.body.error.message).toContain(relIdMap1['temp-rel-1']); // Should include existing ID
+      });
+
+      it('allows different relationship type between same elements', async () => {
+        // Create two elements
+        const elements = createApplyRequest([
+          createElementPayload('business-actor', generateUniqueName('Source2'), { tempId: 'temp-source' }),
+          createElementPayload('business-service', generateUniqueName('Target2'), { tempId: 'temp-target' })
+        ]);
+        const elemResponse = await httpClient.post('/model/apply', elements);
+        const elemResult = await waitForOperation(elemResponse.body.operationId);
+        const elemIdMap = buildIdMap(elemResult.result);
+        const sourceId = elemIdMap['temp-source'];
+        const targetId = elemIdMap['temp-target'];
+        createdElementIds.push(sourceId, targetId);
+
+        // Create first relationship
+        const payload1 = createApplyRequest([
+          createRelationshipPayload('serving-relationship', sourceId, targetId, { tempId: 'temp-rel-1' })
+        ]);
+        const response1 = await httpClient.post('/model/apply', payload1);
+        const result1 = await waitForOperation(response1.body.operationId);
+        const relIdMap1 = buildIdMap(result1.result);
+        createdElementIds.push(relIdMap1['temp-rel-1']);
+
+        // Create different relationship type (should succeed)
+        const payload2 = createApplyRequest([
+          createRelationshipPayload('assignment-relationship', sourceId, targetId, { tempId: 'temp-rel-2' })
+        ]);
+        const response2 = await httpClient.post('/model/apply', payload2);
+        expectSuccessResponse(response2);
+
+        const result2 = await waitForOperation(response2.body.operationId);
+        const relIdMap2 = buildIdMap(result2.result);
+        expect(result2.status).toBe('complete');
+        expect(relIdMap2['temp-rel-2']).toBeDefined();
+
+        createdElementIds.push(relIdMap2['temp-rel-2']);
+      });
+
+      it('rejects intra-batch duplicate relationships', async () => {
+        // Create two elements
+        const elements = createApplyRequest([
+          createElementPayload('business-actor', generateUniqueName('Source3'), { tempId: 'temp-source' }),
+          createElementPayload('business-service', generateUniqueName('Target3'), { tempId: 'temp-target' })
+        ]);
+        const elemResponse = await httpClient.post('/model/apply', elements);
+        const elemResult = await waitForOperation(elemResponse.body.operationId);
+        const elemIdMap = buildIdMap(elemResult.result);
+        const sourceId = elemIdMap['temp-source'];
+        const targetId = elemIdMap['temp-target'];
+        createdElementIds.push(sourceId, targetId);
+
+        // Try to create duplicate relationships in same batch
+        const payload = createApplyRequest([
+          createRelationshipPayload('serving-relationship', sourceId, targetId, { tempId: 'temp-rel-1' }),
+          createRelationshipPayload('serving-relationship', sourceId, targetId, { tempId: 'temp-rel-2' })
+        ]);
+
+        const response = await httpClient.post('/model/apply', payload);
+
+        expectErrorResponse(response, 400);
+        expect(response.body.error.code).toBe('ValidationError');
+        expect(response.body.error.message).toContain('already created earlier in this batch');
+      });
+    });
+  });
 });

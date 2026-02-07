@@ -1,0 +1,616 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/archi-runbook.schema.json",
+  "title": "Archi CLI Runbook",
+  "description": "Schema for archi-cli YAML runbooks (v1alpha1).",
+  "type": "object",
+  "required": [
+    "apiVersion",
+    "kind",
+    "spec"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "apiVersion": {
+      "const": "archi-cli/v1alpha1"
+    },
+    "kind": {
+      "const": "Runbook"
+    },
+    "metadata": {
+      "$ref": "#/$defs/metadata"
+    },
+    "spec": {
+      "$ref": "#/$defs/spec"
+    }
+  },
+  "$defs": {
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "labels": {
+          "$ref": "#/$defs/stringMap"
+        }
+      },
+      "additionalProperties": true
+    },
+    "stringMap": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "expression": {
+      "type": "string",
+      "pattern": "^\\$\\{\\{[\\s\\S]+\\}\\}$"
+    },
+    "templateString": {
+      "type": "string"
+    },
+    "statusCode": {
+      "type": "integer",
+      "minimum": 100,
+      "maximum": 599
+    },
+    "statusExpectation": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/statusCode"
+        },
+        {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/statusCode"
+          }
+        }
+      ]
+    },
+    "retryPolicy": {
+      "type": "object",
+      "properties": {
+        "maxAttempts": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1
+        },
+        "backoffMs": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 0
+        },
+        "retryOnStatus": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/statusCode"
+          },
+          "default": [
+            429,
+            502,
+            503,
+            504
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "expectBody": {
+      "type": "object",
+      "properties": {
+        "hasKeys": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "expr": {
+          "$ref": "#/$defs/expression"
+        }
+      },
+      "additionalProperties": false
+    },
+    "expect": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "$ref": "#/$defs/statusExpectation"
+        },
+        "body": {
+          "$ref": "#/$defs/expectBody"
+        }
+      },
+      "additionalProperties": false
+    },
+    "request": {
+      "type": "object",
+      "required": [
+        "method",
+        "path"
+      ],
+      "properties": {
+        "method": {
+          "type": "string",
+          "enum": [
+            "GET",
+            "POST",
+            "PUT",
+            "DELETE",
+            "PATCH"
+          ]
+        },
+        "path": {
+          "$ref": "#/$defs/templateString",
+          "minLength": 1
+        },
+        "query": {
+          "$ref": "#/$defs/stringMap"
+        },
+        "headers": {
+          "$ref": "#/$defs/stringMap"
+        },
+        "body": {}
+      },
+      "additionalProperties": false
+    },
+    "outputMap": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/expression"
+      }
+    },
+    "applyPoll": {
+      "type": "object",
+      "properties": {
+        "endpoint": {
+          "$ref": "#/$defs/templateString"
+        },
+        "opIdParam": {
+          "type": "string",
+          "minLength": 1
+        },
+        "intervalMs": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "timeoutMs": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "successStatus": {
+          "type": "string",
+          "minLength": 1
+        },
+        "errorStatus": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "waitPoll": {
+      "type": "object",
+      "required": [
+        "request"
+      ],
+      "properties": {
+        "request": {
+          "$ref": "#/$defs/request"
+        },
+        "intervalMs": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "timeoutMs": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "stepBase": {
+      "type": "object",
+      "required": [
+        "id",
+        "type"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "http",
+            "apply",
+            "wait",
+            "set",
+            "assert",
+            "foreach",
+            "parallel",
+            "script"
+          ]
+        },
+        "name": {
+          "type": "string"
+        },
+        "when": {
+          "$ref": "#/$defs/expression"
+        },
+        "continueOnError": {
+          "type": "boolean"
+        },
+        "timeoutMs": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "retry": {
+          "$ref": "#/$defs/retryPolicy"
+        },
+        "expect": {
+          "$ref": "#/$defs/expect"
+        },
+        "outputs": {
+          "$ref": "#/$defs/outputMap"
+        }
+      }
+    },
+    "httpStep": {
+      "type": "object",
+      "required": [
+        "type",
+        "request"
+      ],
+      "properties": {
+        "type": {
+          "const": "http"
+        },
+        "request": {
+          "$ref": "#/$defs/request"
+        }
+      }
+    },
+    "applyStep": {
+      "type": "object",
+      "required": [
+        "type",
+        "changes"
+      ],
+      "properties": {
+        "type": {
+          "const": "apply"
+        },
+        "endpoint": {
+          "$ref": "#/$defs/templateString"
+        },
+        "changes": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object"
+          }
+        },
+        "wait": {
+          "type": "boolean",
+          "default": true
+        },
+        "operationIdFrom": {
+          "$ref": "#/$defs/expression"
+        },
+        "poll": {
+          "$ref": "#/$defs/applyPoll"
+        }
+      }
+    },
+    "waitStep": {
+      "type": "object",
+      "required": [
+        "type",
+        "until",
+        "poll"
+      ],
+      "properties": {
+        "type": {
+          "const": "wait"
+        },
+        "until": {
+          "$ref": "#/$defs/expression"
+        },
+        "failWhen": {
+          "$ref": "#/$defs/expression"
+        },
+        "poll": {
+          "$ref": "#/$defs/waitPoll"
+        }
+      }
+    },
+    "setStep": {
+      "type": "object",
+      "required": [
+        "type",
+        "assign"
+      ],
+      "properties": {
+        "type": {
+          "const": "set"
+        },
+        "assign": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
+    },
+    "assertStep": {
+      "type": "object",
+      "required": [
+        "type",
+        "that"
+      ],
+      "properties": {
+        "type": {
+          "const": "assert"
+        },
+        "that": {
+          "$ref": "#/$defs/expression"
+        },
+        "message": {
+          "$ref": "#/$defs/templateString"
+        }
+      }
+    },
+    "foreachStep": {
+      "type": "object",
+      "required": [
+        "type",
+        "items",
+        "steps"
+      ],
+      "properties": {
+        "type": {
+          "const": "foreach"
+        },
+        "items": {
+          "$ref": "#/$defs/expression"
+        },
+        "as": {
+          "type": "string",
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+        },
+        "steps": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/step"
+          }
+        }
+      }
+    },
+    "parallelBranch": {
+      "type": "object",
+      "required": [
+        "name",
+        "steps"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "steps": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/step"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "parallelStep": {
+      "type": "object",
+      "required": [
+        "type",
+        "branches"
+      ],
+      "properties": {
+        "type": {
+          "const": "parallel"
+        },
+        "maxConcurrency": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 4
+        },
+        "branches": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/parallelBranch"
+          }
+        }
+      }
+    },
+    "scriptStep": {
+      "type": "object",
+      "required": [
+        "type",
+        "code"
+      ],
+      "properties": {
+        "type": {
+          "const": "script"
+        },
+        "endpoint": {
+          "$ref": "#/$defs/templateString"
+        },
+        "code": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "step": {
+      "type": "object",
+      "allOf": [
+        {
+          "$ref": "#/$defs/stepBase"
+        },
+        {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/httpStep"
+            },
+            {
+              "$ref": "#/$defs/applyStep"
+            },
+            {
+              "$ref": "#/$defs/waitStep"
+            },
+            {
+              "$ref": "#/$defs/setStep"
+            },
+            {
+              "$ref": "#/$defs/assertStep"
+            },
+            {
+              "$ref": "#/$defs/foreachStep"
+            },
+            {
+              "$ref": "#/$defs/parallelStep"
+            },
+            {
+              "$ref": "#/$defs/scriptStep"
+            }
+          ]
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "connection": {
+      "type": "object",
+      "required": [
+        "baseUrl"
+      ],
+      "properties": {
+        "baseUrl": {
+          "type": "string",
+          "minLength": 1
+        },
+        "headers": {
+          "$ref": "#/$defs/stringMap"
+        },
+        "timeoutMs": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "retry": {
+          "$ref": "#/$defs/retryPolicy"
+        }
+      },
+      "additionalProperties": false
+    },
+    "permissions": {
+      "type": "object",
+      "properties": {
+        "scripts": {
+          "type": "boolean",
+          "default": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "defaults": {
+      "type": "object",
+      "properties": {
+        "expect": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "$ref": "#/$defs/statusExpectation"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "spec": {
+      "type": "object",
+      "required": [
+        "connection",
+        "steps"
+      ],
+      "properties": {
+        "connection": {
+          "$ref": "#/$defs/connection"
+        },
+        "permissions": {
+          "$ref": "#/$defs/permissions"
+        },
+        "vars": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "defaults": {
+          "$ref": "#/$defs/defaults"
+        },
+        "steps": {
+          "$comment": "Unique step id values should be enforced by a separate linter rule.",
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/step"
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "steps": {
+                "contains": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "const": "script"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                }
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "permissions"
+            ],
+            "properties": {
+              "permissions": {
+                "required": [
+                  "scripts"
+                ],
+                "properties": {
+                  "scripts": {
+                    "const": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "additionalProperties": false
+    }
+  }
+}
