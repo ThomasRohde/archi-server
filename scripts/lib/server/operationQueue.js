@@ -1,0 +1,396 @@
+/**
+ * operationQueue.js - Async operation queue with Display.timerExec processor
+ *
+ * Manages a queue of model operations that are processed asynchronously on the
+ * SWT Display thread. Uses undoableCommands for all model modifications to ensure
+ * proper undo/redo support. Operations are processed in batches with status tracking.
+ *
+ * Production hardening features:
+ *   - Operation timeout with automatic failure
+ *   - Configurable via serverConfig
+ *   - Clean operation status tracking
+ *
+ * @module server/operationQueue
+ * @requires lib/core/undoableCommands
+ * @requires server/modelSnapshot
+ * @requires server/loggingQueue
+ * @requires server/serverConfig (optional)
+ */
+
+(function() {
+    "use strict";
+
+    // Guard against double-loading
+    if (typeof globalThis !== "undefined" && typeof globalThis.operationQueue !== "undefined") {
+        return;
+    }
+
+    // Java imports
+    var ConcurrentLinkedQueue = Java.type("java.util.concurrent.ConcurrentLinkedQueue");
+
+    /**
+     * Async operation queue with processor
+     */
+    var operationQueue = {
+        /**
+         * Thread-safe queue for pending operations
+         * @type {java.util.concurrent.ConcurrentLinkedQueue}
+         */
+        queue: new ConcurrentLinkedQueue(),
+
+        /**
+         * Map of operation ID to operation descriptor
+         * @type {Object}
+         */
+        pendingOperations: {},
+
+        /**
+         * Processor state
+         * @private
+         */
+        _processorRunning: false,
+        _displayRef: null,
+        _modelRef: null,
+        _processorCycleCount: 0,
+        _onUpdateCountCallback: null,
+
+        /**
+         * Get configuration from serverConfig or use defaults
+         * @returns {Object} Configuration object
+         * @private
+         */
+        _getConfig: function() {
+            if (typeof serverConfig !== "undefined" && serverConfig.operations) {
+                return {
+                    processorInterval: serverConfig.operations.processorInterval || 50,
+                    maxOpsPerCycle: serverConfig.operations.maxOpsPerCycle || 10,
+                    cleanupInterval: serverConfig.operations.cleanupInterval || 100,
+                    maxOperationAge: serverConfig.operations.maxOperationAge || 3600000,
+                    timeoutMs: serverConfig.operations.timeoutMs || 60000
+                };
+            }
+            return {
+                processorInterval: 50,
+                maxOpsPerCycle: 10,
+                cleanupInterval: 100,
+                maxOperationAge: 3600000,
+                timeoutMs: 60000
+            };
+        },
+
+        /**
+         * Processor configuration (deprecated - use _getConfig())
+         * @deprecated Use serverConfig.operations instead
+         */
+        config: {
+            processorInterval: 50,      // Processor cycle interval in milliseconds
+            maxOpsPerCycle: 10,         // Maximum operations to process per cycle
+            cleanupInterval: 100,       // Cleanup every N cycles (~5 seconds)
+            maxOperationAge: 3600000    // Max age for completed operations (1 hour)
+        },
+
+        /**
+         * Create operation descriptor
+         * @param {Array} changes - Array of change descriptors
+         * @returns {Object} Operation descriptor with id, status, changes, timestamps
+         */
+        createOperation: function(changes) {
+            var opId = "op_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
+            return {
+                id: opId,
+                changes: changes,
+                status: "queued",
+                result: null,
+                error: null,
+                createdAt: new Date().toISOString(),
+                startedAt: null,         // Timestamp when processing started
+                completedAt: null
+            };
+        },
+
+        /**
+         * Queue operation for processing
+         * @param {Object} operation - Operation descriptor from createOperation()
+         * @returns {string} Operation ID
+         */
+        queueOperation: function(operation) {
+            this.pendingOperations[operation.id] = operation;
+            this.queue.offer(operation);
+            return operation.id;
+        },
+
+        /**
+         * Get operation status by ID
+         * @param {string} opId - Operation ID
+         * @returns {Object|null} Operation descriptor or null if not found
+         */
+        getOperationStatus: function(opId) {
+            return this.pendingOperations[opId] || null;
+        },
+
+        /**
+         * Get count of queued operations
+         * @returns {number} Number of operations in queue
+         */
+        getQueuedCount: function() {
+            return this.queue.size();
+        },
+
+        /**
+         * Get count of completed operations
+         * @returns {number} Number of completed operations
+         */
+        getCompletedCount: function() {
+            var count = 0;
+            for (var opId in this.pendingOperations) {
+                if (this.pendingOperations[opId].status === "complete") {
+                    count++;
+                }
+            }
+            return count;
+        },
+
+        /**
+         * Get count of in-flight (queued or processing) operations
+         * @returns {number} Number of in-flight operations
+         */
+        getInFlightCount: function() {
+            var processingCount = 0;
+            for (var opId in this.pendingOperations) {
+                var status = this.pendingOperations[opId].status;
+                if (status === "processing" || status === "queued") {
+                    processingCount++;
+                }
+            }
+            return processingCount;
+        },
+
+        /**
+         * Get detailed queue statistics for health endpoint
+         * @returns {Object} Queue statistics
+         */
+        getQueueStats: function() {
+            var queued = 0;
+            var processing = 0;
+            var completed = 0;
+            var error = 0;
+
+            for (var opId in this.pendingOperations) {
+                switch (this.pendingOperations[opId].status) {
+                    case "queued": queued++; break;
+                    case "processing": processing++; break;
+                    case "complete": completed++; break;
+                    case "error": error++; break;
+                }
+            }
+
+            return {
+                queueSize: this.queue.size(),
+                queued: queued,
+                processing: processing,
+                completed: completed,
+                error: error,
+                total: Object.keys(this.pendingOperations).length
+            };
+        },
+
+        /**
+         * Start operation processor timer
+         * @param {org.eclipse.swt.widgets.Display} display - SWT Display reference
+         * @param {Object} options - Configuration options
+         * @param {com.archimatetool.model.IArchimateModel} options.modelRef - EMF model reference
+         * @param {Function} [options.onUpdateCount] - Callback for operation count updates (queued, completed)
+         */
+        startProcessor: function(display, options) {
+            if (this._processorRunning) {
+                return;
+            }
+
+            this._processorRunning = true;
+            this._displayRef = display;
+            this._modelRef = options.modelRef;
+            this._onUpdateCountCallback = options.onUpdateCount || null;
+
+            this._scheduleProcessor();
+        },
+
+        /**
+         * Stop the operation processor
+         */
+        stopProcessor: function() {
+            this._processorRunning = false;
+        },
+
+        /**
+         * Schedule next processor cycle (internal)
+         * @private
+         */
+        _scheduleProcessor: function() {
+            var self = this;
+            var config = this._getConfig();
+
+            this._displayRef.timerExec(config.processorInterval, function() {
+                if (!self._processorRunning) {
+                    return;
+                }
+
+                // Check for timed-out in-progress operations
+                self._checkOperationTimeouts();
+
+                // Process operations from queue
+                var processed = 0;
+                var maxPerCycle = config.maxOpsPerCycle;
+
+                while (processed < maxPerCycle && !self.queue.isEmpty()) {
+                    var operation = self.queue.poll();
+                    if (!operation) break;
+
+                    // Mark operation as in-progress with start time
+                    operation.status = "processing";
+                    operation.startedAt = Date.now();
+
+                    try {
+                        if (loggingQueue) {
+                            loggingQueue.log("Processing operation: " + operation.id);
+                            loggingQueue.log("Model ref available: " + (self._modelRef !== null));
+                        }
+
+                        // Use undoableCommands.executeBatch for proper undo/redo support
+                        var batchLabel = "API Operation " + operation.id;
+                        var results = undoableCommands.executeBatch(self._modelRef, batchLabel, operation.changes);
+
+                        // Refresh model snapshot
+                        if (modelSnapshot) {
+                            modelSnapshot.refreshSnapshot(self._modelRef);
+                        }
+
+                        // Mark operation as complete
+                        operation.status = "complete";
+                        operation.result = results;
+                        operation.completedAt = Date.now();
+
+                        var duration = operation.completedAt - operation.startedAt;
+                        if (loggingQueue) {
+                            loggingQueue.log("Operation completed: " + operation.id +
+                                           " (" + results.length + " changes, " + duration + "ms) [UNDOABLE]");
+                        }
+
+                    } catch (e) {
+                        var errorMsg = "Operation failed: " + operation.id + " - " + String(e);
+
+                        // Include Java stack trace if available
+                        if (e.javaException) {
+                            var StringWriter = Java.type("java.io.StringWriter");
+                            var PrintWriter = Java.type("java.io.PrintWriter");
+                            var sw = new StringWriter();
+                            e.javaException.printStackTrace(new PrintWriter(sw));
+                            errorMsg += "\n" + sw.toString();
+                        }
+
+                        if (loggingQueue) {
+                            loggingQueue.error(errorMsg);
+                        }
+
+                        operation.status = "error";
+                        operation.error = String(e);
+                        operation.completedAt = Date.now();
+                    }
+
+                    processed++;
+                }
+
+                // Update operation counter
+                self._updateOperationCount();
+
+                // Cleanup old operations periodically
+                if (self._processorCycleCount % config.cleanupInterval === 0) {
+                    self.cleanupOldOperations(config.maxOperationAge);
+                }
+
+                self._processorCycleCount++;
+
+                // Schedule next processor cycle
+                if (self._processorRunning) {
+                    self._scheduleProcessor();
+                }
+            });
+        },
+
+        /**
+         * Check for and timeout stale in-progress operations
+         * @private
+         */
+        _checkOperationTimeouts: function() {
+            var config = this._getConfig();
+            var now = Date.now();
+
+            for (var opId in this.pendingOperations) {
+                var op = this.pendingOperations[opId];
+                if (op.status === "processing" && op.startedAt) {
+                    var elapsed = now - op.startedAt;
+                    if (elapsed > config.timeoutMs) {
+                        if (loggingQueue) {
+                            loggingQueue.error("Operation timed out: " + opId +
+                                " (elapsed: " + elapsed + "ms, limit: " + config.timeoutMs + "ms)");
+                        }
+                        op.status = "error";
+                        op.error = "Operation timed out after " + Math.round(elapsed / 1000) + " seconds";
+                        op.completedAt = now;
+                    }
+                }
+            }
+        },
+
+        /**
+         * Update operation count via callback
+         * @private
+         */
+        _updateOperationCount: function() {
+            if (this._onUpdateCountCallback) {
+                var queuedCount = this.queue.size();
+                var completedCount = this.getCompletedCount();
+                this._onUpdateCountCallback(queuedCount, completedCount);
+            }
+        },
+
+        /**
+         * Clean up old completed/failed operations
+         * @param {number} maxAgeMs - Maximum age in milliseconds for completed operations
+         */
+        cleanupOldOperations: function(maxAgeMs) {
+            var cutoffTime = Date.now() - maxAgeMs;
+            var toDelete = [];
+
+            for (var opId in this.pendingOperations) {
+                var op = this.pendingOperations[opId];
+                if ((op.status === "complete" || op.status === "error") &&
+                    op.completedAt &&
+                    op.completedAt < cutoffTime) {
+                    toDelete.push(opId);
+                }
+            }
+
+            var self = this;
+            toDelete.forEach(function(opId) {
+                delete self.pendingOperations[opId];
+            });
+
+            if (toDelete.length > 0 && loggingQueue) {
+                loggingQueue.log("Cleaned up " + toDelete.length + " old operations");
+            }
+        }
+    };
+
+    // Export globally for JArchi
+    if (typeof globalThis !== "undefined") {
+        globalThis.operationQueue = operationQueue;
+    } else if (typeof global !== "undefined") {
+        global.operationQueue = operationQueue;
+    }
+
+    // CommonJS for Node.js build tools
+    if (typeof module !== "undefined" && module.exports) {
+        module.exports = operationQueue;
+    }
+
+})();

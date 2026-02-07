@@ -1,0 +1,577 @@
+/**
+ * Model API Server.ajs - Production HTTP API Server for ArchiMate Models
+ *
+ * Run an HTTP REST API server inside Archi that exposes model operations to external clients.
+ * All operations are fully undoable (Ctrl+Z) using undoableCommands API.
+ *
+ * Architecture:
+ *   External Client → HTTP (localhost:8765) → Java HttpServer (thread pool)
+ *                                                  ↓ Display executor
+ *                                                SWT Display Thread
+ *                                                  ↓
+ *                                            Model Operations (undoable)
+ *
+ * Production Hardening (v1.1.0):
+ *   - Rate limiting: 200 requests/minute per IP (configurable)
+ *   - Request body size limit: 1MB max (configurable)
+ *   - Operation timeout: 60 seconds (configurable)
+ *   - Request ID correlation for debugging
+ *   - ArchiMate type validation on createElement/createRelationship
+ *   - Security headers (X-Content-Type-Options, X-Frame-Options, etc.)
+ *   - Configurable CORS origins (no wildcard by default)
+ *   - Graceful shutdown with in-flight operation wait
+ *   - Enhanced health endpoint with memory/queue stats
+ *
+ * Configuration:
+ *   All settings in lib/server/serverConfig.js
+ *
+ * Endpoints:
+ *   GET  /health                  - Server health check (detailed)
+ *   GET  /test                    - UI thread test
+ *   POST /model/query             - Query model snapshot (sync)
+ *   POST /model/plan              - Generate change plan (no mutation)
+ *   POST /model/apply             - Apply changes asynchronously (returns operation ID)
+ *   POST /model/search            - Search elements/relationships
+ *   POST /model/save              - Save model to disk
+ *   GET  /model/element/{id}      - Get element details
+ *   GET  /ops/status?opId=...     - Poll operation status
+ *   GET  /folders                 - List model folders
+ *   GET  /views                   - List views
+ *   POST /views                   - Create view (async)
+ *   GET  /views/{id}              - Get view details
+ *   DELETE /views/{id}            - Delete view
+ *   POST /views/{id}/export       - Export view image
+ *   POST /views/{id}/duplicate    - Duplicate view
+ *   PUT  /views/{id}/router       - Set view router
+ *   POST /views/{id}/layout       - Apply layout
+ *   GET  /views/{id}/validate     - Validate view integrity
+ *   POST /scripts/run             - Execute JArchi script code (sync, returns output/files)
+ *   POST /shutdown                - Trigger server shutdown
+ *
+ * Prerequisites:
+ *   - Open ArchiMate model
+ *   - Open at least one view from the model (REQUIRED for undo/redo support)
+ *   - Port 8765 available (or configure different port)
+ *
+ * Usage:
+ *   1. Open a model and at least one view
+ *   2. Run this script from Archi Scripts menu
+ *   3. Monitor dialog opens showing server status and logs
+ *   4. Use external client (Node.js, Python, curl) to interact with API
+ *   5. Click "Stop Server" button to shutdown gracefully
+ *
+ * Security Warning:
+ *   ⚠️ NO AUTHENTICATION - Binds to localhost only (127.0.0.1)
+ *   Do NOT expose to network. For development and local automation only.
+ *
+ * @version 1.1.0
+ */
+
+console.clear();
+console.show();
+console.log("▶ " + new Date().toISOString() + " – Model API Server start");
+
+// Load core dependencies
+load(__DIR__ + "lib/core/swtImports.js");
+load(__DIR__ + "lib/core/serverCore.js");
+load(__DIR__ + "lib/core/undoableCommands.js");
+load(__DIR__ + "lib/core/requireModel.js");
+
+// Load server modules (order matters - dependencies first!)
+load(__DIR__ + "lib/server/serverConfig.js");  // Config must be loaded first
+load(__DIR__ + "lib/server/loggingQueue.js");
+load(__DIR__ + "lib/server/folderCache.js");
+load(__DIR__ + "lib/server/modelSnapshot.js");
+load(__DIR__ + "lib/server/operationValidation.js");
+load(__DIR__ + "lib/server/operationQueue.js");
+load(__DIR__ + "lib/server/monitorUI.js");
+load(__DIR__ + "lib/server/apiEndpoints.js");
+load(__DIR__ + "lib/server/layoutDagreHeadless.js");  // Dagre layout for view layout endpoint
+
+/**
+ * Router for /views endpoints
+ * Handles path parameter extraction and routes to appropriate handlers
+ * 
+ * Routes:
+ *   GET    /views              -> handleListViews
+ *   POST   /views              -> handleCreateView
+ *   GET    /views/{id}         -> handleGetView
+ *   DELETE /views/{id}         -> handleDeleteView
+ *   POST   /views/{id}/export      -> handleExportView
+ *   POST   /views/{id}/duplicate   -> handleDuplicateView
+ *   PUT    /views/{id}/router      -> handleSetViewRouter
+ *   POST   /views/{id}/layout      -> handleLayoutView
+ *   GET    /views/{id}/validate    -> handleValidateView
+ */
+function routeViewsEndpoint(req, res, state, apiEndpoints) {
+    var path = req.path;
+    var method = req.method;
+    
+    // Parse path segments: /views, /views/{id}, /views/{id}/export, etc.
+    var pathMatch;
+    
+    // Exact /views
+    if (path === "/views" || path === "/views/") {
+        if (method === "GET") {
+            return apiEndpoints.handleListViews(req, res, state);
+        } else if (method === "POST") {
+            return apiEndpoints.handleCreateView(req, res, state);
+        } else {
+            res.statusCode = 405;
+            res.body = { error: { code: "MethodNotAllowed", message: "Method " + method + " not allowed on /views" } };
+            return;
+        }
+    }
+    
+    // /views/{id}/export
+    pathMatch = path.match(/^\/views\/([^\/]+)\/export\/?$/);
+    if (pathMatch) {
+        if (method === "POST") {
+            req.params = { id: pathMatch[1] };
+            return apiEndpoints.handleExportView(req, res, state);
+        } else {
+            res.statusCode = 405;
+            res.body = { error: { code: "MethodNotAllowed", message: "Method " + method + " not allowed on /views/{id}/export" } };
+            return;
+        }
+    }
+    
+    // /views/{id}/duplicate
+    pathMatch = path.match(/^\/views\/([^\/]+)\/duplicate\/?$/);
+    if (pathMatch) {
+        if (method === "POST") {
+            req.params = { id: pathMatch[1] };
+            return apiEndpoints.handleDuplicateView(req, res, state);
+        } else {
+            res.statusCode = 405;
+            res.body = { error: { code: "MethodNotAllowed", message: "Method " + method + " not allowed" } };
+            return;
+        }
+    }
+    
+    // /views/{id}/router
+    pathMatch = path.match(/^\/views\/([^\/]+)\/router\/?$/);
+    if (pathMatch) {
+        if (method === "POST" || method === "PUT") {
+            req.params = { id: pathMatch[1] };
+            return apiEndpoints.handleSetViewRouter(req, res, state);
+        } else {
+            res.statusCode = 405;
+            res.body = { error: { code: "MethodNotAllowed", message: "Method " + method + " not allowed" } };
+            return;
+        }
+    }
+    
+    // /views/{id}/layout
+    pathMatch = path.match(/^\/views\/([^\/]+)\/layout\/?$/);
+    if (pathMatch) {
+        if (method === "POST") {
+            req.params = { id: pathMatch[1] };
+            return apiEndpoints.handleLayoutView(req, res, state);
+        } else {
+            res.statusCode = 405;
+            res.body = { error: { code: "MethodNotAllowed", message: "Method " + method + " not allowed" } };
+            return;
+        }
+    }
+    
+    // /views/{id}/validate
+    pathMatch = path.match(/^\/views\/([^\/]+)\/validate\/?$/);
+    if (pathMatch) {
+        if (method === "GET") {
+            req.params = { id: pathMatch[1] };
+            return apiEndpoints.handleValidateView(req, res, state);
+        } else {
+            res.statusCode = 405;
+            res.body = { error: { code: "MethodNotAllowed", message: "Method " + method + " not allowed" } };
+            return;
+        }
+    }
+    
+    // /views/{id}
+    pathMatch = path.match(/^\/views\/([^\/]+)\/?$/);
+    if (pathMatch) {
+        if (method === "GET") {
+            req.params = { id: pathMatch[1] };
+            return apiEndpoints.handleGetView(req, res, state);
+        } else if (method === "DELETE") {
+            req.params = { id: pathMatch[1] };
+            return apiEndpoints.handleDeleteView(req, res, state);
+        } else {
+            res.statusCode = 405;
+            res.body = { error: { code: "MethodNotAllowed", message: "Method " + method + " not allowed on /views/{id}" } };
+            return;
+        }
+    }
+    
+    // No match
+    res.statusCode = 404;
+    res.body = { error: { code: "NotFound", message: "Unknown views endpoint: " + path } };
+}
+
+/**
+ * Router for /model endpoints (including /model/element/{id})
+ */
+function routeModelEndpoint(req, res, state, apiEndpoints) {
+    var path = req.path;
+    var method = req.method;
+    var pathMatch;
+    
+    // /model/query
+    if (path === "/model/query" || path === "/model/query/") {
+        if (method === "POST") {
+            return apiEndpoints.handleQuery(req, res, state);
+        }
+        res.statusCode = 405;
+        res.body = { error: { code: "MethodNotAllowed", message: "Use POST for /model/query" } };
+        return;
+    }
+    
+    // /model/plan
+    if (path === "/model/plan" || path === "/model/plan/") {
+        if (method === "POST") {
+            return apiEndpoints.handlePlan(req, res, state);
+        }
+        res.statusCode = 405;
+        res.body = { error: { code: "MethodNotAllowed", message: "Use POST for /model/plan" } };
+        return;
+    }
+    
+    // /model/apply
+    if (path === "/model/apply" || path === "/model/apply/") {
+        if (method === "POST") {
+            return apiEndpoints.handleApply(req, res, state);
+        }
+        res.statusCode = 405;
+        res.body = { error: { code: "MethodNotAllowed", message: "Use POST for /model/apply" } };
+        return;
+    }
+    
+    // /model/search
+    if (path === "/model/search" || path === "/model/search/") {
+        if (method === "POST") {
+            return apiEndpoints.handleSearch(req, res, state);
+        }
+        res.statusCode = 405;
+        res.body = { error: { code: "MethodNotAllowed", message: "Use POST for /model/search" } };
+        return;
+    }
+    
+    // /model/save
+    if (path === "/model/save" || path === "/model/save/") {
+        if (method === "POST") {
+            return apiEndpoints.handleSave(req, res, state);
+        }
+        res.statusCode = 405;
+        res.body = { error: { code: "MethodNotAllowed", message: "Use POST for /model/save" } };
+        return;
+    }
+    
+    // /model/element/{id}
+    pathMatch = path.match(/^\/model\/element\/([^\/]+)\/?$/);
+    if (pathMatch) {
+        if (method === "GET") {
+            req.params = { id: pathMatch[1] };
+            return apiEndpoints.handleGetElement(req, res, state);
+        }
+        res.statusCode = 405;
+        res.body = { error: { code: "MethodNotAllowed", message: "Use GET for /model/element/{id}" } };
+        return;
+    }
+    
+    // No match
+    res.statusCode = 404;
+    res.body = { error: { code: "NotFound", message: "Unknown model endpoint: " + path } };
+}
+
+(function() {
+    "use strict";
+
+    // Configuration - use serverConfig if available, with fallbacks
+    var CONFIG = {
+        PORT: serverConfig.server.port || 8765,
+        HOST: serverConfig.server.host || "127.0.0.1",
+        VERSION: serverConfig.server.version || "1.1.0"
+    };
+
+    // Global state
+    var state = {
+        serverInstance: null,
+        displayRef: null,
+        modelRef: null,
+        isShuttingDown: false,
+        startTime: null  // Track server start time for uptime calculation
+    };
+
+    /**
+     * Main entry point
+     */
+    function main() {
+        try {
+            loggingQueue.log("Initializing Model API Server...");
+
+            // 1. Get model using requireModel
+            try {
+                state.modelRef = requireModel({
+                    setAsCurrent: true,
+                    promptIfMultiple: true,
+                    title: "Select model for API Server",
+                    returnRawModel: true
+                });
+
+                loggingQueue.log("Model reference captured: " + state.modelRef.getName());
+                loggingQueue.log("Model ID: " + state.modelRef.getId());
+
+            } catch (e) {
+                loggingQueue.error(e.message);
+                console.error("ERROR: " + e.message);
+                console.error("Make sure you have an ArchiMate model open before running this script.");
+                return;
+            }
+
+            // 2. Verify command stack (needed for undo/redo)
+            try {
+                var testStack = undoableCommands.getCommandStack(state.modelRef);
+                loggingQueue.log("✓ Command stack available - undo/redo will work");
+            } catch (cmdStackError) {
+                loggingQueue.warn("Could not get command stack: " + cmdStackError.message);
+                loggingQueue.warn("This usually means no view is open for this model.");
+                loggingQueue.warn("Apply operations may fail. Please open a view and restart the server.");
+                console.error("WARNING: No command stack available. Open a view from the model and restart the server.");
+            }
+
+            // 3. Initialize folder cache
+            try {
+                folderCache.initialize(state.modelRef);
+                loggingQueue.log("Folder cache initialized");
+            } catch (e) {
+                loggingQueue.error("Failed to initialize folder cache: " + e);
+                console.error("ERROR: Failed to initialize folder cache: " + e);
+                if (e.javaException) {
+                    e.javaException.printStackTrace();
+                }
+                return;
+            }
+
+            // 4. Capture initial model snapshot
+            try {
+                loggingQueue.log("Capturing model snapshot...");
+                var snapshot = modelSnapshot.captureSnapshot(state.modelRef);
+                loggingQueue.log("Model snapshot captured:");
+                loggingQueue.log("  Elements: " + snapshot.elements.length);
+                loggingQueue.log("  Relationships: " + snapshot.relationships.length);
+                loggingQueue.log("  Views: " + snapshot.views.length);
+            } catch (e) {
+                loggingQueue.error("Failed to capture model snapshot: " + e);
+                console.error("ERROR: Failed to capture model snapshot: " + e);
+                if (e.javaException) {
+                    e.javaException.printStackTrace();
+                }
+                return;
+            }
+
+            // 5. Get Display reference
+            state.displayRef = swtImports.Display.getDefault();
+            loggingQueue.log("Display reference acquired");
+
+            // 6. Create HTTP server
+            loggingQueue.log("Creating HTTP server...");
+            state.serverInstance = serverCore.create({
+                port: CONFIG.PORT,
+                host: CONFIG.HOST,
+                onLog: loggingQueue.log.bind(loggingQueue),
+                display: state.displayRef
+            });
+
+            // 7. Register endpoint handlers
+            loggingQueue.log("Registering endpoint handlers...");
+            state.serverInstance
+                .addHandler("/health", "GET", function(req, res) {
+                    apiEndpoints.handleHealth(req, res, state);
+                })
+                .addHandler("/test", "GET", function(req, res) {
+                    apiEndpoints.handleTest(req, res, state);
+                })
+                // Model endpoints - use router for parametric paths
+                .addHandler("/model", "*", function(req, res) {
+                    routeModelEndpoint(req, res, state, apiEndpoints);
+                })
+                .addHandler("/ops/status", "GET", function(req, res) {
+                    apiEndpoints.handleOpStatus(req, res, state);
+                })
+                .addHandler("/scripts/run", "POST", function(req, res) {
+                    apiEndpoints.handleScriptRun(req, res, state, __DIR__);
+                })
+                // Folder management
+                .addHandler("/folders", "GET", function(req, res) {
+                    apiEndpoints.handleListFolders(req, res, state);
+                })
+                // View management - router handles all /views/* paths
+                .addHandler("/views", "*", function(req, res) {
+                    routeViewsEndpoint(req, res, state, apiEndpoints);
+                })
+                .addHandler("/shutdown", "POST", function(req, res) {
+                    apiEndpoints.handleShutdown(req, res, state);
+                    if (state.displayRef) {
+                        // Defer shutdown so the HTTP response can be sent first
+                        state.displayRef.timerExec(1, function() { shutdown(); });
+                    } else {
+                        shutdown();
+                    }
+                });
+
+            // 8. Start HTTP server
+            loggingQueue.log("Starting HTTP server...");
+            state.serverInstance.start();
+            state.startTime = Date.now();  // Track start time for uptime
+
+            // Log hardening configuration
+            loggingQueue.log("Security configuration:");
+            loggingQueue.log("  Rate limit: " + serverConfig.rateLimit.maxRequests + " requests/" +
+                           (serverConfig.rateLimit.windowMs / 1000) + "s" +
+                           (serverConfig.rateLimit.enabled ? "" : " (DISABLED)"));
+            loggingQueue.log("  Max body size: " + Math.round(serverConfig.request.maxBodySize / 1024) + "KB");
+            loggingQueue.log("  Operation timeout: " + (serverConfig.operations.timeoutMs / 1000) + "s");
+            loggingQueue.log("  CORS: " + (serverConfig.security.corsAllowAll ? "* (all origins)" :
+                           serverConfig.security.corsOrigins.join(", ") || "(disabled)"));
+
+            // 9. Create monitor dialog
+            loggingQueue.log("Creating monitor dialog...");
+            monitorUI.createMonitorDialog({
+                host: CONFIG.HOST,
+                port: CONFIG.PORT,
+                onStop: function() { shutdown(); },
+                onClose: function(callback) { shutdown(callback); }
+            });
+
+            // 10. Start operation processor
+            operationQueue.startProcessor(state.displayRef, {
+                modelRef: state.modelRef,
+                onUpdateCount: function(queued, completed) {
+                    monitorUI.updateOperationCount(queued, completed);
+                }
+            });
+
+            // 11. Start log flush timer
+            loggingQueue.startFlushTimer(state.displayRef, monitorUI.logText);
+
+            loggingQueue.log("✓ Server running on http://" + CONFIG.HOST + ":" + CONFIG.PORT);
+            loggingQueue.log("✓ Monitor dialog open");
+            loggingQueue.log("");
+            loggingQueue.log("Test with: curl http://localhost:" + CONFIG.PORT + "/health");
+            loggingQueue.log("Stop server: Click 'Stop Server' button in dialog");
+
+        } catch (e) {
+            loggingQueue.error("Failed to start server: " + e);
+            console.error("ERROR: Failed to start server: " + e);
+            if (e.javaException) {
+                e.javaException.printStackTrace();
+            }
+        }
+    }
+
+    /**
+     * Shutdown server and cleanup with graceful wait for in-flight operations
+     * @param {Function} [callback] - Optional callback to invoke after shutdown completes
+     */
+    function shutdown(callback) {
+        if (state.isShuttingDown) {
+            // If already shutting down and callback provided, just call it
+            if (callback) callback();
+            return;
+        }
+        state.isShuttingDown = true;
+
+        loggingQueue.log("Server shutdown initiated");
+
+        // Mark server as stopped in UI
+        monitorUI.markServerStopped();
+
+        // Get shutdown config
+        var shutdownConfig = serverConfig.shutdown || { timeoutMs: 10000, checkIntervalMs: 100 };
+
+        // Check for in-flight operations and wait gracefully
+        var inFlightCount = operationQueue.getInFlightCount();
+        if (inFlightCount > 0) {
+            loggingQueue.log("Waiting for " + inFlightCount + " in-flight operation(s) to complete...");
+
+            var waitStart = Date.now();
+            var checkInterval = shutdownConfig.checkIntervalMs || 100;
+            var maxWait = shutdownConfig.timeoutMs || 10000;
+
+            // Use timerExec for graceful wait
+            var waitForOperations = function() {
+                var elapsed = Date.now() - waitStart;
+                var remaining = operationQueue.getInFlightCount();
+
+                if (remaining === 0) {
+                    loggingQueue.log("All operations completed, proceeding with shutdown");
+                    completeShutdown(callback);
+                } else if (elapsed >= maxWait) {
+                    loggingQueue.warn("Shutdown timeout reached with " + remaining + " operation(s) still in-flight");
+                    completeShutdown(callback);
+                } else {
+                    // Continue waiting
+                    state.displayRef.timerExec(checkInterval, waitForOperations);
+                }
+            };
+
+            state.displayRef.timerExec(checkInterval, waitForOperations);
+        } else {
+            completeShutdown(callback);
+        }
+    }
+
+    /**
+     * Complete shutdown after graceful wait
+     * @param {Function} [callback] - Optional callback
+     * @private
+     */
+    function completeShutdown(callback) {
+        // Stop timers
+        operationQueue.stopProcessor();
+        loggingQueue.stopFlushTimer();
+
+        // Stop HTTP server
+        if (state.serverInstance) {
+            state.serverInstance.stop();
+        }
+
+        // Update UI
+        monitorUI.updateStatus("Server: Stopped");
+
+        // Calculate uptime
+        var uptime = state.startTime ? Math.round((Date.now() - state.startTime) / 1000) : 0;
+        loggingQueue.log("Server uptime: " + uptime + " seconds");
+
+        // Log completion
+        if (state.displayRef) {
+            var Runnable = Java.type("java.lang.Runnable");
+            var logCompletion = Java.extend(Runnable, {
+                run: function() {
+                    console.log("✓ Server shutdown complete");
+
+                    // Invoke callback if provided (for close-triggered shutdown)
+                    if (callback) {
+                        callback();
+                    } else {
+                        // If no callback, close dialog directly (for Stop button)
+                        monitorUI.close();
+                    }
+                }
+            });
+            state.displayRef.asyncExec(new logCompletion());
+        } else {
+            console.log("✓ Server shutdown complete");
+            if (callback) {
+                callback();
+            } else {
+                monitorUI.close();
+            }
+        }
+    }
+
+    // Run main
+    main();
+
+})();
