@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0](https://github.com/ThomasRohde/archi-server/compare/v1.2.0...v1.3.0) (2026-02-07)
+
+
+### Features
+
+* add archimate modeling capabilities and auditing prompts ([c35a625](https://github.com/ThomasRohde/archi-server/commit/c35a6257a9c732f01f9ffce4e09a6718c36a3183))
+* archimate modeling skills ([41d3637](https://github.com/ThomasRohde/archi-server/commit/41d36372bbca74a42c4083197fdcc6cfa7f8ebf4))
+* **tests:** add manual verification for duplicate detection feature ([c09097a](https://github.com/ThomasRohde/archi-server/commit/c09097a57a05aef6fd6c13e9c5404cba6d57d97b))
+
 ## [1.2.0](https://github.com/ThomasRohde/archi-server/compare/v1.1.0...v1.2.0) (2026-02-07)
 
 
