@@ -49,15 +49,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Thread-safe queue management
 - Graceful error handling and recovery
 
-## [Unreleased]
-
-### Planned
-- WebSocket support for real-time updates
-- Authentication middleware
-- Batch operation optimization
-- Enhanced view manipulation capabilities
-- Additional export formats
-
----
-
 [1.1.0]: https://github.com/ThomasRohde/archi-server/releases/tag/v1.1.0

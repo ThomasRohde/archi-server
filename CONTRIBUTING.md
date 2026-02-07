@@ -36,12 +36,25 @@ Enhancement suggestions are welcome! Please create an issue with:
    - Update README.md if adding features
    - Update openapi.yaml for API changes
    - Add inline code comments
-5. **Commit with clear messages**
-   - Use present tense ("Add feature" not "Added feature")
-   - Include issue references where applicable
+5. **Commit with [Conventional Commits](https://www.conventionalcommits.org/) format**
+   - Commits are validated locally by `commitlint` + `husky` — non-conforming messages are rejected
+   - Format: `<type>(<optional scope>): <description>`
+   - **Types:** `feat`, `fix`, `docs`, `chore`, `refactor`, `test`, `perf`, `ci`, `build`, `style`, `revert`
+   - **Examples:**
+     ```
+     feat: add WebSocket support for real-time updates
+     fix: correct rate limit counter reset timing
+     docs: update API examples in README
+     feat!: redesign query endpoint response format   ← breaking change
+     chore: update vitest to v2
+     refactor(endpoints): extract shared validation logic
+     ```
+   - Use `!` after the type/scope to indicate a **breaking change** (triggers major version bump)
+   - Include issue references in the body or footer: `Closes #42`
 6. **Submit the pull request**
    - Describe what changes you made and why
    - Link to any related issues
+   - Merging to `master` triggers **release-please** to open/update a Release PR automatically
 
 ## Development Setup
 
@@ -74,6 +87,23 @@ Manual testing checklist:
 ## Questions?
 
 Feel free to ask questions by creating an issue or starting a discussion on the Archi forum.
+
+## Releases
+
+Releases are fully automated via [release-please](https://github.com/googleapis/release-please):
+
+1. **Conventional Commits** drive version bumps:
+   - `feat:` → minor version bump (1.1.0 → 1.2.0)
+   - `fix:` → patch version bump (1.1.0 → 1.1.1)
+   - `feat!:` or `BREAKING CHANGE:` → major version bump (1.1.0 → 2.0.0)
+2. When commits land on `master`, release-please opens/updates a **Release PR**
+3. The Release PR accumulates changes and auto-generates the changelog
+4. **Merging the Release PR** creates a GitHub Release with:
+   - Git tag (`v1.2.0`)
+   - Auto-generated changelog
+   - Downloadable `archi-server-scripts-{version}.zip` archive
+
+You never need to manually edit `CHANGELOG.md`, bump versions, or create tags.
 
 ## Code of Conduct
 

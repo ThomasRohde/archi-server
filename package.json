@@ -11,19 +11,28 @@
     "test:unit": "vitest run --dir tests/suites/unit",
     "test:integration": "vitest run --dir tests/suites/integration",
     "test:e2e": "vitest run --dir tests/suites/e2e",
-    "test:coverage": "vitest run --dir tests/suites/unit --coverage"
+    "test:coverage": "vitest run --dir tests/suites/unit --coverage",
+    "prepare": "husky"
   },
-  "keywords": ["archimate", "test", "vitest", "api-testing"],
+  "keywords": [
+    "archimate",
+    "test",
+    "vitest",
+    "api-testing"
+  ],
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "vitest": "^1.3.0",
-    "@vitest/ui": "^1.3.0",
+    "@commitlint/cli": "^20.4.1",
+    "@commitlint/config-conventional": "^20.4.1",
     "@vitest/coverage-v8": "^1.3.0",
+    "@vitest/ui": "^1.3.0",
     "ajv": "^8.12.0",
     "ajv-formats": "^2.1.1",
+    "husky": "^9.1.7",
+    "js-yaml": "^4.1.0",
     "openapi-types": "^12.1.3",
-    "js-yaml": "^4.1.0"
+    "vitest": "^1.3.0"
   },
   "engines": {
     "node": ">=18.0.0"
