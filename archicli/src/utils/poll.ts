@@ -6,11 +6,24 @@ export interface PollOptions {
   onProgress?: (status: string, attempt: number) => void;
 }
 
+export interface OperationErrorDetails {
+  message?: string;
+  opIndex?: number;
+  opNumber?: number;
+  path?: string;
+  op?: string;
+  field?: string;
+  reference?: string;
+  hint?: string;
+  change?: Record<string, unknown>;
+}
+
 export interface OperationStatus {
   operationId: string;
   status: 'queued' | 'processing' | 'complete' | 'error';
   result?: unknown[];
   error?: string;
+  errorDetails?: OperationErrorDetails | null;
   message?: string;
   durationMs?: number;
 }

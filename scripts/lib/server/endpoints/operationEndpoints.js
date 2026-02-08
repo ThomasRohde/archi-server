@@ -69,6 +69,7 @@
                     operationId: opId,
                     status: "error",
                     error: operation.error,
+                    errorDetails: operation.errorDetails || null,
                     createdAt: operation.createdAt,
                     startedAt: operation.startedAt,
                     completedAt: operation.completedAt,

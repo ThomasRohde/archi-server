@@ -1505,6 +1505,37 @@ components:
           type: string
           nullable: true
           description: Error message (when status is error)
+        errorDetails:
+          type: object
+          nullable: true
+          description: Structured context for failed operations (when status is error)
+          properties:
+            message:
+              type: string
+            opIndex:
+              type: integer
+              description: Zero-based index in /changes array
+            opNumber:
+              type: integer
+              description: One-based operation number for human-readable output
+            path:
+              type: string
+              description: JSON pointer-like location (e.g. /changes/2)
+            op:
+              type: string
+              description: Operation type (e.g. addToView)
+            field:
+              type: string
+              description: Field involved in the failure context
+            reference:
+              type: string
+              description: Unresolved id/tempId value when detected
+            hint:
+              type: string
+              description: Short remediation hint
+            change:
+              type: object
+              description: Original change payload for the failing operation (best effort)
         message:
           type: string
           nullable: true

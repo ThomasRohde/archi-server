@@ -90,6 +90,266 @@
         },
 
         /**
+         * Fields that can contain IDs or tempIds in apply operations.
+         * @private
+         */
+        _referenceFields: [
+            "id", "sourceId", "targetId", "elementId", "viewId",
+            "relationshipId", "sourceVisualId", "targetVisualId",
+            "parentId", "folderId", "viewObjectId", "connectionId"
+        ],
+
+        /**
+         * Extract human-readable message from an error object.
+         * @param {Object|string} error - Thrown error
+         * @returns {string} Error message
+         * @private
+         */
+        _extractErrorMessage: function(error) {
+            if (!error) return "Unknown error";
+            if (typeof error === "string") return error;
+            if (error.message) return String(error.message);
+            return String(error);
+        },
+
+        /**
+         * Detect reference details from common runtime error messages.
+         * @param {string} message - Error message text
+         * @returns {Object|null} { field, reference } or null
+         * @private
+         */
+        _extractReferenceFromMessage: function(message) {
+            if (!message) return null;
+
+            var patterns = [
+                { regex: /deleteConnectionFromView:\s*cannot find view:\s*([^\r\n]+)/i, field: "viewId" },
+                { regex: /deleteView:\s*cannot find view:\s*([^\r\n]+)/i, field: "viewId" },
+                { regex: /cannot find view:\s*([^\r\n]+)/i, field: "viewId" },
+                { regex: /cannot find element to delete:\s*([^\r\n]+)/i, field: "id" },
+                { regex: /cannot find element:\s*([^\r\n]+)/i, field: "id" },
+                { regex: /cannot find relationship to delete:\s*([^\r\n]+)/i, field: "id" },
+                { regex: /cannot find relationship:\s*([^\r\n]+)/i, field: "relationshipId" },
+                { regex: /deleteConnectionFromView:\s*cannot find connection:\s*([^\r\n]+)/i, field: "connectionId" },
+                { regex: /cannot find connection in view:\s*([^\r\n]+)/i, field: "connectionId" },
+                { regex: /cannot find connection:\s*([^\r\n]+)/i, field: "connectionId" }
+            ];
+
+            for (var i = 0; i < patterns.length; i++) {
+                var m = message.match(patterns[i].regex);
+                if (m && m[1]) {
+                    var ref = String(m[1]).trim();
+                    ref = ref.replace(/^['"]/, "").replace(/['"]$/, "");
+                    return { field: patterns[i].field, reference: ref };
+                }
+            }
+
+            return null;
+        },
+
+        /**
+         * Find the most likely change operation for a given reference.
+         * @param {Array} changes - Requested changes
+         * @param {Object|null} refInfo - { field, reference } or null
+         * @returns {Object|null} { index, change, field } or null
+         * @private
+         */
+        _findChangeContext: function(changes, refInfo) {
+            if (!changes || !changes.length) return null;
+
+            var i;
+            var j;
+            var field;
+            var change;
+
+            if (refInfo && refInfo.field && refInfo.reference) {
+                for (i = 0; i < changes.length; i++) {
+                    change = changes[i];
+                    if (!change || typeof change !== "object") continue;
+                    if (change[refInfo.field] === refInfo.reference) {
+                        return { index: i, change: change, field: refInfo.field };
+                    }
+                }
+            }
+
+            if (refInfo && refInfo.reference) {
+                for (i = 0; i < changes.length; i++) {
+                    change = changes[i];
+                    if (!change || typeof change !== "object") continue;
+                    for (j = 0; j < this._referenceFields.length; j++) {
+                        field = this._referenceFields[j];
+                        if (change[field] === refInfo.reference) {
+                            return { index: i, change: change, field: field };
+                        }
+                    }
+                }
+            }
+
+            return null;
+        },
+
+        /**
+         * Best-effort semantic preflight used only for failure context.
+         * Mirrors executeBatch phase ordering to locate unresolved tempId refs.
+         * @param {Array} changes - Requested changes
+         * @returns {Object|null} Context object or null
+         * @private
+         */
+        _findFirstSemanticReferenceError: function(changes) {
+            if (!changes || !changes.length) return null;
+
+            var declaredTempIds = {};
+            var availableTempIds = {};
+            var phase3Ops = {
+                deleteConnectionFromView: true,
+                deleteElement: true,
+                deleteRelationship: true,
+                deleteView: true
+            };
+            var phase2Creators = {
+                createRelationship: true,
+                addToView: true,
+                createFolder: true,
+                createNote: true,
+                createGroup: true,
+                createView: true
+            };
+
+            var i;
+            var change;
+            var opName;
+            var tempId;
+
+            for (i = 0; i < changes.length; i++) {
+                change = changes[i];
+                if (!change || typeof change !== "object") continue;
+                tempId = change.tempId;
+                if (typeof tempId === "string" && tempId.length > 0 && !declaredTempIds[tempId]) {
+                    declaredTempIds[tempId] = {
+                        index: i,
+                        op: typeof change.op === "string" ? change.op : "unknown"
+                    };
+                }
+            }
+
+            // Phase 1: all createElement tempIds become available.
+            for (i = 0; i < changes.length; i++) {
+                change = changes[i];
+                if (!change || typeof change !== "object") continue;
+                if (change.op === "createElement" && typeof change.tempId === "string" && change.tempId.length > 0) {
+                    availableTempIds[change.tempId] = true;
+                }
+            }
+
+            function isRealId(idValue) {
+                return typeof idValue === "string" && idValue.indexOf("id-") === 0;
+            }
+
+            function checkRefs(op, index, fields, declared, available) {
+                for (var fi = 0; fi < fields.length; fi++) {
+                    var refField = fields[fi];
+                    var refValue = op[refField];
+                    if (typeof refValue !== "string" || isRealId(refValue)) continue;
+                    if (!declared[refValue]) continue;
+                    if (available[refValue]) continue;
+
+                    var decl = declared[refValue];
+                    return {
+                        index: index,
+                        change: op,
+                        field: refField,
+                        reference: refValue,
+                        hint: "tempId '" + refValue + "' is declared at /changes/" + decl.index +
+                              " (" + decl.op + ") but is not available at this execution phase"
+                    };
+                }
+                return null;
+            }
+
+            // Phase 2: non-delete mutations in request order.
+            for (i = 0; i < changes.length; i++) {
+                change = changes[i];
+                if (!change || typeof change !== "object") continue;
+                opName = typeof change.op === "string" ? change.op : "";
+                if (opName === "createElement" || phase3Ops[opName]) continue;
+
+                var issue2 = checkRefs(change, i, this._referenceFields, declaredTempIds, availableTempIds);
+                if (issue2) return issue2;
+
+                if (phase2Creators[opName] && typeof change.tempId === "string" && change.tempId.length > 0) {
+                    availableTempIds[change.tempId] = true;
+                }
+            }
+
+            // Phase 3: delete operations in request order.
+            for (i = 0; i < changes.length; i++) {
+                change = changes[i];
+                if (!change || typeof change !== "object") continue;
+                opName = typeof change.op === "string" ? change.op : "";
+                if (!phase3Ops[opName]) continue;
+
+                var issue3 = checkRefs(change, i, this._referenceFields, declaredTempIds, availableTempIds);
+                if (issue3) return issue3;
+            }
+
+            return null;
+        },
+
+        /**
+         * Build structured error details for a failed operation.
+         * @param {Object} operation - Operation descriptor
+         * @param {Object|string} error - Thrown error
+         * @returns {Object} Error details with per-op context when available
+         * @private
+         */
+        _buildOperationErrorDetails: function(operation, error) {
+            var message = this._extractErrorMessage(error);
+            var details = {
+                message: message
+            };
+
+            var refInfo = this._extractReferenceFromMessage(message);
+            var context = this._findChangeContext(operation && operation.changes ? operation.changes : [], refInfo);
+
+            if (!context) {
+                var semanticContext = this._findFirstSemanticReferenceError(operation && operation.changes ? operation.changes : []);
+                if (semanticContext) {
+                    context = semanticContext;
+                    if (!refInfo && semanticContext.reference) {
+                        refInfo = {
+                            field: semanticContext.field,
+                            reference: semanticContext.reference
+                        };
+                    }
+                    if (semanticContext.hint) {
+                        details.hint = semanticContext.hint;
+                    }
+                }
+            }
+
+            if (context) {
+                details.opIndex = context.index;
+                details.opNumber = context.index + 1;
+                details.path = "/changes/" + context.index;
+                details.op = context.change && typeof context.change.op === "string" ? context.change.op : "unknown";
+                if (context.field) {
+                    details.field = context.field;
+                }
+                if (refInfo && refInfo.reference) {
+                    details.reference = refInfo.reference;
+                } else if (context.field && context.change && typeof context.change[context.field] === "string") {
+                    details.reference = context.change[context.field];
+                }
+                details.change = context.change;
+            }
+
+            if (!details.hint && details.field && details.reference) {
+                details.hint = details.field + " refers to '" + details.reference + "' which was not resolved";
+            }
+
+            return details;
+        },
+
+        /**
          * Create operation descriptor
          * @param {Array} changes - Array of change descriptors
          * @returns {Object} Operation descriptor with id, status, changes, timestamps
@@ -102,6 +362,7 @@
                 status: "queued",
                 result: null,
                 error: null,
+                errorDetails: null,
                 createdAt: new Date().toISOString(),
                 startedAt: null,         // Timestamp when processing started
                 completedAt: null
@@ -277,6 +538,7 @@
 
                     } catch (e) {
                         var errorMsg = "Operation failed: " + operation.id + " - " + String(e);
+                        var errorDetails = self._buildOperationErrorDetails(operation, e);
 
                         // Include Java stack trace if available
                         if (e.javaException) {
@@ -289,10 +551,19 @@
 
                         if (loggingQueue) {
                             loggingQueue.error(errorMsg);
+                            if (errorDetails && errorDetails.opNumber) {
+                                loggingQueue.error(
+                                    "Operation context: change " + errorDetails.opNumber +
+                                    " (" + errorDetails.op + ")" +
+                                    (errorDetails.field ? ", field=" + errorDetails.field : "") +
+                                    (errorDetails.reference ? ", reference=" + errorDetails.reference : "")
+                                );
+                            }
                         }
 
                         operation.status = "error";
-                        operation.error = String(e);
+                        operation.error = errorDetails.message;
+                        operation.errorDetails = errorDetails;
                         operation.completedAt = new Date().toISOString();
                     }
 
@@ -335,6 +606,10 @@
                         }
                         op.status = "error";
                         op.error = "Operation timed out after " + Math.round(elapsed / 1000) + " seconds";
+                        op.errorDetails = {
+                            message: op.error,
+                            hint: "Operation exceeded timeout while in processing state"
+                        };
                         op.completedAt = new Date().toISOString();
                     }
                 }

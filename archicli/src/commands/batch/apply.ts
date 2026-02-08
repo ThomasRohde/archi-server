@@ -3,7 +3,7 @@ import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { resolve, dirname, basename, extname } from 'path';
 import { post } from '../../utils/api';
 import { print, success, failure } from '../../utils/output';
-import { pollUntilDone } from '../../utils/poll';
+import { pollUntilDone, type OperationErrorDetails } from '../../utils/poll';
 import { validate } from '../../schemas/registry';
 
 interface BomFile {
@@ -143,6 +143,51 @@ function collectTempIdRefs(changes: unknown[]): string[] {
   return [...refs].filter((r) => !r.startsWith('id-'));
 }
 
+function buildChunkFailureMessage(results: Array<Record<string, unknown>>): string {
+  const failed = results.filter((r) => r.status === 'error');
+  if (failed.length === 0) return 'One or more chunks failed';
+
+  return failed
+    .map((chunk) => {
+      const chunkNo = typeof chunk.chunk === 'number' ? chunk.chunk : '?';
+      const chunkOf = typeof chunk.of === 'number' ? chunk.of : '?';
+      const fallbackMessage =
+        typeof chunk.error === 'string' && chunk.error.length > 0
+          ? chunk.error
+          : 'operation failed';
+      const details = (chunk.errorDetails ?? null) as OperationErrorDetails | null;
+
+      if (!details || typeof details !== 'object') {
+        return `Chunk ${chunkNo}/${chunkOf}: ${fallbackMessage}`;
+      }
+
+      const message =
+        typeof details.message === 'string' && details.message.length > 0
+          ? details.message
+          : fallbackMessage;
+      const opNumber = typeof details.opNumber === 'number' ? details.opNumber : null;
+      const opName = typeof details.op === 'string' && details.op.length > 0 ? details.op : null;
+      const path = typeof details.path === 'string' && details.path.length > 0 ? details.path : null;
+      const refField = typeof details.field === 'string' && details.field.length > 0 ? details.field : null;
+      const refValue =
+        typeof details.reference === 'string' && details.reference.length > 0
+          ? details.reference
+          : null;
+      const hint = typeof details.hint === 'string' && details.hint.length > 0 ? details.hint : null;
+
+      const contextParts: string[] = [];
+      if (opNumber !== null) contextParts.push(`op ${opNumber}`);
+      if (opName) contextParts.push(opName);
+      if (!opNumber && !opName && path) contextParts.push(path);
+
+      const context = contextParts.length > 0 ? `${contextParts.join(' ')}: ` : '';
+      const ref = refField && refValue ? ` (${refField}=${refValue})` : '';
+      const hintText = hint ? ` Hint: ${hint}` : '';
+      return `Chunk ${chunkNo}/${chunkOf}: ${context}${message}${ref}${hintText}`;
+    })
+    .join(' | ');
+}
+
 export function batchApplyCommand(): Command {
   return new Command('apply')
     .description(
@@ -235,7 +280,7 @@ export function batchApplyCommand(): Command {
           const progressStream = process.stdout.isTTY ? process.stdout : null;
 
           // Submit each chunk, carrying tempId→realId map across chunks
-          const results = [];
+          const results: Array<Record<string, unknown>> = [];
           let hadOperationErrors = false;
           for (let i = 0; i < chunks.length; i++) {
             // Substitute any tempIds resolved from previous chunks or idFiles
@@ -292,7 +337,13 @@ export function batchApplyCommand(): Command {
             output['warning'] = 'Empty BOM — no changes were applied';
           }
           if (hadOperationErrors) {
-            print(failure('BATCH_APPLY_PARTIAL_FAILURE', 'One or more chunks failed', output));
+            print(
+              failure(
+                'BATCH_APPLY_PARTIAL_FAILURE',
+                buildChunkFailureMessage(results),
+                output
+              )
+            );
             cmd.error('', { exitCode: 1 });
           } else {
             print(success(output));
