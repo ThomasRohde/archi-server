@@ -42,8 +42,8 @@ export function createProgram(): Command {
     .option('-u, --base-url <url>', 'Archi server base URL', process.env['ARCHI_BASE_URL'] ?? 'http://127.0.0.1:8765')
     .option('--output <format>', 'output format: json or text', 'json')
     .option('-v, --verbose', 'enable verbose HTTP logging')
-    .hook('preAction', (thisCommand) => {
-      const opts = thisCommand.opts<{ baseUrl: string; output: 'json' | 'text'; verbose?: boolean }>();
+    .hook('preAction', (_thisCommand, actionCommand) => {
+      const opts = actionCommand.optsWithGlobals<{ baseUrl: string; output: 'json' | 'text'; verbose?: boolean }>();
       setConfig({
         baseUrl: opts.baseUrl,
         output: opts.output,

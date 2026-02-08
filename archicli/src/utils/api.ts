@@ -20,15 +20,23 @@ async function request<T>(
   const url = `${config.baseUrl}${path}`;
 
   if (config.verbose) {
-    console.error(`[${method}] ${url}`);
-    if (body) console.error(JSON.stringify(body, null, 2));
+    const out = process.stdout.isTTY ? process.stdout : process.stderr;
+    out.write(`[${method}] ${url}\n`);
+    if (body) out.write(JSON.stringify(body, null, 2) + '\n');
   }
 
-  const res = await fetch(url, {
-    method,
-    headers: { 'Content-Type': 'application/json' },
-    ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
-  });
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+    });
+  } catch (err) {
+    throw new Error(
+      `Could not connect to server at ${config.baseUrl}. Is the Archi Model API Server running? (${err})`
+    );
+  }
 
   const data = await res.json().catch(() => ({}));
 

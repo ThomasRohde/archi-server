@@ -54,3 +54,4 @@ build/
 # Testing
 coverage/
 .nyc_output/
+archimate-plugin/

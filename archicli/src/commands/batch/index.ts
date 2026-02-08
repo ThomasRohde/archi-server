@@ -15,18 +15,34 @@ export function batchCommand(): Command {
         '    "idFiles": ["prev.ids.json", ...]  // pre-load tempId->realId mappings\n' +
         '  }\n\n' +
         'OPERATION TYPES (each object has an "op" field plus required fields):\n' +
-        '  createElement     type, name, [tempId, documentation, folder]\n' +
-        '  createRelationship type, sourceId, targetId, [tempId, name]\n' +
-        '  setProperty       id, key, value\n' +
-        '  updateElement     id, [name, documentation]\n' +
-        '  deleteElement     id\n' +
-        '  createView        name, [tempId, documentation]\n' +
-        '  addToView         viewId, elementId, [x, y, width, height, tempId]\n' +
-        '  addConnectionToView viewId, relationshipId\n\n' +
+        '  createElement          type, name, [tempId, documentation, folder]\n' +
+        '  createRelationship     type, sourceId, targetId, [tempId, name]\n' +
+        '  updateElement          id, [name, documentation]\n' +
+        '  updateRelationship     id, [name, documentation]\n' +
+        '  deleteElement          id\n' +
+        '  deleteRelationship     id\n' +
+        '  setProperty            id, key, value\n' +
+        '  createView             name, [tempId, documentation]\n' +
+        '  createFolder           name, [parentId]\n' +
+        '  moveToFolder           id, folderId\n' +
+        '  addToView              viewId, elementId, [x, y, width, height, tempId]\n' +
+        '  addConnectionToView    viewId, relationshipId\n' +
+        '  deleteConnectionFromView viewId, connectionId\n' +
+        '  moveViewObject         viewId, viewObjectId, x, y\n' +
+        '  styleViewObject        viewId, viewObjectId, [fillColor, lineColor, fontColor, ...]\n' +
+        '  styleConnection        viewId, connectionId, [lineColor, fontColor, ...]\n' +
+        '  createNote             viewId, content, [x, y, width, height, tempId]\n' +
+        '  createGroup            viewId, name, [x, y, width, height, tempId]\n\n' +
         'TEMPID SYSTEM: Assign "tempId" on any create op. Later ops in the same batch\n' +
         '  can use that tempId as the value for id/sourceId/targetId/viewId/elementId.\n' +
         '  After --poll completes, mappings are saved to <file>.ids.json automatically.'
     )
+    .action(function (this: Command) {
+      if (this.args.length > 0) {
+        this.error(`unknown command '${this.args[0]}'`);
+      }
+      this.help();
+    })
     .addCommand(batchApplyCommand())
     .addCommand(batchSplitCommand());
 }

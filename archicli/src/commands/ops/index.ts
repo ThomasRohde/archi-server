@@ -9,5 +9,11 @@ export function opsCommand(): Command {
         'operationId immediately. Use "ops status <id> --poll" to wait for completion.\n\n' +
         'TIP: Use "batch apply --poll" for batch workflows — it polls automatically.'
     )
+    .action(function (this: Command) {
+      if (this.args.length > 0) {
+        this.error(`unknown command '${this.args[0]}'`);
+      }
+      this.help();
+    })
     .addCommand(opsStatusCommand());
 }

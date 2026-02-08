@@ -45,6 +45,47 @@
     { "required": ["idFiles"] }
   ],
   "definitions": {
+    "ElementType": {
+      "type": "string",
+      "description": "Valid ArchiMate element type in kebab-case",
+      "enum": [
+        "resource", "capability", "value-stream", "course-of-action",
+        "business-actor", "business-role", "business-collaboration",
+        "business-interface", "business-process", "business-function",
+        "business-interaction", "business-event", "business-service",
+        "business-object", "contract", "representation", "product",
+        "application-component", "application-collaboration",
+        "application-interface", "application-function",
+        "application-interaction", "application-process",
+        "application-event", "application-service", "data-object",
+        "node", "device", "system-software", "technology-collaboration",
+        "technology-interface", "path", "communication-network",
+        "technology-function", "technology-process", "technology-interaction",
+        "technology-event", "technology-service", "artifact",
+        "equipment", "facility", "distribution-network", "material",
+        "stakeholder", "driver", "assessment", "goal", "outcome",
+        "principle", "requirement", "constraint", "meaning", "value",
+        "work-package", "deliverable", "implementation-event", "plateau", "gap",
+        "location", "grouping", "junction"
+      ]
+    },
+    "RelationshipType": {
+      "type": "string",
+      "description": "Valid ArchiMate relationship type",
+      "enum": [
+        "composition-relationship",
+        "aggregation-relationship",
+        "assignment-relationship",
+        "realization-relationship",
+        "serving-relationship",
+        "access-relationship",
+        "influence-relationship",
+        "triggering-relationship",
+        "flow-relationship",
+        "specialization-relationship",
+        "association-relationship"
+      ]
+    },
     "ChangeOperation": {
       "type": "object",
       "required": ["op"],
@@ -70,7 +111,8 @@
             "styleConnection",
             "moveViewObject",
             "createNote",
-            "createGroup"
+            "createGroup",
+            "createView"
           ]
         }
       },
@@ -80,11 +122,39 @@
       "then": {
         "required": ["op", "type", "name"],
         "properties": {
-          "type": { "type": "string", "description": "ArchiMate element type (e.g. 'application-component')" },
+          "type": { "$ref": "#/definitions/ElementType" },
           "name": { "type": "string" },
           "tempId": { "type": "string", "description": "Temporary ID for cross-referencing within the same batch" },
           "documentation": { "type": "string" },
           "folder": { "type": "string", "description": "Target folder path or ID" }
+        }
+      },
+      "else": {
+        "if": {
+          "properties": { "op": { "const": "createRelationship" } }
+        },
+        "then": {
+          "required": ["op", "type", "sourceId", "targetId"],
+          "properties": {
+            "type": { "$ref": "#/definitions/RelationshipType" },
+            "sourceId": { "type": "string", "description": "Source element ID or tempId" },
+            "targetId": { "type": "string", "description": "Target element ID or tempId" },
+            "tempId": { "type": "string", "description": "Temporary ID for cross-referencing within the same batch" },
+            "name": { "type": "string" }
+          }
+        },
+        "else": {
+          "if": {
+            "properties": { "op": { "const": "createView" } }
+          },
+          "then": {
+            "required": ["op", "name"],
+            "properties": {
+              "name": { "type": "string" },
+              "tempId": { "type": "string", "description": "Temporary ID for cross-referencing within the same batch" },
+              "documentation": { "type": "string" }
+            }
+          }
         }
       }
     }

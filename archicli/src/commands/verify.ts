@@ -58,16 +58,10 @@ export function verifyCommand(): Command {
         }
 
         const result = validate(schema, data);
-        print(
-          success({
-            file,
-            schema,
-            valid: result.valid,
-            errors: result.errors,
-          })
-        );
-
-        if (!result.valid) {
+        if (result.valid) {
+          print(success({ file, schema, valid: true }));
+        } else {
+          print(failure('VALIDATION_FAILED', 'File failed schema validation', { file, schema, errors: result.errors }));
           cmd.error('', { exitCode: 1 });
         }
       } catch (err) {

@@ -13,6 +13,12 @@ export function modelCommand(): Command {
         'For large batches of changes, use "batch apply" instead of "model apply".\n' +
         'It handles chunking, polling, and tempId persistence automatically.'
     )
+    .action(function (this: Command) {
+      if (this.args.length > 0) {
+        this.error(`unknown command '${this.args[0]}'`);
+      }
+      this.help();
+    })
     .addCommand(modelQueryCommand())
     .addCommand(modelApplyCommand())
     .addCommand(modelSearchCommand())

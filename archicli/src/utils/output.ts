@@ -50,7 +50,13 @@ function formatText(data: unknown): string {
   if (data === undefined || data === null) return '';
   if (typeof data === 'string') return data;
   if (typeof data !== 'object') return String(data);
-  return JSON.stringify(data, null, 2);
+  const obj = data as Record<string, unknown>;
+  return Object.entries(obj)
+    .map(([k, v]) => {
+      if (v === null || typeof v !== 'object') return `${k}: ${v}`;
+      return `${k}:\n${JSON.stringify(v, null, 2).split('\n').map((l) => '  ' + l).join('\n')}`;
+    })
+    .join('\n');
 }
 
 export function printRaw(data: unknown): void {

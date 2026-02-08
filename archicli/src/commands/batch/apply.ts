@@ -80,7 +80,11 @@ function substituteIds(chunk: unknown[], map: Record<string, string>): unknown[]
   return chunk.map((op) => {
     const o = op as Record<string, unknown>;
     const patched: Record<string, unknown> = { ...o };
-    for (const field of ['id', 'sourceId', 'targetId'] as const) {
+    for (const field of [
+      'id', 'sourceId', 'targetId', 'elementId', 'viewId',
+      'relationshipId', 'sourceVisualId', 'targetVisualId',
+      'parentId', 'folderId', 'viewObjectId', 'connectionId',
+    ]) {
       const v = o[field];
       if (typeof v === 'string' && map[v]) patched[field] = map[v];
     }
@@ -126,7 +130,11 @@ function collectTempIdRefs(changes: unknown[]): string[] {
   const refs = new Set<string>();
   for (const op of changes) {
     const o = op as Record<string, unknown>;
-    for (const field of ['id', 'sourceId', 'targetId']) {
+    for (const field of [
+      'id', 'sourceId', 'targetId', 'elementId', 'viewId',
+      'relationshipId', 'sourceVisualId', 'targetVisualId',
+      'parentId', 'folderId', 'viewObjectId', 'connectionId',
+    ]) {
       const v = o[field];
       if (typeof v === 'string') refs.add(v);
     }
@@ -223,6 +231,9 @@ export function batchApplyCommand(): Command {
             }
           }
 
+          // Progress stream: use stdout in TTY mode (ensures ordering), suppress when piped
+          const progressStream = process.stdout.isTTY ? process.stdout : null;
+
           // Submit each chunk, carrying tempId→realId map across chunks
           const results = [];
           for (let i = 0; i < chunks.length; i++) {
@@ -241,10 +252,10 @@ export function batchApplyCommand(): Command {
               const pollResult = await pollUntilDone(resp.operationId, {
                 timeoutMs: parseInt(options.pollTimeout, 10) || 60_000,
                 onProgress: (status, attempt) => {
-                  process.stderr.write(`\r  Chunk ${i + 1}/${chunks.length}: ${status} (${attempt})  `);
+                  progressStream?.write(`\r  Chunk ${i + 1}/${chunks.length}: ${status} (${attempt})  `);
                 },
               });
-              process.stderr.write('\n');
+              progressStream?.write('\n');
               chunkResult = { ...chunkResult, ...pollResult };
               // Collect tempId→realId mappings from completed chunk results
               const opResults = (pollResult as { result?: Array<{ tempId?: string; realId?: string }> }).result ?? [];
@@ -266,13 +277,15 @@ export function batchApplyCommand(): Command {
             writeFileSync(idsPath, JSON.stringify(tempIdMap, null, 2));
           }
 
-          print(
-            success({
-              totalChanges: allChanges.length,
-              chunks: chunks.length,
-              results,
-            })
-          );
+          const output: Record<string, unknown> = {
+            totalChanges: allChanges.length,
+            chunks: chunks.length,
+            results,
+          };
+          if (allChanges.length === 0) {
+            output['warning'] = 'Empty BOM — no changes were applied';
+          }
+          print(success(output));
         } catch (err) {
           print(failure('BATCH_APPLY_FAILED', String(err)));
           cmd.error('', { exitCode: 1 });

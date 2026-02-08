@@ -13,6 +13,12 @@ export function viewCommand(): Command {
         'NOTE: addConnectionToView requires VISUAL IDs (from addToView results),\n' +
         'not the element concept IDs. Use "view get <id>" to inspect existing visual IDs.'
     )
+    .action(function (this: Command) {
+      if (this.args.length > 0) {
+        this.error(`unknown command '${this.args[0]}'`);
+      }
+      this.help();
+    })
     .addCommand(viewListCommand())
     .addCommand(viewGetCommand())
     .addCommand(viewCreateCommand())
