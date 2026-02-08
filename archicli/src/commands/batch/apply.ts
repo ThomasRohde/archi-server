@@ -261,10 +261,11 @@ export function batchApplyCommand(): Command {
               if ((pollResult as { status?: string }).status === 'error') {
                 hadOperationErrors = true;
               }
-              // Collect tempId→realId/visualId/viewId/noteId/groupId mappings from completed chunk results
+              // Collect tempId→realId/visualId/noteId/groupId/viewId mappings from completed chunk results.
+              // Prefer note/group IDs over viewId to avoid mapping note/group tempIds to the parent view.
               const opResults = (pollResult as { result?: Array<{ tempId?: string; realId?: string; visualId?: string; viewId?: string; noteId?: string; groupId?: string }> }).result ?? [];
               for (const r of opResults) {
-                const id = r.realId ?? r.visualId ?? r.viewId ?? r.noteId ?? r.groupId;
+                const id = r.realId ?? r.visualId ?? r.noteId ?? r.groupId ?? r.viewId;
                 if (r.tempId && id) tempIdMap[r.tempId] = id;
               }
             }

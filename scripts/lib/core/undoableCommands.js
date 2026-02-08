@@ -2174,7 +2174,7 @@
             }
             else if (operation.op === "createNote") {
                 // Create a note in a view
-                var viewForNote = findViewById(model, operation.viewId);
+                var viewForNote = idMap[operation.viewId] || findViewById(model, operation.viewId);
                 if (!viewForNote) {
                     throw new Error("Cannot find view: " + operation.viewId);
                 }
@@ -2213,7 +2213,7 @@
             }
             else if (operation.op === "createGroup") {
                 // Create a visual group in a view
-                var viewForGroup = findViewById(model, operation.viewId);
+                var viewForGroup = idMap[operation.viewId] || findViewById(model, operation.viewId);
                 if (!viewForGroup) {
                     throw new Error("Cannot find view: " + operation.viewId);
                 }
