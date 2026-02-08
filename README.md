@@ -13,6 +13,7 @@
 - [Installation](#installation)
 - [Project Structure](#project-structure)
 - [Usage](#usage)
+- [CLI (archicli)](#cli-archicli)
 - [API Reference](#api-reference)
 - [Configuration](#configuration)
 - [Security](#security)
@@ -26,6 +27,7 @@
 
 ## Features
 
+- 🖥️ **CLI (archicli)** - TypeScript command-line tool for scripted and agent-driven workflows
 - 🔄 **Model Automation** - Create, query, and modify elements programmatically
 - 🔌 **External Integration** - Connect with Python, Node.js, or any HTTP client
 - 📊 **View Generation** - Dynamically create and layout ArchiMate views
@@ -55,6 +57,76 @@ git clone https://github.com/ThomasRohde/archi-server.git ~/Documents/Archi/scri
 ```
 
 Or download and extract the [latest release](https://github.com/ThomasRohde/archi-server/releases) to your Archi scripts folder.
+
+## CLI (archicli)
+
+`archicli` is a TypeScript CLI in the `archicli/` directory that provides a structured interface to the API server — designed for scripted workflows, AI agents, and CI/CD pipelines.
+
+### Install
+
+```bash
+cd archicli
+npm install
+npm run build
+npm link          # makes `archicli` available globally
+```
+
+### Quick start
+
+```bash
+archicli health                                  # verify server is running
+archicli model query                             # inspect the model
+archicli model search --type application-component
+archicli verify changes.json                     # validate a BOM file
+archicli batch apply changes.json --poll         # apply and wait for results
+```
+
+### Bill of Materials (BOM) files
+
+Changes are described in JSON BOM files. The `batch apply` command handles validation, chunking (up to 1000 ops per request), polling, and tempId→realId persistence automatically:
+
+```json
+{
+  "version": "1.0",
+  "description": "Create application layer",
+  "includes": ["parts/elements.json"],
+  "idFiles": ["previous.ids.json"],
+  "changes": [
+    { "op": "createElement", "type": "application-component", "name": "My Server", "tempId": "my-server" },
+    { "op": "setProperty", "id": "my-server", "key": "status", "value": "active" },
+    { "op": "createRelationship", "type": "serving-relationship", "sourceId": "my-server", "targetId": "other-element" }
+  ]
+}
+```
+
+After `--poll` completes, `changes.ids.json` is written containing all tempId→realId mappings for use in subsequent BOM files.
+
+### Key concepts
+
+| Concept | Description |
+|---------|-------------|
+| **tempId** | Friendly name assigned at authoring time (e.g. `"my-server"`). Resolved to a real Archi ID at runtime. Later ops in the same batch can reference earlier tempIds. |
+| **Async mutations** | `/model/apply` is async — always use `--poll` or `ops status <id>` to confirm success. |
+| **Views vs elements** | Elements exist in the model tree independently. Views are diagrams; use `addToView` + `addConnectionToView` to populate them. |
+| **Visual IDs** | `addToView` returns a `visualId` (diagram object) distinct from the element `conceptId`. `addConnectionToView` needs visual IDs. |
+
+### All commands
+
+```
+archicli health                      Check server connectivity and model stats
+archicli verify <file>               Validate BOM JSON before sending
+archicli model query                 Model overview: counts + sample elements
+archicli model search [options]      Search by type, name, or property
+archicli model element <id>          Full detail for one element
+archicli model apply <file> --poll   Low-level single-file apply
+archicli batch apply <file> --poll   Apply BOM with auto-chunking + polling
+archicli batch split <file>          Split large BOM into linked chunk files
+archicli view list                   List all views
+archicli view get <id>               View detail with visual object IDs
+archicli view create <name>          Create empty view
+archicli view export <id>            Export view as PNG/JPEG
+archicli ops status <opId> --poll    Poll async operation to completion
+```
 
 ## Project Structure
 
@@ -88,6 +160,23 @@ archi-server/
 │       │       └── viewEndpoints.js
 │       └── vendor/
 │           └── dagre.min.js       # Layout engine
+├── archicli/                      # TypeScript CLI (Node.js, npm install)
+│   ├── src/
+│   │   ├── cli.ts                 # Entry point
+│   │   ├── index.ts               # Program factory
+│   │   ├── commands/              # health, verify, batch, model, view, ops
+│   │   ├── schemas/               # BOM JSON schema + validator
+│   │   └── utils/                 # api, config, output, poll helpers
+│   ├── package.json
+│   └── tsconfig.json
+├── model/                         # Example BOM files documenting this project
+│   ├── index.json                 # Master BOM (uses includes)
+│   ├── 01-strategy.json           # Capabilities and value streams
+│   ├── 02-business.json           # Actors, roles, processes
+│   ├── 03-application.json        # Server components
+│   ├── 04-technology.json         # Runtime environment
+│   ├── 05-relationships.json      # Cross-layer relationships
+│   └── 06-views.json              # Views with element placement
 ├── .claude/                       # Claude Code integration
 │   ├── skills/                    # Shared AI agent skills (Agent Skills standard)
 │   │   ├── archi-server-api/      # API execution reference
@@ -122,15 +211,16 @@ archi-server/
 Verify the server is running:
 
 ```bash
-# Check server health
-curl http://localhost:8765/health
+# Using the CLI (recommended for scripting and agents)
+archicli health
+archicli model query
+archicli model search --type application-component
 
-# Query model elements
+# Or using curl directly
+curl http://localhost:8765/health
 curl -X POST http://localhost:8765/model/query \
   -H "Content-Type: application/json" \
-  -d '{"query": "elements"}'
-
-# List views
+  -d '{}'
 curl http://localhost:8765/views
 ```
 

@@ -5,7 +5,15 @@
       "Bash(npm test:*)",
       "Bash(npx vitest:*)",
       "Bash(npm run test:integration:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "WebFetch(domain:maxschmitt.me)",
+      "WebFetch(domain:github.com)",
+      "Bash(npx @hey-api/openapi-ts:*)",
+      "Bash(node dist/cli.js:*)",
+      "Bash(archicli health:*)",
+      "Bash(archicli batch apply:*)",
+      "Bash(node archicli/dist/cli.js batch apply:*)",
+      "Bash(node archicli/dist/cli.js health:*)"
     ]
   }
 }

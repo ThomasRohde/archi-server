@@ -1,0 +1,210 @@
+{
+  "version": "1.0",
+  "description": "Application layer — all server components, endpoints, interfaces and data objects",
+  "changes": [
+    {
+      "op": "createElement",
+      "type": "application-component",
+      "name": "Model API Server",
+      "tempId": "comp-server",
+      "documentation": "Main entry point script (scripts/Model API Server.ajs). Loads all library modules via load(), wires up HTTP routes through the router, creates the Monitor UI dialog, and starts the HTTP server. Bootstraps the entire system. Must be run from inside Archi with a model open and at least one view active.",
+      "folder": "Application"
+    },
+    { "op": "setProperty", "id": "comp-server", "key": "layer", "value": "Application" },
+    { "op": "setProperty", "id": "comp-server", "key": "source-file", "value": "scripts/Model API Server.ajs" },
+    { "op": "setProperty", "id": "comp-server", "key": "status", "value": "active" },
+    {
+      "op": "createElement",
+      "type": "application-component",
+      "name": "Server Core",
+      "tempId": "comp-core",
+      "documentation": "HTTP server wrapper around com.sun.net.httpserver.HttpServer (scripts/lib/core/serverCore.js). Handles request parsing, response writing, rate limiting (200 req/min default), CORS headers, security headers, and request body size limits (1 MB). Routes incoming HTTP requests to registered handler functions.",
+      "folder": "Application"
+    },
+    { "op": "setProperty", "id": "comp-core", "key": "layer", "value": "Application" },
+    { "op": "setProperty", "id": "comp-core", "key": "source-file", "value": "scripts/lib/core/serverCore.js" },
+    { "op": "setProperty", "id": "comp-core", "key": "status", "value": "active" },
+    { "op": "setProperty", "id": "comp-core", "key": "rate-limit", "value": "200 req/min per IP" },
+    {
+      "op": "createElement",
+      "type": "application-component",
+      "name": "Server Configuration",
+      "tempId": "comp-config",
+      "documentation": "Centralised configuration module (scripts/lib/server/serverConfig.js). Defines port (8765), host binding (127.0.0.1), rate limits, request size limits (1 MB), operation timeouts (60s), CORS allowed origins, and security response headers. All other modules read config from this single source of truth.",
+      "folder": "Application"
+    },
+    { "op": "setProperty", "id": "comp-config", "key": "layer", "value": "Application" },
+    { "op": "setProperty", "id": "comp-config", "key": "source-file", "value": "scripts/lib/server/serverConfig.js" },
+    { "op": "setProperty", "id": "comp-config", "key": "status", "value": "active" },
+    { "op": "setProperty", "id": "comp-config", "key": "default-port", "value": "8765" },
+    {
+      "op": "createElement",
+      "type": "application-component",
+      "name": "Operation Queue",
+      "tempId": "comp-op-queue",
+      "documentation": "Asynchronous operation queue (scripts/lib/server/operationQueue.js). Accepts model mutation requests from HTTP threads, queues them, and processes batches every ~50ms via Display.timerExec on the SWT Display Thread. Tracks operation status (queued, processing, complete, error) keyed by operationId for /ops/status polling.",
+      "folder": "Application"
+    },
+    { "op": "setProperty", "id": "comp-op-queue", "key": "layer", "value": "Application" },
+    { "op": "setProperty", "id": "comp-op-queue", "key": "source-file", "value": "scripts/lib/server/operationQueue.js" },
+    { "op": "setProperty", "id": "comp-op-queue", "key": "status", "value": "active" },
+    { "op": "setProperty", "id": "comp-op-queue", "key": "processing-interval", "value": "50ms via Display.timerExec" },
+    {
+      "op": "createElement",
+      "type": "application-component",
+      "name": "Undoable Commands",
+      "tempId": "comp-undoable",
+      "documentation": "Core command execution module (scripts/lib/core/undoableCommands.js). Wraps all ArchiMate model mutations in Eclipse GEF CompoundCommand objects so they are tracked in Archi's undo/redo stack. Implements createElement, createRelationship, setProperty, updateElement, deleteElement, and all view operations as undoable units. The executeBatch function processes BOM change arrays as a single compound command.",
+      "folder": "Application"
+    },
+    { "op": "setProperty", "id": "comp-undoable", "key": "layer", "value": "Application" },
+    { "op": "setProperty", "id": "comp-undoable", "key": "source-file", "value": "scripts/lib/core/undoableCommands.js" },
+    { "op": "setProperty", "id": "comp-undoable", "key": "status", "value": "active" },
+    { "op": "setProperty", "id": "comp-undoable", "key": "pattern", "value": "GEF CompoundCommand wrapping all mutations" },
+    {
+      "op": "createElement",
+      "type": "application-component",
+      "name": "Operation Validation",
+      "tempId": "comp-validation",
+      "documentation": "Pre-execution validation module (scripts/lib/server/operationValidation.js). Validates all operations in a batch before execution begins: checks ArchiMate type names against allowed lists, verifies required fields (name, type, sourceId, targetId, etc.), validates relationship source/target compatibility, and catches type mismatches. Prevents partial execution of invalid batches.",
+      "folder": "Application"
+    },
+    { "op": "setProperty", "id": "comp-validation", "key": "layer", "value": "Application" },
+    { "op": "setProperty", "id": "comp-validation", "key": "source-file", "value": "scripts/lib/server/operationValidation.js" },
+    { "op": "setProperty", "id": "comp-validation", "key": "status", "value": "active" },
+    {
+      "op": "createElement",
+      "type": "application-component",
+      "name": "Model Snapshot",
+      "tempId": "comp-snapshot",
+      "documentation": "Efficient read-only model serialisation module (scripts/lib/server/modelSnapshot.js). Traverses the Archi model graph and produces a structured JSON snapshot containing all elements, relationships, properties, and optionally view metadata. Used by /model/query and /model/search to avoid repeated model traversals within a single request.",
+      "folder": "Application"
+    },
+    { "op": "setProperty", "id": "comp-snapshot", "key": "layer", "value": "Application" },
+    { "op": "setProperty", "id": "comp-snapshot", "key": "source-file", "value": "scripts/lib/server/modelSnapshot.js" },
+    { "op": "setProperty", "id": "comp-snapshot", "key": "status", "value": "active" },
+    {
+      "op": "createElement",
+      "type": "application-component",
+      "name": "Folder Cache",
+      "tempId": "comp-folder-cache",
+      "documentation": "Performance-optimised folder lookup cache (scripts/lib/server/folderCache.js). Caches the mapping between ArchiMate element types and their target folders in the model. Avoids repeated tree traversals when placing new elements into the correct folder during batch operations.",
+      "folder": "Application"
+    },
+    { "op": "setProperty", "id": "comp-folder-cache", "key": "layer", "value": "Application" },
+    { "op": "setProperty", "id": "comp-folder-cache", "key": "source-file", "value": "scripts/lib/server/folderCache.js" },
+    { "op": "setProperty", "id": "comp-folder-cache", "key": "status", "value": "active" },
+    {
+      "op": "createElement",
+      "type": "application-component",
+      "name": "Logging Queue",
+      "tempId": "comp-log-queue",
+      "documentation": "Thread-safe logging queue (scripts/lib/server/loggingQueue.js). Collects log messages from HTTP handler threads and flushes them to the Monitor UI in batches on the Display Thread. Prevents UI freezes caused by high-frequency log writes during busy API traffic.",
+      "folder": "Application"
+    },
+    { "op": "setProperty", "id": "comp-log-queue", "key": "layer", "value": "Application" },
+    { "op": "setProperty", "id": "comp-log-queue", "key": "source-file", "value": "scripts/lib/server/loggingQueue.js" },
+    { "op": "setProperty", "id": "comp-log-queue", "key": "status", "value": "active" },
+    {
+      "op": "createElement",
+      "type": "application-component",
+      "name": "Monitor UI",
+      "tempId": "comp-monitor",
+      "documentation": "SWT dialog providing real-time server monitoring (scripts/lib/server/monitorUI.js). Displays request counts, active operations, error rates, and scrolling log output. Provides Stop Server button. Built using Eclipse SWT GridLayout with periodic refresh via Display.timerExec.",
+      "folder": "Application"
+    },
+    { "op": "setProperty", "id": "comp-monitor", "key": "layer", "value": "Application" },
+    { "op": "setProperty", "id": "comp-monitor", "key": "source-file", "value": "scripts/lib/server/monitorUI.js" },
+    { "op": "setProperty", "id": "comp-monitor", "key": "status", "value": "active" },
+    {
+      "op": "createElement",
+      "type": "application-component",
+      "name": "Layout Engine",
+      "tempId": "comp-layout",
+      "documentation": "Automatic graph layout component (scripts/lib/server/layoutDagreHeadless.js). Implements the Dagre directed-graph layout algorithm for ArchiMate views. Called by POST /views/{id}/layout to arrange view elements automatically based on their relationships. Outputs node positions and edge bendpoints.",
+      "folder": "Application"
+    },
+    { "op": "setProperty", "id": "comp-layout", "key": "layer", "value": "Application" },
+    { "op": "setProperty", "id": "comp-layout", "key": "source-file", "value": "scripts/lib/server/layoutDagreHeadless.js" },
+    { "op": "setProperty", "id": "comp-layout", "key": "status", "value": "active" },
+    { "op": "setProperty", "id": "comp-layout", "key": "algorithm", "value": "Dagre (directed acyclic graph)" },
+    {
+      "op": "createElement",
+      "type": "application-component",
+      "name": "API Endpoints Facade",
+      "tempId": "comp-endpoints",
+      "documentation": "Facade module that loads and exports all endpoint handler modules (scripts/lib/server/apiEndpoints.js). Acts as a single aggregation point — the main server script imports this module and registers all routes from it. Decouples endpoint logic from server bootstrap.",
+      "folder": "Application"
+    },
+    { "op": "setProperty", "id": "comp-endpoints", "key": "layer", "value": "Application" },
+    { "op": "setProperty", "id": "comp-endpoints", "key": "source-file", "value": "scripts/lib/server/apiEndpoints.js" },
+    { "op": "setProperty", "id": "comp-endpoints", "key": "status", "value": "active" },
+    {
+      "op": "createElement",
+      "type": "application-component",
+      "name": "Health Endpoints",
+      "tempId": "comp-health-ep",
+      "documentation": "Handles /health (server status, model info, memory), /test (simple echo), and /shutdown (graceful stop) endpoints (scripts/lib/server/endpoints/healthEndpoints.js). /health is the primary connectivity check — returns model element/relationship counts and server uptime.",
+      "folder": "Application"
+    },
+    { "op": "setProperty", "id": "comp-health-ep", "key": "layer", "value": "Application" },
+    { "op": "setProperty", "id": "comp-health-ep", "key": "source-file", "value": "scripts/lib/server/endpoints/healthEndpoints.js" },
+    { "op": "setProperty", "id": "comp-health-ep", "key": "routes", "value": "GET /health, GET /test, POST /shutdown" },
+    {
+      "op": "createElement",
+      "type": "application-component",
+      "name": "Model Endpoints",
+      "tempId": "comp-model-ep",
+      "documentation": "Handles all /model/* routes (scripts/lib/server/endpoints/modelEndpoints.js): POST /model/query (graph traversal), POST /model/apply (async batch mutation), POST /model/search (element search), GET /model/element/{id} (element detail with relationships), POST /model/plan (dry-run analysis), and POST /model/save (persist to disk).",
+      "folder": "Application"
+    },
+    { "op": "setProperty", "id": "comp-model-ep", "key": "layer", "value": "Application" },
+    { "op": "setProperty", "id": "comp-model-ep", "key": "source-file", "value": "scripts/lib/server/endpoints/modelEndpoints.js" },
+    { "op": "setProperty", "id": "comp-model-ep", "key": "routes", "value": "POST /model/query, POST /model/apply, POST /model/search, GET /model/element/{id}, POST /model/plan, POST /model/save" },
+    {
+      "op": "createElement",
+      "type": "application-component",
+      "name": "View Endpoints",
+      "tempId": "comp-view-ep",
+      "documentation": "Handles all /views/* routes (scripts/lib/server/endpoints/viewEndpoints.js): GET /views (list all), GET /views/{id} (single view with element positions), POST /views (create), DELETE /views/{id}, POST /views/{id}/layout (Dagre auto-layout), POST /views/{id}/export (PNG or JSON export).",
+      "folder": "Application"
+    },
+    { "op": "setProperty", "id": "comp-view-ep", "key": "layer", "value": "Application" },
+    { "op": "setProperty", "id": "comp-view-ep", "key": "source-file", "value": "scripts/lib/server/endpoints/viewEndpoints.js" },
+    { "op": "setProperty", "id": "comp-view-ep", "key": "routes", "value": "GET /views, GET /views/{id}, POST /views, DELETE /views/{id}, POST /views/{id}/layout, POST /views/{id}/export" },
+    {
+      "op": "createElement",
+      "type": "application-component",
+      "name": "Operation Endpoints",
+      "tempId": "comp-op-ep",
+      "documentation": "Handles the /ops/* routes (scripts/lib/server/endpoints/operationEndpoints.js): GET /ops/status?opId=... returns the current state and result of an async operation (queued, processing, complete, error). Clients poll this endpoint after submitting a /model/apply request.",
+      "folder": "Application"
+    },
+    { "op": "setProperty", "id": "comp-op-ep", "key": "layer", "value": "Application" },
+    { "op": "setProperty", "id": "comp-op-ep", "key": "source-file", "value": "scripts/lib/server/endpoints/operationEndpoints.js" },
+    { "op": "setProperty", "id": "comp-op-ep", "key": "routes", "value": "GET /ops/status" },
+    {
+      "op": "createElement",
+      "type": "application-interface",
+      "name": "REST API",
+      "tempId": "iface-rest",
+      "documentation": "HTTP REST API interface exposed on http://127.0.0.1:8765. All endpoints accept and return JSON. Bound to localhost only — not designed for network exposure. Protected by rate limiting, CORS controls, and request size limits defined in serverConfig.js.",
+      "folder": "Application"
+    },
+    { "op": "setProperty", "id": "iface-rest", "key": "layer", "value": "Application" },
+    { "op": "setProperty", "id": "iface-rest", "key": "status", "value": "active" },
+    { "op": "setProperty", "id": "iface-rest", "key": "binding", "value": "http://127.0.0.1:8765" },
+    { "op": "setProperty", "id": "iface-rest", "key": "content-type", "value": "application/json" },
+    {
+      "op": "createElement",
+      "type": "data-object",
+      "name": "Operation Result",
+      "tempId": "data-op-result",
+      "documentation": "Data object representing the outcome of an asynchronous model operation. Contains: operationId, status (queued/processing/complete/error), result array (one entry per change with op, realId, tempId mappings), error message if failed, and timing metadata (createdAt, startedAt, completedAt, durationMs). Stored in the operation queue keyed by operationId.",
+      "folder": "Application"
+    },
+    { "op": "setProperty", "id": "data-op-result", "key": "layer", "value": "Application" },
+    { "op": "setProperty", "id": "data-op-result", "key": "status", "value": "active" },
+    { "op": "setProperty", "id": "data-op-result", "key": "storage", "value": "In-memory Map in operationQueue" }
+  ]
+}

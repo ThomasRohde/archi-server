@@ -1,0 +1,45 @@
+{
+  "name": "archi-server-cli",
+  "version": "0.1.0",
+  "description": "CLI for the Archi Model API Server — automation, batch operations, and model management",
+  "bin": {
+    "archicli": "dist/cli.js"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "src/schemas",
+    "README.md"
+  ],
+  "scripts": {
+    "codegen": "openapi-ts",
+    "build": "tsc && node -e \"const fs=require('fs');fs.mkdirSync('dist/schemas',{recursive:true});fs.readdirSync('src/schemas').filter(f=>f.endsWith('.json')).forEach(f=>fs.copyFileSync('src/schemas/'+f,'dist/schemas/'+f))\"",
+    "dev": "tsx src/cli.ts",
+    "prepublishOnly": "npm run codegen && npm run build"
+  },
+  "keywords": [
+    "archimate",
+    "archi",
+    "cli",
+    "automation",
+    "modeling"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@hey-api/client-fetch": "^0.13.1",
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
+    "commander": "^12.1.0"
+  },
+  "devDependencies": {
+    "@hey-api/openapi-ts": "^0.92.3",
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

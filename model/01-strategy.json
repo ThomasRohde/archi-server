@@ -1,0 +1,61 @@
+{
+  "version": "1.0",
+  "description": "Strategy layer — strategic capabilities and value streams of the Archi Model API Server",
+  "changes": [
+    {
+      "op": "createElement",
+      "type": "capability",
+      "name": "Model Automation",
+      "tempId": "cap-automation",
+      "documentation": "Strategic capability to create, update and delete ArchiMate model elements, relationships, views and properties programmatically via a REST API. Enables treating architecture models as living artefacts managed through automation pipelines.",
+      "folder": "Strategy"
+    },
+    { "op": "setProperty", "id": "cap-automation", "key": "layer", "value": "Strategy" },
+    { "op": "setProperty", "id": "cap-automation", "key": "status", "value": "active" },
+    { "op": "setProperty", "id": "cap-automation", "key": "maturity", "value": "Operationally Defined" },
+    {
+      "op": "createElement",
+      "type": "capability",
+      "name": "Programmatic Model Access",
+      "tempId": "cap-access",
+      "documentation": "Strategic capability to expose the full ArchiMate model structure — elements, relationships, properties, and views — as structured JSON for external consumption by tools, scripts, and AI agents.",
+      "folder": "Strategy"
+    },
+    { "op": "setProperty", "id": "cap-access", "key": "layer", "value": "Strategy" },
+    { "op": "setProperty", "id": "cap-access", "key": "status", "value": "active" },
+    { "op": "setProperty", "id": "cap-access", "key": "maturity", "value": "Defined" },
+    {
+      "op": "createElement",
+      "type": "capability",
+      "name": "Tool Integration",
+      "tempId": "cap-integration",
+      "documentation": "Strategic capability to integrate ArchiMate modelling with external tools including CI/CD pipelines, AI coding agents, documentation generators, and enterprise data sources through a standard HTTP interface.",
+      "folder": "Strategy"
+    },
+    { "op": "setProperty", "id": "cap-integration", "key": "layer", "value": "Strategy" },
+    { "op": "setProperty", "id": "cap-integration", "key": "status", "value": "active" },
+    { "op": "setProperty", "id": "cap-integration", "key": "maturity", "value": "Managed" },
+    {
+      "op": "createElement",
+      "type": "capability",
+      "name": "Change Governance",
+      "tempId": "cap-governance",
+      "documentation": "Strategic capability to ensure all model modifications are fully undoable and auditable through integration with Archi's built-in GEF Command Stack. Every API-driven change appears in the Edit > Undo menu and can be rolled back, protecting model integrity during automated operations.",
+      "folder": "Strategy"
+    },
+    { "op": "setProperty", "id": "cap-governance", "key": "layer", "value": "Strategy" },
+    { "op": "setProperty", "id": "cap-governance", "key": "status", "value": "active" },
+    { "op": "setProperty", "id": "cap-governance", "key": "maturity", "value": "Optimised" },
+    {
+      "op": "createElement",
+      "type": "value-stream",
+      "name": "Architecture-as-Code",
+      "tempId": "vs-arch-code",
+      "documentation": "End-to-end value stream from specification of architectural change through automated API-driven model update to documentation export. Practitioners describe changes as BOM JSON files, apply them via the CLI, validate via live model queries, and export views as images or structured data.",
+      "folder": "Strategy"
+    },
+    { "op": "setProperty", "id": "vs-arch-code", "key": "layer", "value": "Strategy" },
+    { "op": "setProperty", "id": "vs-arch-code", "key": "status", "value": "active" },
+    { "op": "setProperty", "id": "vs-arch-code", "key": "stages", "value": "Specify → Validate → Apply → Query → Export" }
+  ]
+}

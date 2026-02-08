@@ -1,0 +1,110 @@
+{
+  "version": "1.0",
+  "description": "Technology layer — runtime environment, system software and infrastructure",
+  "changes": [
+    {
+      "op": "createElement",
+      "type": "node",
+      "name": "JVM Process",
+      "tempId": "node-jvm",
+      "documentation": "The Java Virtual Machine process hosting Archi. Provides the runtime environment for the Eclipse RCP application, the jArchi plugin, and the GraalVM JavaScript engine. All server components ultimately execute within this JVM process. Memory allocation controlled by Archi's JVM startup arguments.",
+      "folder": "Technology"
+    },
+    { "op": "setProperty", "id": "node-jvm", "key": "layer", "value": "Technology" },
+    { "op": "setProperty", "id": "node-jvm", "key": "status", "value": "active" },
+    { "op": "setProperty", "id": "node-jvm", "key": "technology", "value": "Java 17+ (Eclipse Temurin or OpenJDK)" },
+    {
+      "op": "createElement",
+      "type": "device",
+      "name": "Archi Application",
+      "tempId": "dev-archi",
+      "documentation": "The Archi modelling tool (version 5.7+) running as an Eclipse Rich Client Platform application. Provides the visual ArchiMate modelling environment, the model persistence layer, the undo/redo infrastructure (GEF Command Stack), and the scripting host for jArchi scripts.",
+      "folder": "Technology"
+    },
+    { "op": "setProperty", "id": "dev-archi", "key": "layer", "value": "Technology" },
+    { "op": "setProperty", "id": "dev-archi", "key": "status", "value": "active" },
+    { "op": "setProperty", "id": "dev-archi", "key": "version", "value": "5.7+" },
+    { "op": "setProperty", "id": "dev-archi", "key": "platform", "value": "Eclipse RCP" },
+    {
+      "op": "createElement",
+      "type": "system-software",
+      "name": "jArchi Plugin",
+      "tempId": "sys-jarchi",
+      "documentation": "The jArchi scripting plugin for Archi (version 1.11+). Embeds the GraalVM JavaScript engine into Archi, exposes the ArchiMate model API ($, model, shell globals), provides the scripting console, and enables .ajs script execution from the Scripts menu. The API server scripts run entirely within jArchi.",
+      "folder": "Technology"
+    },
+    { "op": "setProperty", "id": "sys-jarchi", "key": "layer", "value": "Technology" },
+    { "op": "setProperty", "id": "sys-jarchi", "key": "status", "value": "active" },
+    { "op": "setProperty", "id": "sys-jarchi", "key": "version", "value": "1.11+" },
+    { "op": "setProperty", "id": "sys-jarchi", "key": "script-dir", "value": "scripts/" },
+    {
+      "op": "createElement",
+      "type": "system-software",
+      "name": "GraalVM JavaScript",
+      "tempId": "sys-graalvm",
+      "documentation": "GraalVM's JavaScript engine embedded within the JVM. Executes the .ajs server scripts with ES6+ compatibility (excluding async/await and modules). Provides Java interoperability via Java.type() and Java.extend(), enabling scripts to instantiate Java classes, extend interfaces, and call Java APIs directly.",
+      "folder": "Technology"
+    },
+    { "op": "setProperty", "id": "sys-graalvm", "key": "layer", "value": "Technology" },
+    { "op": "setProperty", "id": "sys-graalvm", "key": "status", "value": "active" },
+    { "op": "setProperty", "id": "sys-graalvm", "key": "language-level", "value": "ES6+ (no async/await, no ESM)" },
+    { "op": "setProperty", "id": "sys-graalvm", "key": "java-interop", "value": "Java.type(), Java.extend(), Java.super() (limited)" },
+    {
+      "op": "createElement",
+      "type": "system-software",
+      "name": "Eclipse SWT",
+      "tempId": "sys-swt",
+      "documentation": "Eclipse Standard Widget Toolkit providing the UI thread model. The SWT Display thread is the only thread permitted to update UI elements and perform ArchiMate model mutations. The server uses Display.asyncExec() for synchronous operations and Display.timerExec() for the async operation queue processor.",
+      "folder": "Technology"
+    },
+    { "op": "setProperty", "id": "sys-swt", "key": "layer", "value": "Technology" },
+    { "op": "setProperty", "id": "sys-swt", "key": "status", "value": "active" },
+    { "op": "setProperty", "id": "sys-swt", "key": "threading-model", "value": "Single UI thread; Display.asyncExec / Display.timerExec for cross-thread dispatch" },
+    {
+      "op": "createElement",
+      "type": "system-software",
+      "name": "Java HTTP Server",
+      "tempId": "sys-http",
+      "documentation": "Built-in Java HTTP server (com.sun.net.httpserver.HttpServer). Used by Server Core to listen on port 8765. Runs request handlers on a thread pool (separate from the SWT Display Thread). Requires explicit Display thread dispatch for all model operations.",
+      "folder": "Technology"
+    },
+    { "op": "setProperty", "id": "sys-http", "key": "layer", "value": "Technology" },
+    { "op": "setProperty", "id": "sys-http", "key": "status", "value": "active" },
+    { "op": "setProperty", "id": "sys-http", "key": "class", "value": "com.sun.net.httpserver.HttpServer" },
+    { "op": "setProperty", "id": "sys-http", "key": "thread-model", "value": "Thread pool (separate from SWT Display Thread)" },
+    {
+      "op": "createElement",
+      "type": "system-software",
+      "name": "GEF Command Stack",
+      "tempId": "sys-gef",
+      "documentation": "Eclipse Graphical Editing Framework Command Stack integrated into Archi. Records every model mutation as an undoable Command object. All API-driven changes (created via undoableCommands.js) are executed through the command stack, making them visible in Edit > Undo and fully reversible via Ctrl+Z.",
+      "folder": "Technology"
+    },
+    { "op": "setProperty", "id": "sys-gef", "key": "layer", "value": "Technology" },
+    { "op": "setProperty", "id": "sys-gef", "key": "status", "value": "active" },
+    { "op": "setProperty", "id": "sys-gef", "key": "class", "value": "org.eclipse.gef.commands.CommandStack" },
+    {
+      "op": "createElement",
+      "type": "technology-service",
+      "name": "SWT Display Thread",
+      "tempId": "tech-display",
+      "documentation": "The single SWT UI thread on which all model read/write operations must execute. The server architecture enforces this through two patterns: (1) synchronous requests use Display.asyncExec() with a CountDownLatch to block the HTTP handler thread until the operation completes; (2) asynchronous requests queue work for Display.timerExec() processing.",
+      "folder": "Technology"
+    },
+    { "op": "setProperty", "id": "tech-display", "key": "layer", "value": "Technology" },
+    { "op": "setProperty", "id": "tech-display", "key": "status", "value": "active" },
+    { "op": "setProperty", "id": "tech-display", "key": "access-patterns", "value": "Display.asyncExec (sync ops), Display.timerExec (async queue)" },
+    {
+      "op": "createElement",
+      "type": "artifact",
+      "name": "Server Scripts",
+      "tempId": "artifact-scripts",
+      "documentation": "All .ajs JavaScript source files comprising the server implementation. Organised under scripts/: main entry script (Model API Server.ajs), core libraries (scripts/lib/core/: serverCore.js, undoableCommands.js, requireModel.js, swtImports.js), server modules (scripts/lib/server/: config, queue, snapshot, validation, etc.), and endpoint handlers (scripts/lib/server/endpoints/).",
+      "folder": "Technology"
+    },
+    { "op": "setProperty", "id": "artifact-scripts", "key": "layer", "value": "Technology" },
+    { "op": "setProperty", "id": "artifact-scripts", "key": "status", "value": "active" },
+    { "op": "setProperty", "id": "artifact-scripts", "key": "location", "value": "scripts/" },
+    { "op": "setProperty", "id": "artifact-scripts", "key": "language", "value": "JavaScript (GraalVM ES6+, loaded via load())" }
+  ]
+}

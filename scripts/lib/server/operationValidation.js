@@ -270,6 +270,20 @@
                 case "createGroup":
                     this.validateCreateGroup(change, index);
                     break;
+                case "createView":
+                    this.validateCreateView(change, index);
+                    break;
+                case "deleteView":
+                case "duplicateView":
+                case "setViewRouter":
+                case "layoutView":
+                    // Basic validation: require viewId
+                    if (!change.viewId && change.op !== "createView") {
+                        throw this.createValidationError(
+                            "Change " + index + " (" + change.op + "): missing 'viewId' field"
+                        );
+                    }
+                    break;
                 default:
                     throw this.createValidationError(
                         "Change " + index + " has unknown operation: " + change.op
@@ -563,16 +577,8 @@
                     "Change " + index + " (addConnectionToView): missing 'relationshipId' field"
                 );
             }
-            if (!change.sourceVisualId) {
-                throw this.createValidationError(
-                    "Change " + index + " (addConnectionToView): missing 'sourceVisualId' field"
-                );
-            }
-            if (!change.targetVisualId) {
-                throw this.createValidationError(
-                    "Change " + index + " (addConnectionToView): missing 'targetVisualId' field"
-                );
-            }
+            // sourceVisualId and targetVisualId are optional — if omitted, the
+            // execution engine auto-discovers them from the relationship's source/target
         },
 
         /**
@@ -760,6 +766,20 @@
             if (!change.name) {
                 throw this.createValidationError(
                     "Change " + index + " (createGroup): missing 'name' field"
+                );
+            }
+        },
+
+        /**
+         * Validate createView operation
+         * @param {Object} change - Change descriptor
+         * @param {number} index - Index in changes array
+         * @throws {Error} If validation fails
+         */
+        validateCreateView: function(change, index) {
+            if (!change.name) {
+                throw this.createValidationError(
+                    "Change " + index + " (createView): missing 'name' field"
                 );
             }
         },

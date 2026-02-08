@@ -968,6 +968,7 @@
         var compound = new CompoundCommand(label);
         var results = [];
         var idMap = {}; // Map tempId -> created object
+        var relEndpoints = {}; // rel.getId() -> { src, tgt } for same-batch source/target lookup
 
         // First pass: create all elements
         for (var i = 0; i < operations.length; i++) {
@@ -1074,6 +1075,11 @@
                 );
                 compound.add(relAddCmd);
 
+                if (operation.tempId) {
+                    idMap[operation.tempId] = rel;
+                }
+                relEndpoints[rel.getId()] = { src: source, tgt: target };
+
                 results.push({
                     op: "createRelationship",
                     tempId: operation.tempId,
@@ -1129,24 +1135,27 @@
                     );
                     compound.add(propValueCmd);
 
-                    var AddPropCmd = Java.extend(GEFCommand, {
-                        execute: function() {
-                            props.add(newProperty);
-                        },
-                        undo: function() {
-                            props.remove(newProperty);
-                        },
-                        canExecute: function() {
-                            return true;
-                        },
-                        canUndo: function() {
-                            return true;
-                        },
-                        getLabel: function() {
-                            return "Add Property";
-                        }
-                    });
-                    compound.add(new AddPropCmd());
+                    // Use IIFE to capture variables properly in closure
+                    (function(capturedProps, capturedNewProp) {
+                        var AddPropCmd = Java.extend(GEFCommand, {
+                            execute: function() {
+                                capturedProps.add(capturedNewProp);
+                            },
+                            undo: function() {
+                                capturedProps.remove(capturedNewProp);
+                            },
+                            canExecute: function() {
+                                return true;
+                            },
+                            canUndo: function() {
+                                return true;
+                            },
+                            getLabel: function() {
+                                return "Add Property";
+                            }
+                        });
+                        compound.add(new AddPropCmd());
+                    })(props, newProperty);
                 }
 
                 results.push({
@@ -1269,7 +1278,7 @@
             }
             else if (operation.op === "addToView") {
                 // Add element to view at specified position using EMF
-                var viewForAdd = findViewById(model, operation.viewId);
+                var viewForAdd = idMap[operation.viewId] || findViewById(model, operation.viewId);
                 if (!viewForAdd) {
                     throw new Error("Cannot find view: " + operation.viewId);
                 }
@@ -1321,6 +1330,9 @@
                 }
                 // Also store by visual object ID
                 idMap[visualObj.getId()] = visualObj;
+                // Index by view+element for auto-discovery during same-batch addConnectionToView
+                var _eltId = elementToAdd.getId ? elementToAdd.getId() : elementToAdd.id;
+                idMap["__vis_" + viewForAdd.getId() + "_" + _eltId] = visualObj;
 
                 results.push({
                     op: "addToView",
@@ -1336,7 +1348,7 @@
             }
             else if (operation.op === "addConnectionToView") {
                 // Add relationship as visual connection using EMF
-                var viewForConn = findViewById(model, operation.viewId);
+                var viewForConn = idMap[operation.viewId] || findViewById(model, operation.viewId);
                 if (!viewForConn) {
                     throw new Error("Cannot find view: " + operation.viewId);
                 }
@@ -1350,19 +1362,58 @@
                 var sourceVisual = idMap[operation.sourceVisualId];
                 var targetVisual = idMap[operation.targetVisualId];
 
-                // If not in idMap, search in view children
-                if (!sourceVisual) {
+                // If not in idMap, search in view children by explicit visual ID
+                if (!sourceVisual && operation.sourceVisualId) {
                     sourceVisual = findVisualObjectInView(viewForConn, operation.sourceVisualId);
                 }
-                if (!targetVisual) {
+                if (!targetVisual && operation.targetVisualId) {
                     targetVisual = findVisualObjectInView(viewForConn, operation.targetVisualId);
                 }
 
-                if (!sourceVisual) {
-                    throw new Error("Cannot find source visual object: " + operation.sourceVisualId);
+                // Auto-discover: if still missing, find visuals by matching the relationship's
+                // source/target element IDs. First check idMap index (works within same batch),
+                // then fall back to iterating already-committed view children.
+                if (!sourceVisual || !targetVisual) {
+                    // Use relEndpoints cache for same-batch relationships (getSource/getTarget
+                    // return null until the compound command actually executes)
+                    var _ep = relEndpoints[relationship.getId()];
+                    var relSrcId = _ep ? (_ep.src.getId ? _ep.src.getId() : null)
+                                       : (relationship.getSource() ? relationship.getSource().getId() : null);
+                    var relTgtId = _ep ? (_ep.tgt.getId ? _ep.tgt.getId() : null)
+                                       : (relationship.getTarget() ? relationship.getTarget().getId() : null);
+                    var viewConnId = viewForConn.getId();
+                    if (!sourceVisual && relSrcId) {
+                        sourceVisual = idMap["__vis_" + viewConnId + "_" + relSrcId];
+                    }
+                    if (!targetVisual && relTgtId) {
+                        targetVisual = idMap["__vis_" + viewConnId + "_" + relTgtId];
+                    }
+                    // Fall back to searching committed view children
+                    if (!sourceVisual || !targetVisual) {
+                        var autoChildren = viewForConn.getChildren();
+                        for (var avi = 0; avi < autoChildren.size(); avi++) {
+                            var avc = autoChildren.get(avi);
+                            if (typeof avc.getArchimateElement === "function") {
+                                var avel = avc.getArchimateElement();
+                                if (avel) {
+                                    var avelId = avel.getId();
+                                    if (!sourceVisual && avelId === relSrcId) { sourceVisual = avc; }
+                                    if (!targetVisual && avelId === relTgtId) { targetVisual = avc; }
+                                }
+                            }
+                        }
+                    }
                 }
-                if (!targetVisual) {
-                    throw new Error("Cannot find target visual object: " + operation.targetVisualId);
+
+                if (!sourceVisual || !targetVisual) {
+                    // Source or target element not present in this view — skip gracefully
+                    results.push({
+                        op: "addConnectionToView",
+                        skipped: true,
+                        reason: (!sourceVisual ? "source" : "target") + " element not in view",
+                        relationshipId: operation.relationshipId
+                    });
+                    continue;
                 }
 
                 // Direction validation: ensure visual source/target match relationship source/target

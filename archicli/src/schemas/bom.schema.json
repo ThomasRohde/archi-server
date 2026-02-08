@@ -1,0 +1,92 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://archi-server/schemas/bom.schema.json",
+  "title": "ArchiMate Bill of Materials",
+  "description": "A batch of ArchiMate model change operations to apply, optionally composed from multiple files via 'includes'.",
+  "type": "object",
+  "required": ["version"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "const": "1.0",
+      "description": "Schema version — must be '1.0'"
+    },
+    "description": {
+      "type": "string",
+      "description": "Human-readable description of what this BOM does"
+    },
+    "includes": {
+      "type": "array",
+      "description": "Relative paths to other JSON files whose 'changes' arrays are merged before applying. Resolved relative to this file's directory.",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "idFiles": {
+      "type": "array",
+      "description": "Relative paths to .ids.json files containing tempId→realId mappings to pre-load before applying. Enables cross-file and cross-session tempId resolution.",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "changes": {
+      "type": "array",
+      "description": "List of model change operations",
+      "items": {
+        "$ref": "#/definitions/ChangeOperation"
+      }
+    }
+  },
+  "anyOf": [
+    { "required": ["changes"] },
+    { "required": ["includes"] },
+    { "required": ["idFiles"] }
+  ],
+  "definitions": {
+    "ChangeOperation": {
+      "type": "object",
+      "required": ["op"],
+      "description": "A single model change operation",
+      "properties": {
+        "op": {
+          "type": "string",
+          "description": "Operation type",
+          "enum": [
+            "createElement",
+            "createRelationship",
+            "updateElement",
+            "updateRelationship",
+            "deleteElement",
+            "deleteRelationship",
+            "setProperty",
+            "moveToFolder",
+            "createFolder",
+            "addToView",
+            "addConnectionToView",
+            "deleteConnectionFromView",
+            "styleViewObject",
+            "styleConnection",
+            "moveViewObject",
+            "createNote",
+            "createGroup"
+          ]
+        }
+      },
+      "if": {
+        "properties": { "op": { "const": "createElement" } }
+      },
+      "then": {
+        "required": ["op", "type", "name"],
+        "properties": {
+          "type": { "type": "string", "description": "ArchiMate element type (e.g. 'application-component')" },
+          "name": { "type": "string" },
+          "tempId": { "type": "string", "description": "Temporary ID for cross-referencing within the same batch" },
+          "documentation": { "type": "string" },
+          "folder": { "type": "string", "description": "Target folder path or ID" }
+        }
+      }
+    }
+  }
+}
