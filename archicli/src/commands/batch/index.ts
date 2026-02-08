@@ -23,7 +23,7 @@ export function batchCommand(): Command {
         '  deleteRelationship     id\n' +
         '  setProperty            id, key, value\n' +
         '  createView             name, [tempId, documentation]\n' +
-        '  createFolder           name, [parentId]\n' +
+        '  createFolder           name, parentId | parentType\n' +
         '  moveToFolder           id, folderId\n' +
         '  addToView              viewId, elementId, [x, y, width, height, tempId]\n' +
         '  addConnectionToView    viewId, relationshipId\n' +

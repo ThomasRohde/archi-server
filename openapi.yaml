@@ -938,7 +938,7 @@ components:
               type: integer
             views:
               type: integer
-        sample:
+        elements:
           type: array
           items:
             $ref: '#/components/schemas/ElementSummary'
@@ -1987,10 +1987,10 @@ components:
           type: string
           nullable: true
           description: ArchiMate viewpoint (e.g., "application_cooperation")
-        elementCount:
+        objectCount:
           type: integer
           nullable: true
-          description: Number of visual elements in view
+          description: Number of visual objects in view
         connectionCount:
           type: integer
           nullable: true
@@ -2031,6 +2031,14 @@ components:
         viewType:
           type: string
           description: Type of the created view
+        viewpoint:
+          type: string
+          nullable: true
+          description: Viewpoint ID if specified
+        documentation:
+          type: string
+          nullable: true
+          description: Documentation if specified
         durationMs:
           type: integer
           description: Creation duration in milliseconds

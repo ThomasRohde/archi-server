@@ -5,11 +5,11 @@ import { print, success, failure } from '../../utils/output';
 export function modelQueryCommand(): Command {
   return new Command('query')
     .description(
-      'Get a model overview: element/relationship counts and sample elements.\n\n' +
+      'Get a model overview: element/relationship counts and first N elements.\n\n' +
         'Use this as your first command to understand what is in the model.\n' +
         'For targeted lookup use "model search" (by type/name) or "model element <id>".'
     )
-    .option('-l, --limit <n>', 'number of sample elements to return', '10')
+    .option('-l, --limit <n>', 'number of elements to return', '10')
     .action(async (options: { limit: string }, cmd: Command) => {
       try {
         const limit = parseInt(options.limit, 10);

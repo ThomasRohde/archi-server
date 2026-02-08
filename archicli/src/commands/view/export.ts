@@ -13,12 +13,19 @@ export function viewExportCommand(): Command {
     .option('-m, --margin <n>', 'margin in pixels')
     .action(async (id: string, options: { format: string; file?: string; scale?: string; margin?: string }, cmd: Command) => {
       try {
+        const validFormats = ['PNG', 'JPEG', 'JPG'];
+        const fmt = options.format.toUpperCase();
+        if (!validFormats.includes(fmt)) {
+          print(failure('INVALID_FORMAT', `Invalid format '${fmt}'. Valid formats: ${validFormats.join(', ')}`));
+          cmd.error('', { exitCode: 1 });
+          return;
+        }
         if (options.file && !isAbsolute(options.file)) {
           print(failure('INVALID_PATH', `Output path must be absolute (got: "${options.file}"). Example: C:\\path\\to\\image.png`));
           cmd.error('', { exitCode: 1 });
           return;
         }
-        const body: Record<string, unknown> = { format: options.format.toUpperCase() };
+        const body: Record<string, unknown> = { format: fmt };
         if (options.file) body['outputPath'] = options.file;
         if (options.scale) body['scale'] = parseFloat(options.scale);
         if (options.margin) body['margin'] = parseInt(options.margin, 10);

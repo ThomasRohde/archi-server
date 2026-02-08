@@ -54,8 +54,13 @@ export function createProgram(): Command {
       });
     });
 
-  // Show help (exit 0) when no subcommand is given
-  program.action(() => program.help());
+  // Show help when no subcommand given; error on unknown commands
+  program.action(function (this: Command) {
+    if (this.args.length > 0) {
+      this.error(`unknown command '${this.args[0]}'`);
+    }
+    program.help();
+  });
 
   program
     .addCommand(healthCommand())

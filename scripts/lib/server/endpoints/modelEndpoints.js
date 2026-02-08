@@ -364,9 +364,9 @@
                     views: views.length
                 };
 
-                var sample = [];
+                var sampleElements = [];
                 for (var i = 0; i < elements.length && i < limit; i++) {
-                    sample.push(elements[i]);
+                    sampleElements.push(elements[i]);
                 }
 
                 if (typeof loggingQueue !== "undefined" && loggingQueue) {
@@ -375,7 +375,7 @@
 
                 response.body = {
                     summary: summary,
-                    sample: sample
+                    elements: sampleElements
                 };
 
             } catch (e) {

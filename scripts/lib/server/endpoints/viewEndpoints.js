@@ -29,6 +29,9 @@
     var System = Java.type("java.lang.System");
     var UUID = Java.type("java.util.UUID");
 
+    // Viewpoint manager for resolving viewpoint IDs
+    var ViewpointManagerClass = Java.type("com.archimatetool.model.viewpoints.ViewpointManager");
+
     // EMF types for view detection
     var IArchimateDiagramModel = Java.type("com.archimatetool.model.IArchimateDiagramModel");
     var ISketchModel = Java.type("com.archimatetool.model.ISketchModel");
@@ -37,6 +40,28 @@
     var IDiagramModelConnection = Java.type("com.archimatetool.model.IDiagramModelConnection");
     var IDiagramModelArchimateObject = Java.type("com.archimatetool.model.IDiagramModelArchimateObject");
     var IDiagramModelArchimateConnection = Java.type("com.archimatetool.model.IDiagramModelArchimateConnection");
+
+    /**
+     * Resolve viewpoint ID from a view, handling GraalVM module-access restrictions.
+     * vp.getId() may fail on the inner Viewpoint class; fallback scans ViewpointManager.
+     */
+    function getViewpointId(view) {
+        try {
+            var vp = view.getViewpoint();
+            if (!vp) return null;
+            if (typeof vp === 'string') return vp;
+            var id = vp.getId ? vp.getId() : null;
+            if (id && String(id).indexOf('@') === -1) return String(id);
+            // Fallback: scan all viewpoints for identity match
+            var allVPs = ViewpointManagerClass.INSTANCE.getAllViewpoints();
+            for (var i = 0; i < allVPs.size(); i++) {
+                if (allVPs.get(i) === vp) return String(allVPs.get(i).getId());
+            }
+        } catch (e) {
+            // ignore
+        }
+        return null;
+    }
 
     /**
      * Find a view by ID using EMF traversal (works without $() context)
@@ -130,34 +155,30 @@
      * Count elements and connections in a view using EMF traversal
      */
     function countViewContents(view) {
-        var elementCount = 0;
+        var objectCount = 0;
         var connectionCount = 0;
 
+        // Connections in Archi's diagram model are stored in the sourceConnections
+        // list of each IDiagramModelObject — they are NOT children of the view container.
         function processChildren(container) {
             var children = container.getChildren();
             for (var i = 0; i < children.size(); i++) {
                 var child = children.get(i);
-                if (child instanceof IDiagramModelConnection) {
-                    connectionCount++;
-                } else if (child instanceof IDiagramModelObject) {
-                    elementCount++;
+                if (child instanceof IDiagramModelObject) {
+                    objectCount++;
+                    // Count connections that originate from this object
+                    var srcConns = child.getSourceConnections ? child.getSourceConnections() : null;
+                    if (srcConns) connectionCount += srcConns.size();
                     // Recursively process nested children (groups, etc.)
-                    if (typeof child.getChildren === "function") {
-                        processChildren(child);
-                    }
+                    var childList = child.getChildren ? child.getChildren() : null;
+                    if (childList) processChildren(child);
                 }
             }
         }
 
         processChildren(view);
 
-        // Also count connections at view level
-        var sourceConnections = view.getSourceConnections ? view.getSourceConnections() : null;
-        if (sourceConnections) {
-            connectionCount += sourceConnections.size();
-        }
-
-        return { elementCount: elementCount, connectionCount: connectionCount };
+        return { objectCount: objectCount, connectionCount: connectionCount };
     }
 
     /**
@@ -303,18 +324,13 @@
 
                     // Get viewpoint if available
                     if (view instanceof IArchimateDiagramModel) {
-                        try {
-                            var vp = view.getViewpoint();
-                            if (vp) viewData.viewpoint = vp.getId ? vp.getId() : String(vp);
-                        } catch (e) {
-                            // Ignore viewpoint errors
-                        }
+                        viewData.viewpoint = getViewpointId(view);
                     }
 
                     // Count elements and connections
                     try {
                         var counts = countViewContents(view);
-                        viewData.elementCount = counts.elementCount;
+                        viewData.objectCount = counts.objectCount;
                         viewData.connectionCount = counts.connectionCount;
                     } catch (e) {
                         // Ignore count errors
@@ -405,12 +421,7 @@
 
                 // Get viewpoint if ArchiMate diagram
                 if (view instanceof IArchimateDiagramModel) {
-                    try {
-                        var vp = view.getViewpoint();
-                        if (vp) viewDetail.viewpoint = vp.getId ? vp.getId() : String(vp);
-                    } catch (e) {
-                        // Ignore viewpoint errors
-                    }
+                    viewDetail.viewpoint = getViewpointId(view);
 
                     // Get connection router (JArchi 1.11+)
                     try {
@@ -515,6 +526,8 @@
                     viewId: result.viewId,
                     viewName: result.viewName,
                     viewType: "archimate-diagram-model",
+                    viewpoint: result.viewpoint || null,
+                    documentation: result.documentation || null,
                     durationMs: durationMs
                 };
 

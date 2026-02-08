@@ -670,9 +670,9 @@
                     "Change " + index + " (createFolder): missing 'name' field"
                 );
             }
-            if (!change.parentId) {
+            if (!change.parentId && !change.parentType) {
                 throw this.createValidationError(
-                    "Change " + index + " (createFolder): missing 'parentId' field"
+                    "Change " + index + " (createFolder): must specify 'parentId' or 'parentType'"
                 );
             }
         },

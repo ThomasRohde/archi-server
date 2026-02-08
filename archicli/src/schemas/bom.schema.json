@@ -154,6 +154,23 @@
               "tempId": { "type": "string", "description": "Temporary ID for cross-referencing within the same batch" },
               "documentation": { "type": "string" }
             }
+          },
+          "else": {
+            "if": {
+              "properties": { "op": { "const": "createFolder" } }
+            },
+            "then": {
+              "required": ["op", "name"],
+              "properties": {
+                "name": { "type": "string", "minLength": 1 },
+                "parentId": { "type": "string", "description": "ID of the parent folder" },
+                "parentType": { "type": "string", "description": "Type of the parent folder (e.g. application, business)" }
+              },
+              "anyOf": [
+                { "required": ["parentId"] },
+                { "required": ["parentType"] }
+              ]
+            }
           }
         }
       }

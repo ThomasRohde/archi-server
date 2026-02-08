@@ -31,6 +31,8 @@ export function modelSearchCommand(): Command {
   return new Command('search')
     .description(
       'Search for elements and relationships by type, name, or property.\n\n' +
+      'NOTE: With no filters, ALL elements and relationships are returned.\n' +
+      'Use --type, --name, or --property-key to narrow results.\n\n' +
         'ELEMENT TYPES (ArchiMate layers):\n' +
         '  Strategy:    capability, value-stream, resource, course-of-action\n' +
         '  Business:    business-actor, business-role, business-process, business-service,\n' +
