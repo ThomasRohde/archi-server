@@ -2232,6 +2232,17 @@
                 if (operation.documentation) {
                     newView.setDocumentation(operation.documentation);
                 }
+                if (operation.viewpoint) {
+                    try {
+                        var ViewpointManager = Java.type("com.archimatetool.model.viewpoints.ViewpointManager");
+                        var vp = ViewpointManager.INSTANCE.getViewpoint(operation.viewpoint);
+                        if (vp) {
+                            newView.setViewpoint(vp);
+                        }
+                    } catch (vpErr) {
+                        // Ignore viewpoint errors — unsupported viewpoint ID is a no-op
+                    }
+                }
 
                 // Find target folder (Views/Diagrams folder by default)
                 var targetViewFolder = null;

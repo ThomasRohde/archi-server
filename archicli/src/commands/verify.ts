@@ -58,12 +58,32 @@ export function verifyCommand(): Command {
         }
 
         const result = validate(schema, data);
-        if (result.valid) {
-          print(success({ file, schema, valid: true }));
-        } else {
+        if (!result.valid) {
           print(failure('VALIDATION_FAILED', 'File failed schema validation', { file, schema, errors: result.errors }));
           cmd.error('', { exitCode: 1 });
+          return;
         }
+
+        // Extra BOM-specific checks that JSON Schema cannot express
+        if (schema === 'bom') {
+          const changes = (data as { changes?: unknown[] }).changes ?? [];
+          const seen = new Map<string, number>();
+          const dupes: string[] = [];
+          for (const [i, ch] of changes.entries()) {
+            const t = (ch as { tempId?: string }).tempId;
+            if (t) {
+              if (seen.has(t)) dupes.push(`'${t}' at /changes/${seen.get(t)} and /changes/${i}`);
+              else seen.set(t, i);
+            }
+          }
+          if (dupes.length > 0) {
+            print(failure('VALIDATION_FAILED', 'Duplicate tempIds found', { file, schema, errors: dupes.map((d) => ({ message: `Duplicate tempId ${d}` })) }));
+            cmd.error('', { exitCode: 1 });
+            return;
+          }
+        }
+
+        print(success({ file, schema, valid: true }));
       } catch (err) {
         print(failure('VERIFY_ERROR', String(err)));
         cmd.error('', { exitCode: 1 });

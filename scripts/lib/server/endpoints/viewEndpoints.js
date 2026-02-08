@@ -499,7 +499,8 @@
                     op: "createView",
                     name: viewName,
                     documentation: documentation || undefined,
-                    folderId: body.folderId || undefined
+                    folderId: body.folderId || undefined,
+                    viewpoint: body.viewpoint || undefined
                 }];
                 var results = undoableCommands.executeBatch(modelRef, "Create View: " + viewName, ops);
                 var result = results[0];
@@ -511,7 +512,6 @@
                 }
 
                 response.body = {
-                    success: true,
                     viewId: result.viewId,
                     viewName: result.viewName,
                     viewType: "archimate-diagram-model",
@@ -676,7 +676,6 @@
                 }
 
                 response.body = {
-                    success: true,
                     viewId: viewId,
                     viewName: viewName,
                     format: format,

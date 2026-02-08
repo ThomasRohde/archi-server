@@ -236,6 +236,7 @@ export function batchApplyCommand(): Command {
 
           // Submit each chunk, carrying tempId→realId map across chunks
           const results = [];
+          let hadOperationErrors = false;
           for (let i = 0; i < chunks.length; i++) {
             // Substitute any tempIds resolved from previous chunks or idFiles
             const chunk = substituteIds(chunks[i], tempIdMap);
@@ -257,10 +258,14 @@ export function batchApplyCommand(): Command {
               });
               progressStream?.write('\n');
               chunkResult = { ...chunkResult, ...pollResult };
-              // Collect tempId→realId mappings from completed chunk results
-              const opResults = (pollResult as { result?: Array<{ tempId?: string; realId?: string }> }).result ?? [];
+              if ((pollResult as { status?: string }).status === 'error') {
+                hadOperationErrors = true;
+              }
+              // Collect tempId→realId/visualId/viewId/noteId/groupId mappings from completed chunk results
+              const opResults = (pollResult as { result?: Array<{ tempId?: string; realId?: string; visualId?: string; viewId?: string; noteId?: string; groupId?: string }> }).result ?? [];
               for (const r of opResults) {
-                if (r.tempId && r.realId) tempIdMap[r.tempId] = r.realId;
+                const id = r.realId ?? r.visualId ?? r.viewId ?? r.noteId ?? r.groupId;
+                if (r.tempId && id) tempIdMap[r.tempId] = id;
               }
             }
 
@@ -285,7 +290,12 @@ export function batchApplyCommand(): Command {
           if (allChanges.length === 0) {
             output['warning'] = 'Empty BOM — no changes were applied';
           }
-          print(success(output));
+          if (hadOperationErrors) {
+            print(failure('BATCH_APPLY_PARTIAL_FAILURE', 'One or more chunks failed', output));
+            cmd.error('', { exitCode: 1 });
+          } else {
+            print(success(output));
+          }
         } catch (err) {
           print(failure('BATCH_APPLY_FAILED', String(err)));
           cmd.error('', { exitCode: 1 });

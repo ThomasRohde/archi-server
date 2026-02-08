@@ -43,13 +43,19 @@ export function createProgram(): Command {
     .option('--output <format>', 'output format: json or text', 'json')
     .option('-v, --verbose', 'enable verbose HTTP logging')
     .hook('preAction', (_thisCommand, actionCommand) => {
-      const opts = actionCommand.optsWithGlobals<{ baseUrl: string; output: 'json' | 'text'; verbose?: boolean }>();
+      const opts = actionCommand.optsWithGlobals<{ baseUrl: string; output: string; verbose?: boolean }>();
+      if (!['json', 'text'].includes(opts.output)) {
+        actionCommand.error(`Unknown output format '${opts.output}'. Valid formats: json, text`);
+      }
       setConfig({
         baseUrl: opts.baseUrl,
-        output: opts.output,
+        output: opts.output as 'json' | 'text',
         verbose: opts.verbose ?? false,
       });
     });
+
+  // Show help (exit 0) when no subcommand is given
+  program.action(() => program.help());
 
   program
     .addCommand(healthCommand())

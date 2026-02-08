@@ -5,9 +5,9 @@ import { print, success, failure } from '../../utils/output';
 
 export function viewExportCommand(): Command {
   return new Command('export')
-    .description('Export a view to an image file (PNG or JPEG)')
+    .description('Export a view to an image file (PNG, JPEG, or JPG)')
     .argument('<id>', 'view ID to export')
-    .option('-f, --format <format>', 'image format: PNG or JPEG', 'PNG')
+    .option('-f, --format <format>', 'image format: PNG, JPEG, or JPG', 'PNG')
     .option('-o, --file <path>', 'absolute output file path (temp file if omitted)')
     .option('-s, --scale <n>', 'image scale factor (0.5 to 4)')
     .option('-m, --margin <n>', 'margin in pixels')

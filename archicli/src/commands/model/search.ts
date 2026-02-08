@@ -52,12 +52,17 @@ export function modelSearchCommand(): Command {
     .option('-t, --type <type>', 'filter by ArchiMate element or relationship type')
     .option('-n, --name <pattern>', 'regex pattern to match element names (e.g. ".*API.*")')
     .option('-k, --property-key <key>', 'filter by property key')
-    .option('-v, --property-value <value>', 'filter by property value (used with --property-key)')
+    .option('-V, --property-value <value>', 'filter by property value (used with --property-key)')
     .option('-l, --limit <n>', 'max results to return', '100')
     .action(async (options: { type?: string; name?: string; propertyKey?: string; propertyValue?: string; limit: string }, cmd: Command) => {
       try {
+        const limit = parseInt(options.limit, 10);
+        if (isNaN(limit) || limit < 1) {
+          print(failure('INVALID_ARGUMENT', `--limit must be a positive integer, got '${options.limit}'`));
+          cmd.error('', { exitCode: 1 });
+        }
         const body: Record<string, unknown> = {
-          limit: parseInt(options.limit, 10),
+          limit,
         };
         let warning: string | undefined;
         if (options.type) {
@@ -68,8 +73,12 @@ export function modelSearchCommand(): Command {
           body['type'] = options.type;
         }
         if (options.name) body['namePattern'] = options.name;
+        if (options.propertyValue && !options.propertyKey) {
+          warning = '--property-value is ignored without --property-key';
+          process.stderr.write(`warning: ${warning}\n`);
+        }
         if (options.propertyKey) body['propertyKey'] = options.propertyKey;
-        if (options.propertyValue) body['propertyValue'] = options.propertyValue;
+        if (options.propertyValue && options.propertyKey) body['propertyValue'] = options.propertyValue;
 
         const data = await post('/model/search', body);
         print(success(warning ? { ...data as object, warning } : data));
