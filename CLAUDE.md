@@ -6,7 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **ArchiMate Model API Server** - A production-ready HTTP REST API server that runs inside Archi (an ArchiMate modeling tool) via the jArchi plugin. This exposes ArchiMate models for automation, integration, and programmatic access.
 
-**Critical: This is NOT a Node.js project.** Scripts run in GraalVM JavaScript inside the Archi JVM with Java interop. There is no npm, no package.json, and no Node.js modules.
+**Critical: The server-side scripts are NOT Node.js.** Scripts in `scripts/` run in GraalVM JavaScript inside the Archi JVM with Java interop. There is no npm, no package.json, and no Node.js modules in `scripts/`.
+
+**Exception: `archicli/` IS a Node.js project** — a TypeScript CLI for the API (see [archicli/](archicli/) and the CLI section below).
 
 ## Running the Server
 
@@ -144,6 +146,55 @@ All server configuration in `scripts/lib/server/serverConfig.js`:
 - Operation timeouts (60s)
 - CORS origins
 - Security headers
+
+## archicli — TypeScript CLI
+
+A standalone CLI for the API in `archicli/` (Node.js/TypeScript, Commander.js):
+
+```bash
+cd archicli && npm install && npm run build
+# or: npm link → archicli globally
+archicli health                              # verify server
+archicli verify model/index.json            # validate BOM before apply
+archicli batch apply model/index.json --poll  # apply and wait for completion
+```
+
+### BOM File Format (`model/` directory contains examples)
+
+```json
+{
+  "version": "1.0",
+  "description": "...",
+  "idFiles": ["01-elements.ids.json"],       // pre-load tempId→realId maps
+  "includes": ["parts/elements.json"],       // compose from sub-files
+  "changes": [
+    { "op": "createElement", "type": "business-actor", "name": "Customer", "tempId": "e-customer" },
+    { "op": "createRelationship", "type": "serving-relationship", "sourceId": "e-service", "targetId": "e-customer", "tempId": "r1" },
+    { "op": "addToView", "viewId": "v-main", "elementId": "e-customer", "tempId": "vis-customer" },
+    { "op": "addConnectionToView", "viewId": "v-main", "relationshipId": "r1", "sourceVisualId": "vis-service", "targetVisualId": "vis-customer" }
+  ]
+}
+```
+
+### Critical CLI Rules
+
+1. **Always use `--poll`** with `batch apply` — mutations are async, without `--poll` you get an opId but no result
+2. **tempIds are resolved automatically**: within a batch, across chunks (with `--poll`), and across files (via `idFiles`)
+3. **`batch apply` auto-saves `<file>.ids.json`** after completion — use in subsequent BOM files' `idFiles` array
+4. **Chunk size**: default 100 ops/request, max 1000; set with `--chunk-size`
+5. **`archicli verify`** validates JSON against schema before sending — run first to catch authoring errors
+
+### Key Commands
+
+| Command | Purpose |
+|---------|---------|
+| `archicli health` | Check server connectivity |
+| `archicli verify <file>` | Validate BOM/request JSON |
+| `archicli batch apply <bom> --poll` | Apply BOM with auto-chunking |
+| `archicli batch split <bom>` | Split large BOM into linked files |
+| `archicli model search` | Search elements by type/name |
+| `archicli model query` | Model summary |
+| `archicli ops status <id> --poll` | Poll async operation |
 
 ## API Specification
 

@@ -188,8 +188,57 @@ Skills follow the [Agent Skills](https://agentskills.io) open standard and are a
 ### Copilot Agent (`.github/agents/`)
 - **@archimate-modeler** — Full modeling agent: analyze descriptions → create elements → build views
 
+## archicli — TypeScript CLI (`archicli/`)
+
+**`archicli/` IS a Node.js project** (unlike `scripts/` which is GraalVM). Use it instead of raw CURL for automation:
+
+```bash
+cd archicli && npm install && npm run build
+archicli health                                    # verify server
+archicli verify model/index.json                   # validate BOM schema
+archicli batch apply model/index.json --poll       # apply with auto-chunking + polling
+```
+
+### BOM File Format
+
+```json
+{
+  "version": "1.0",
+  "idFiles": ["01-elements.ids.json"],   // pre-load tempId→realId maps from previous runs
+  "includes": ["parts/elements.json"],   // compose from sub-files
+  "changes": [
+    { "op": "createElement", "type": "business-actor", "name": "Customer", "tempId": "e-customer" },
+    { "op": "createRelationship", "type": "serving-relationship", "sourceId": "e-svc", "targetId": "e-customer" },
+    { "op": "addToView", "viewId": "v-main", "elementId": "e-customer", "tempId": "vis-cust" },
+    { "op": "addConnectionToView", "viewId": "v-main", "relationshipId": "r1", "sourceVisualId": "vis-svc", "targetVisualId": "vis-cust" }
+  ]
+}
+```
+
+### Critical Rules
+
+1. **Always use `--poll`** — `/model/apply` is async; without it you get an opId but no result or resolved IDs
+2. **tempIds resolve automatically**: within a batch, across chunks (with `--poll`), and across files (via `idFiles`)
+3. **Auto-saves `<file>.ids.json`** after `batch apply --poll` — reference in `idFiles` of subsequent BOMs
+4. **Verify first**: `archicli verify <file>` catches authoring errors before touching the model
+5. **Example BOMs**: see `model/` directory for working examples
+
+### CLI Commands Reference
+
+| Command | Purpose |
+|---------|---------|
+| `archicli health` | Check server connectivity |
+| `archicli verify <file>` | Validate BOM/request JSON |
+| `archicli batch apply <bom> --poll` | Apply BOM (auto-chunks + polls) |
+| `archicli batch split <bom>` | Split large BOM into linked files |
+| `archicli model search` | Search elements by type/name/property |
+| `archicli model query` | Model summary with counts |
+| `archicli model element <id>` | Get element with relationships + views |
+| `archicli ops status <id> --poll` | Poll async operation to completion |
+
 ## References
 
 - **API Spec**: [openapi.yaml](../openapi.yaml)
 - **Dev Guide**: [context/Script Development Guide for Agents.md](../context/Script%20Development%20Guide%20for%20Agents.md)
 - **CLAUDE.md**: Additional runtime details and examples
+- **archicli source**: [archicli/](../archicli/)
