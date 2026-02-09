@@ -68,6 +68,12 @@ curl -s -X POST http://localhost:8765/model/apply \
   ]}'
 ```
 
+**For compound/nested elements** (parent composing children), use `parentVisualId`:
+```bash
+{"op": "addToView", "viewId": "VIEW_ID", "elementId": "CHILD_ID", "tempId": "v-child", "parentVisualId": "v-parent", "x": 10, "y": 30}
+```
+Or use `nestInView` after placement: `{"op": "nestInView", "viewId": "VIEW_ID", "visualId": "CHILD_VIS", "parentVisualId": "PARENT_VIS", "x": 10, "y": 30}`
+
 ### Step 6: Poll for Visual Object IDs
 ```bash
 curl -s "http://localhost:8765/ops/status?opId=OP_ID"

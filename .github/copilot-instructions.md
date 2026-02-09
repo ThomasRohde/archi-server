@@ -159,6 +159,7 @@ This project includes AI agent skills (in `.claude/skills/`) that enable automat
 - Within one batch, `createRelationship` can reference `tempId` from `createElement`
 - `addConnectionToView` needs **visual object IDs** (from `addToView`), not concept IDs
 - Connections are NOT auto-created when adding elements to a view
+- For compound/nested elements, use `parentVisualId` on `addToView` to nest children inside a parent visual object, or use `nestInView` to reparent after placement
 
 ### Available Skills (`.claude/skills/`)
 
@@ -210,7 +211,9 @@ archicli batch apply model/index.json --poll       # apply with auto-chunking + 
     { "op": "createElement", "type": "business-actor", "name": "Customer", "tempId": "e-customer" },
     { "op": "createRelationship", "type": "serving-relationship", "sourceId": "e-svc", "targetId": "e-customer" },
     { "op": "addToView", "viewId": "v-main", "elementId": "e-customer", "tempId": "vis-cust" },
-    { "op": "addConnectionToView", "viewId": "v-main", "relationshipId": "r1", "sourceVisualId": "vis-svc", "targetVisualId": "vis-cust" }
+    { "op": "addToView", "viewId": "v-main", "elementId": "e-child", "tempId": "vis-child", "parentVisualId": "vis-cust" },
+    { "op": "addConnectionToView", "viewId": "v-main", "relationshipId": "r1", "sourceVisualId": "vis-svc", "targetVisualId": "vis-cust" },
+    { "op": "nestInView", "viewId": "v-main", "visualId": "vis-existing", "parentVisualId": "vis-cust", "x": 10, "y": 30 }
   ]
 }
 ```

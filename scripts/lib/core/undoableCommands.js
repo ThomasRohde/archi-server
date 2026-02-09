@@ -1383,7 +1383,22 @@
                     throw new Error("Cannot find element: " + operation.elementId);
                 }
 
-                // Default dimensions
+                // Resolve parent container: parentVisualId → visual object, else view root
+                var addContainer = viewForAdd;
+                var parentVisualIdForResult = null;
+                if (operation.parentVisualId) {
+                    var parentVisual = idMap[operation.parentVisualId] || findVisualObjectInView(viewForAdd, operation.parentVisualId);
+                    if (!parentVisual) {
+                        throw new Error("Cannot find parent visual object: " + operation.parentVisualId);
+                    }
+                    if (typeof parentVisual.getChildren !== "function") {
+                        throw new Error("Visual object " + operation.parentVisualId + " cannot contain children");
+                    }
+                    addContainer = parentVisual;
+                    parentVisualIdForResult = parentVisual.getId();
+                }
+
+                // Default dimensions — coordinates are relative to parent container
                 var addX = typeof operation.x === "number" ? operation.x : 100;
                 var addY = typeof operation.y === "number" ? operation.y : 100;
                 var addWidth = typeof operation.width === "number" ? operation.width : 120;
@@ -1393,7 +1408,7 @@
                 var visualObj = factory.createDiagramModelArchimateObject();
                 visualObj.setArchimateElement(elementToAdd);
 
-                // Set bounds
+                // Set bounds (relative to parent container)
                 var bounds = factory.createBounds();
                 bounds.setX(addX);
                 bounds.setY(addY);
@@ -1401,23 +1416,23 @@
                 bounds.setHeight(addHeight < 0 ? 55 : addHeight);
                 visualObj.setBounds(bounds);
 
-                // Create command to add to view (undoable)
+                // Create command to add to container (undoable)
                 // IMPORTANT: Use IIFE to capture variables by value, not by reference
                 // Without this, the closure would capture the last values from the loop
-                (function(capturedView, capturedVisual) {
+                (function(capturedContainer, capturedVisual) {
                     var AddToViewCmd = Java.extend(GEFCommand, {
                         execute: function() {
-                            capturedView.getChildren().add(capturedVisual);
+                            capturedContainer.getChildren().add(capturedVisual);
                         },
                         undo: function() {
-                            capturedView.getChildren().remove(capturedVisual);
+                            capturedContainer.getChildren().remove(capturedVisual);
                         },
                         canExecute: function() { return true; },
                         canUndo: function() { return true; },
                         getLabel: function() { return "Add to View"; }
                     });
                     compound.add(new AddToViewCmd());
-                })(viewForAdd, visualObj);
+                })(addContainer, visualObj);
 
                 // Store visual object in map for connection references
                 if (operation.tempId) {
@@ -1429,7 +1444,7 @@
                 var _eltId = elementToAdd.getId ? elementToAdd.getId() : elementToAdd.id;
                 idMap["__vis_" + viewForAdd.getId() + "_" + _eltId] = visualObj;
 
-                results.push({
+                var addToViewResult = {
                     op: "addToView",
                     tempId: operation.tempId || null,
                     visualId: visualObj.getId(),
@@ -1439,6 +1454,90 @@
                     y: addY,
                     width: bounds.getWidth(),
                     height: bounds.getHeight()
+                };
+                if (parentVisualIdForResult) {
+                    addToViewResult.parentVisualId = parentVisualIdForResult;
+                }
+                results.push(addToViewResult);
+            }
+            else if (operation.op === "nestInView") {
+                // Move an existing visual object to be a child of another visual object
+                // Implements jArchi's parent.add(object, x, y) pattern
+                var viewForNest = idMap[operation.viewId] || findViewById(model, operation.viewId);
+                if (!viewForNest) {
+                    throw new Error("Cannot find view: " + operation.viewId);
+                }
+
+                var visualToNest = idMap[operation.visualId] || findVisualObjectInView(viewForNest, operation.visualId);
+                if (!visualToNest) {
+                    throw new Error("Cannot find visual object to nest: " + operation.visualId);
+                }
+
+                var nestParent = idMap[operation.parentVisualId] || findVisualObjectInView(viewForNest, operation.parentVisualId);
+                if (!nestParent) {
+                    throw new Error("Cannot find parent visual object: " + operation.parentVisualId);
+                }
+                if (typeof nestParent.getChildren !== "function") {
+                    throw new Error("Visual object " + operation.parentVisualId + " cannot contain children");
+                }
+
+                // Prevent nesting into self
+                if (visualToNest.getId() === nestParent.getId()) {
+                    throw new Error("Cannot nest a visual object inside itself");
+                }
+
+                // Set new position relative to parent (optional, defaults to 10, 10)
+                var nestX = typeof operation.x === "number" ? operation.x : 10;
+                var nestY = typeof operation.y === "number" ? operation.y : 10;
+
+                // Find current parent container for undo
+                (function(capturedView, capturedVisual, capturedNewParent, capturedX, capturedY) {
+                    // Snapshot old parent and old bounds for undo
+                    var oldParent = null;
+                    var oldBounds = capturedVisual.getBounds();
+
+                    var NestCmd = Java.extend(GEFCommand, {
+                        execute: function() {
+                            // Find current parent (view or another container)
+                            oldParent = capturedVisual.eContainer();
+                            // Remove from current parent
+                            if (oldParent && typeof oldParent.getChildren === "function") {
+                                oldParent.getChildren().remove(capturedVisual);
+                            }
+                            // Set new bounds relative to new parent
+                            var newBounds = factory.createBounds();
+                            newBounds.setX(capturedX);
+                            newBounds.setY(capturedY);
+                            newBounds.setWidth(oldBounds.getWidth());
+                            newBounds.setHeight(oldBounds.getHeight());
+                            capturedVisual.setBounds(newBounds);
+                            // Add to new parent
+                            capturedNewParent.getChildren().add(capturedVisual);
+                        },
+                        undo: function() {
+                            // Remove from new parent
+                            capturedNewParent.getChildren().remove(capturedVisual);
+                            // Restore old bounds
+                            capturedVisual.setBounds(oldBounds);
+                            // Add back to old parent
+                            if (oldParent && typeof oldParent.getChildren === "function") {
+                                oldParent.getChildren().add(capturedVisual);
+                            }
+                        },
+                        canExecute: function() { return true; },
+                        canUndo: function() { return true; },
+                        getLabel: function() { return "Nest in View"; }
+                    });
+                    compound.add(new NestCmd());
+                })(viewForNest, visualToNest, nestParent, nestX, nestY);
+
+                results.push({
+                    op: "nestInView",
+                    visualId: visualToNest.getId(),
+                    parentVisualId: nestParent.getId(),
+                    viewId: viewForNest.getId(),
+                    x: nestX,
+                    y: nestY
                 });
             }
             else if (operation.op === "addConnectionToView") {

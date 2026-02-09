@@ -171,7 +171,9 @@ archicli batch apply model/index.json --poll  # apply and wait for completion
     { "op": "createElement", "type": "business-actor", "name": "Customer", "tempId": "e-customer" },
     { "op": "createRelationship", "type": "serving-relationship", "sourceId": "e-service", "targetId": "e-customer", "tempId": "r1" },
     { "op": "addToView", "viewId": "v-main", "elementId": "e-customer", "tempId": "vis-customer" },
-    { "op": "addConnectionToView", "viewId": "v-main", "relationshipId": "r1", "sourceVisualId": "vis-service", "targetVisualId": "vis-customer" }
+    { "op": "addToView", "viewId": "v-main", "elementId": "e-child", "tempId": "vis-child", "parentVisualId": "vis-customer" },
+    { "op": "addConnectionToView", "viewId": "v-main", "relationshipId": "r1", "sourceVisualId": "vis-service", "targetVisualId": "vis-customer" },
+    { "op": "nestInView", "viewId": "v-main", "visualId": "vis-existing", "parentVisualId": "vis-customer", "x": 10, "y": 30 }
   ]
 }
 ```

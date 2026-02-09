@@ -107,6 +107,7 @@
             "createFolder",
             "addToView",
             "addConnectionToView",
+            "nestInView",
             "deleteConnectionFromView",
             "styleViewObject",
             "styleConnection",

@@ -78,6 +78,23 @@ curl -s -X POST http://localhost:8765/model/apply \
   }'
 ```
 
+**For compound/nested elements** (e.g., parent Application Component containing children), use `parentVisualId`:
+```bash
+curl -s -X POST http://localhost:8765/model/apply \
+  -H "Content-Type: application/json" \
+  -d '{
+    "changes": [
+      {"op": "addToView", "viewId": "VIEW_ID", "elementId": "PARENT_ID", "x": 50, "y": 50, "width": 300, "height": 200, "tempId": "v-parent"},
+      {"op": "addToView", "viewId": "VIEW_ID", "elementId": "CHILD_ID", "x": 10, "y": 30, "width": 120, "height": 55, "tempId": "v-child", "parentVisualId": "v-parent"}
+    ]
+  }'
+```
+
+Or use `nestInView` after placement to reparent:
+```bash
+{"op": "nestInView", "viewId": "VIEW_ID", "visualId": "CHILD_VISUAL_ID", "parentVisualId": "PARENT_VISUAL_ID", "x": 10, "y": 30}
+```
+
 ### Step 8: Poll for Visual Object IDs
 
 ```bash

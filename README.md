@@ -137,6 +137,7 @@ For idempotent re-runs, use `--skip-existing` to skip duplicate create operation
 | **Async mutations** | `/model/apply` is async — always use `--poll` or `ops status <id>` to confirm success. |
 | **Views vs elements** | Elements exist in the model tree independently. Views are diagrams; use `addToView` + `addConnectionToView` to populate them. |
 | **Visual IDs** | `addToView` returns a `visualId` (diagram object) distinct from the element `conceptId`. `addConnectionToView` needs visual IDs. |
+| **Nesting** | For compound elements (parent containing children), use `parentVisualId` on `addToView` to nest children inside a parent visual, or `nestInView` to reparent after placement. |
 
 ### All commands
 

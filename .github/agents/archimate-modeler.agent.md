@@ -78,6 +78,8 @@ curl -s -X POST http://localhost:8765/model/apply \
    ```
 
 2. **Add elements to view** via `/model/apply` with `addToView` operations (assign `tempId` to each).
+   - For compound/nested elements (parent containing children), use `parentVisualId` on child `addToView` operations to nest them inside the parent visual.
+   - Or use `nestInView` to reparent after placement.
 
 3. **Poll** to get visual object IDs.
 

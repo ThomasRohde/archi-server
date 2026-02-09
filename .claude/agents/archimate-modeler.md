@@ -119,6 +119,8 @@ Poll and collect relationship IDs.
    ```
 
 2. **Add elements to view** via `/model/apply` with `addToView` operations (assign `tempId` to each).
+   - For compound/nested elements (parent containing children), use `parentVisualId` on child `addToView` operations to nest them inside the parent visual object. Child coordinates are relative to the parent.
+   - Alternatively, use `nestInView` to reparent already-placed visual objects.
 
 3. **Poll** to get visual object IDs.
 

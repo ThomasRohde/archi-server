@@ -263,7 +263,7 @@
         var elements = [];
         var connections = [];
 
-        function processChildren(container) {
+        function processChildren(container, parentId) {
             var children = container.getChildren();
             for (var i = 0; i < children.size(); i++) {
                 var child = children.get(i);
@@ -321,6 +321,11 @@
                         height: bounds ? bounds.getHeight() : 0
                     };
 
+                    // Include parentId for nested visual objects
+                    if (parentId) {
+                        elemData.parentId = parentId;
+                    }
+
                     // Add style properties for visual objects
                     if (typeof child.getFillColor === "function") {
                         var fillColor = child.getFillColor();
@@ -353,15 +358,15 @@
 
                     elements.push(elemData);
 
-                    // Recursively process nested children
+                    // Recursively process nested children, passing this element as parent
                     if (typeof child.getChildren === "function") {
-                        processChildren(child);
+                        processChildren(child, child.getId());
                     }
                 }
             }
         }
 
-        processChildren(view);
+        processChildren(view, null);
         return { elements: elements, connections: connections };
     }
 

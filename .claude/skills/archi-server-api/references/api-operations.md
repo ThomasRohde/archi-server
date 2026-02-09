@@ -182,12 +182,13 @@ Adds an existing model element to a view as a visual object.
 | `viewId` | Yes | string | Target view ID |
 | `elementId` | Yes | string | Element concept ID to add |
 | `tempId` | No | string | Temporary ID for the visual object (needed for connections) |
-| `x` | No | number | X position (default: 100) |
-| `y` | No | number | Y position (default: 100) |
+| `parentVisualId` | No | string | Visual object ID of parent container to nest inside. Coordinates become relative to parent. |
+| `x` | No | number | X position relative to parent or view root (default: 100) |
+| `y` | No | number | Y position relative to parent or view root (default: 100) |
 | `width` | No | number | Width in pixels (default: auto) |
 | `height` | No | number | Height in pixels (default: auto) |
 
-**Example:**
+**Example (top-level):**
 ```json
 {
   "op": "addToView",
@@ -198,6 +199,46 @@ Adds an existing model element to a view as a visual object.
   "y": 100,
   "width": 120,
   "height": 55
+}
+```
+
+**Example (nested inside parent):**
+```json
+{
+  "op": "addToView",
+  "viewId": "view-abc",
+  "elementId": "child-id",
+  "tempId": "vo-child",
+  "parentVisualId": "vo-parent",
+  "x": 10,
+  "y": 30,
+  "width": 120,
+  "height": 55
+}
+```
+
+### nestInView
+
+Moves an existing visual object to be a child of another visual object in the same view. This creates proper visual nesting for compound elements (e.g., an Application Component containing child Application Components via composition). Equivalent to jArchi's `parent.add(object, x, y)`.
+
+| Field | Required | Type | Description |
+|-------|----------|------|-------------|
+| `op` | Yes | `"nestInView"` | Operation type |
+| `viewId` | Yes | string | View ID containing both objects |
+| `visualId` | Yes | string | Visual object ID to move into parent |
+| `parentVisualId` | Yes | string | Visual object ID of the target parent container |
+| `x` | No | number | X position relative to parent (default: 10) |
+| `y` | No | number | Y position relative to parent (default: 10) |
+
+**Example:**
+```json
+{
+  "op": "nestInView",
+  "viewId": "view-abc",
+  "visualId": "vo-child-real-id",
+  "parentVisualId": "vo-parent-real-id",
+  "x": 10,
+  "y": 30
 }
 ```
 

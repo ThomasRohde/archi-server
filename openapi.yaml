@@ -1083,6 +1083,7 @@ components:
           createFolder: '#/components/schemas/CreateFolderOp'
           addToView: '#/components/schemas/AddToViewOp'
           addConnectionToView: '#/components/schemas/AddConnectionToViewOp'
+          nestInView: '#/components/schemas/NestInViewOp'
           deleteConnectionFromView: '#/components/schemas/DeleteConnectionFromViewOp'
           styleViewObject: '#/components/schemas/StyleViewObjectOp'
           styleConnection: '#/components/schemas/StyleConnectionOp'
@@ -1103,6 +1104,7 @@ components:
         - $ref: '#/components/schemas/CreateFolderOp'
         - $ref: '#/components/schemas/AddToViewOp'
         - $ref: '#/components/schemas/AddConnectionToViewOp'
+        - $ref: '#/components/schemas/NestInViewOp'
         - $ref: '#/components/schemas/DeleteConnectionFromViewOp'
         - $ref: '#/components/schemas/StyleViewObjectOp'
         - $ref: '#/components/schemas/StyleConnectionOp'
@@ -1246,12 +1248,19 @@ components:
         tempId:
           type: string
           description: Temporary ID for referencing the created visual object in subsequent operations
+        parentVisualId:
+          type: string
+          description: |
+            Visual object ID of the parent container to nest this element inside.
+            Can be a visual object ID or tempId from a prior addToView/createGroup operation.
+            Coordinates (x, y) become relative to the parent container's bounds.
+            If omitted, the element is added to the view root.
         x:
           type: integer
-          description: X coordinate in view (default 100)
+          description: X coordinate (relative to parent container or view root, default 100)
         y:
           type: integer
-          description: Y coordinate in view (default 100)
+          description: Y coordinate (relative to parent container or view root, default 100)
         width:
           type: integer
           description: Width in pixels (-1 for default)
@@ -1286,6 +1295,39 @@ components:
         targetVisualId:
           type: string
           description: Target visual object ID (from addToView result or existing visual)
+
+    NestInViewOp:
+      type: object
+      required:
+        - op
+        - viewId
+        - visualId
+        - parentVisualId
+      description: |
+        Move an existing visual object to be a child of another visual object in the same view.
+        This is the equivalent of jArchi's parent.add(object, x, y) method.
+        The x, y position is relative to the target parent object's bounds.
+        Use this to create proper visual nesting for compound elements (e.g., an Application Component
+        containing child Application Components via composition relationships).
+      properties:
+        op:
+          type: string
+          enum: [nestInView]
+        viewId:
+          type: string
+          description: View ID containing both visual objects
+        visualId:
+          type: string
+          description: Visual object ID (or tempId) to move into the parent
+        parentVisualId:
+          type: string
+          description: Visual object ID (or tempId) of the target parent container
+        x:
+          type: integer
+          description: X position relative to parent container (default 10)
+        y:
+          type: integer
+          description: Y position relative to parent container (default 10)
 
     DeleteConnectionFromViewOp:
       type: object
@@ -2327,6 +2369,13 @@ components:
           type: integer
         height:
           type: integer
+        parentId:
+          type: string
+          nullable: true
+          description: |
+            Visual object ID of the parent container, if this element is nested inside
+            another visual object (e.g., a group or compound element). Null/absent for
+            top-level elements. Coordinates (x, y) are relative to the parent when present.
         conceptId:
           type: string
           nullable: true

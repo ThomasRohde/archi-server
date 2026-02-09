@@ -113,8 +113,9 @@ done
 | `setProperty` | `id`, `key`, `value` | |
 | `moveToFolder` | `id`, `folderId` | |
 | `createFolder` | `name`, `parentFolderId` | `tempId` |
-| `addToView` | `viewId`, `elementId` | `tempId`, `x`, `y`, `width`, `height` |
+| `addToView` | `viewId`, `elementId` | `tempId`, `x`, `y`, `width`, `height`, `parentVisualId` |
 | `addConnectionToView` | `viewId`, `relationshipId`, `sourceVisualId`, `targetVisualId` | `tempId` |
+| `nestInView` | `viewId`, `visualId`, `parentVisualId` | `x`, `y` |
 | `deleteConnectionFromView` | `viewId`, `connectionId` | |
 | `styleViewObject` | `viewObjectId` | `fillColor`, `lineColor`, `fontColor`, `lineWidth`, `opacity`, `textAlignment` |
 | `styleConnection` | `connectionId` | `lineColor`, `lineWidth`, `fontColor` |
@@ -207,6 +208,29 @@ curl -s -X POST http://localhost:8765/model/apply \
   }'
 ```
 
+**Nesting (compound elements):** To place a child element inside a parent (e.g., a composed Application Component), use `parentVisualId`:
+```bash
+curl -s -X POST http://localhost:8765/model/apply \
+  -H "Content-Type: application/json" \
+  -d '{
+    "changes": [
+      {"op": "addToView", "viewId": "view-abc", "elementId": "parent-id", "x": 50, "y": 50, "width": 300, "height": 200, "tempId": "v-parent"},
+      {"op": "addToView", "viewId": "view-abc", "elementId": "child-id", "x": 10, "y": 30, "width": 120, "height": 55, "tempId": "v-child", "parentVisualId": "v-parent"}
+    ]
+  }'
+```
+
+**Or use `nestInView` to move an already-placed element into a parent:**
+```bash
+curl -s -X POST http://localhost:8765/model/apply \
+  -H "Content-Type: application/json" \
+  -d '{
+    "changes": [
+      {"op": "nestInView", "viewId": "view-abc", "visualId": "v-child-visual-id", "parentVisualId": "v-parent-visual-id", "x": 10, "y": 30}
+    ]
+  }'
+```
+
 ### Step 9: Poll for Visual Object IDs
 The result maps `tempId` → visual object ID. These are the IDs needed for connections.
 
@@ -251,13 +275,15 @@ curl -s -X POST http://localhost:8765/model/save
 
 4. **Within-batch tempId references**: In a single `/model/apply` batch, a `createRelationship` CAN reference `tempId` from a `createElement` in the same batch. But `addToView` and `addConnectionToView` typically need IDs from a separate prior batch.
 
-5. **Limits**: Max 1000 changes per request. 1MB body limit. 200 requests/minute rate limit.
+5. **Nesting for compound elements**: When an element visually contains children (e.g., Application Component composing others), use `parentVisualId` on `addToView` to place children inside the parent. The child's `x`, `y` coordinates become **relative to the parent container**. Alternatively, use `nestInView` to reparent an already-placed visual object. Without nesting, children appear as siblings even if overlapping the parent.
 
-6. **Layout options**: Only `dagre` algorithm. `rankdir`: `TB` (top-bottom), `BT`, `LR` (left-right), `RL`. `nodesep`/`ranksep` in pixels.
+6. **Limits**: Max 1000 changes per request. 1MB body limit. 200 requests/minute rate limit.
 
-7. **Connection router**: `bendpoint` (straight lines) or `manhattan` (right-angle routing). Set via `PUT /views/{id}/router`.
+7. **Layout options**: Only `dagre` algorithm. `rankdir`: `TB` (top-bottom), `BT`, `LR` (left-right), `RL`. `nodesep`/`ranksep` in pixels.
 
-8. **Export formats**: `PNG` or `JPEG`. Scale: 0.5 to 4.0. Optional `margin` in pixels.
+8. **Connection router**: `bendpoint` (straight lines) or `manhattan` (right-angle routing). Set via `PUT /views/{id}/router`.
+
+9. **Export formats**: `PNG` or `JPEG`. Scale: 0.5 to 4.0. Optional `margin` in pixels.
 
 9. **Delete cascade**: `deleteElement` with `cascade: true` (default) removes the element, all its relationships, and all visual references across all views.
 

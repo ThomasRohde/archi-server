@@ -624,4 +624,84 @@ describe('operationValidation', () => {
       });
     });
   });
+
+  describe('nestInView validation', () => {
+    it('accepts valid nestInView operation', () => {
+      const request = {
+        changes: [{
+          op: 'nestInView',
+          viewId: 'view-1',
+          visualId: 'vis-child',
+          parentVisualId: 'vis-parent'
+        }]
+      };
+      expect(() => operationValidation.validateApplyRequest(request)).not.toThrow();
+    });
+
+    it('accepts nestInView with optional x, y', () => {
+      const request = {
+        changes: [{
+          op: 'nestInView',
+          viewId: 'view-1',
+          visualId: 'vis-child',
+          parentVisualId: 'vis-parent',
+          x: 10,
+          y: 30
+        }]
+      };
+      expect(() => operationValidation.validateApplyRequest(request)).not.toThrow();
+    });
+
+    it('rejects nestInView without viewId', () => {
+      const change = { op: 'nestInView', visualId: 'vis-child', parentVisualId: 'vis-parent' };
+      expect(() => operationValidation.validateNestInView(change, 0))
+        .toThrow("missing 'viewId' field");
+    });
+
+    it('rejects nestInView without visualId', () => {
+      const change = { op: 'nestInView', viewId: 'view-1', parentVisualId: 'vis-parent' };
+      expect(() => operationValidation.validateNestInView(change, 0))
+        .toThrow("missing 'visualId' field");
+    });
+
+    it('rejects nestInView without parentVisualId', () => {
+      const change = { op: 'nestInView', viewId: 'view-1', visualId: 'vis-child' };
+      expect(() => operationValidation.validateNestInView(change, 0))
+        .toThrow("missing 'parentVisualId' field");
+    });
+
+    it('rejects nestInView with non-numeric x', () => {
+      const change = { op: 'nestInView', viewId: 'view-1', visualId: 'vis-child', parentVisualId: 'vis-parent', x: 'bad' };
+      expect(() => operationValidation.validateNestInView(change, 0))
+        .toThrow("'x' must be a number");
+    });
+
+    it('rejects nestInView with non-numeric y', () => {
+      const change = { op: 'nestInView', viewId: 'view-1', visualId: 'vis-child', parentVisualId: 'vis-parent', y: 'bad' };
+      expect(() => operationValidation.validateNestInView(change, 0))
+        .toThrow("'y' must be a number");
+    });
+  });
+
+  describe('addToView parentVisualId validation', () => {
+    it('accepts addToView with parentVisualId', () => {
+      const request = {
+        changes: [{
+          op: 'addToView',
+          viewId: 'view-1',
+          elementId: 'elem-1',
+          parentVisualId: 'vis-parent',
+          x: 10,
+          y: 30
+        }]
+      };
+      expect(() => operationValidation.validateApplyRequest(request)).not.toThrow();
+    });
+
+    it('rejects addToView with non-string parentVisualId', () => {
+      const change = { op: 'addToView', viewId: 'view-1', elementId: 'elem-1', parentVisualId: 123 };
+      expect(() => operationValidation.validateAddToView(change, 0))
+        .toThrow("'parentVisualId' must be a string");
+    });
+  });
 });

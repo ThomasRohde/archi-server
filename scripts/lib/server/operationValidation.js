@@ -240,6 +240,9 @@
                 case "addConnectionToView":
                     this.validateAddConnectionToView(change, index);
                     break;
+                case "nestInView":
+                    this.validateNestInView(change, index);
+                    break;
                 case "deleteConnectionFromView":
                     this.validateDeleteConnectionFromView(change, index);
                     break;
@@ -556,6 +559,46 @@
             if (change.y !== undefined && typeof change.y !== 'number') {
                 throw this.createValidationError(
                     "Change " + index + " (addToView): 'y' must be a number"
+                );
+            }
+            // parentVisualId is optional — if provided, coordinates are relative to parent
+            if (change.parentVisualId !== undefined && typeof change.parentVisualId !== 'string') {
+                throw this.createValidationError(
+                    "Change " + index + " (addToView): 'parentVisualId' must be a string"
+                );
+            }
+        },
+
+        /**
+         * Validate nestInView operation
+         * @param {Object} change - Change descriptor
+         * @param {number} index - Index in changes array
+         * @throws {Error} If validation fails
+         */
+        validateNestInView: function(change, index) {
+            if (!change.viewId) {
+                throw this.createValidationError(
+                    "Change " + index + " (nestInView): missing 'viewId' field"
+                );
+            }
+            if (!change.visualId) {
+                throw this.createValidationError(
+                    "Change " + index + " (nestInView): missing 'visualId' field"
+                );
+            }
+            if (!change.parentVisualId) {
+                throw this.createValidationError(
+                    "Change " + index + " (nestInView): missing 'parentVisualId' field"
+                );
+            }
+            if (change.x !== undefined && typeof change.x !== 'number') {
+                throw this.createValidationError(
+                    "Change " + index + " (nestInView): 'x' must be a number"
+                );
+            }
+            if (change.y !== undefined && typeof change.y !== 'number') {
+                throw this.createValidationError(
+                    "Change " + index + " (nestInView): 'y' must be a number"
                 );
             }
         },

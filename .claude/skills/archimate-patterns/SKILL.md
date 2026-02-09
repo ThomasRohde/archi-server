@@ -286,4 +286,4 @@ curl -s -X POST http://localhost:8765/model/apply \
   }'
 ```
 
-After any pattern creation, follow up with: view creation → `addToView` for each element → `addConnectionToView` for each relationship → `layout` → `save`. See the **archi-server-api** skill for full workflow details.
+After any pattern creation, follow up with: view creation → `addToView` for each element (use `parentVisualId` for compound/nested elements) → `addConnectionToView` for each relationship → `layout` → `save`. See the **archi-server-api** skill for full workflow details.

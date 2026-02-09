@@ -64,6 +64,9 @@ curl -s -X POST http://localhost:8765/views \
   -d '{"name": "PATTERN_NAME Architecture", "documentation": "Generated from PATTERN template"}'
 
 # Add elements to view (use real IDs)
+# For compound elements, use parentVisualId to nest children:
+# {"op": "addToView", ..., "parentVisualId": "v-parent"}
+# Or use nestInView to reparent: {"op": "nestInView", "viewId": "...", "visualId": "...", "parentVisualId": "..."}
 curl -s -X POST http://localhost:8765/model/apply \
   -H "Content-Type: application/json" \
   -d '{"changes": [{"op": "addToView", "viewId": "VIEW_ID", "elementId": "REAL_ID", "tempId": "v1"}, ...]}'
