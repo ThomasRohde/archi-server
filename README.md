@@ -79,11 +79,16 @@ archicli model query                             # inspect the model
 archicli model search --type application-component
 archicli verify changes.json                     # validate a BOM file
 archicli batch apply changes.json --poll         # apply and wait for results
+archicli view create "Application Overview" --viewpoint application_cooperation
 ```
 
 ### Bill of Materials (BOM) files
 
-Changes are described in JSON BOM files. The `batch apply` command handles validation, chunking (up to 1000 ops per request), polling, and tempId→realId persistence automatically:
+Changes are described in JSON BOM files. The `batch apply` command handles validation, chunking (up to 1000 ops per request), polling, and tempId→realId persistence automatically.
+
+Validation is strict: unknown top-level and operation fields are rejected. For `archicli verify` auto-detection, BOM files should include `version: "1.0"` and either a `changes` array or an `includes` array.
+
+Example:
 
 ```json
 {
@@ -100,6 +105,8 @@ Changes are described in JSON BOM files. The `batch apply` command handles valid
 ```
 
 After `--poll` completes, `changes.ids.json` is written containing all tempId→realId mappings for use in subsequent BOM files.
+
+If you run `batch apply` without `--poll`, requests are still submitted, but completion is not tracked and ID mappings are not saved. The CLI prints a warning in that mode.
 
 ### Key concepts
 
@@ -123,10 +130,12 @@ archicli batch apply <file> --poll   Apply BOM with auto-chunking + polling
 archicli batch split <file>          Split large BOM into linked chunk files
 archicli view list                   List all views
 archicli view get <id>               View detail with visual object IDs
-archicli view create <name>          Create empty view
+archicli view create <name> [options] Create view (supports --viewpoint, --folder, --documentation)
 archicli view export <id>            Export view as PNG/JPEG
 archicli ops status <opId> --poll    Poll async operation to completion
 ```
+
+Use `archicli view create --help` for the full valid viewpoint list and examples.
 
 ## Project Structure
 

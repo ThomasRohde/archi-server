@@ -44,6 +44,7 @@
     { "required": ["includes"] },
     { "required": ["idFiles"] }
   ],
+  "additionalProperties": false,
   "definitions": {
     "ElementType": {
       "type": "string",
@@ -122,12 +123,14 @@
       "then": {
         "required": ["op", "type", "name"],
         "properties": {
+          "op": { "type": "string" },
           "type": { "$ref": "#/definitions/ElementType" },
           "name": { "type": "string", "minLength": 1 },
           "tempId": { "type": "string", "description": "Temporary ID for cross-referencing within the same batch" },
           "documentation": { "type": "string" },
           "folder": { "type": "string", "description": "Target folder path or ID" }
-        }
+        },
+        "additionalProperties": false
       },
       "else": {
         "if": {
@@ -136,12 +139,14 @@
         "then": {
           "required": ["op", "type", "sourceId", "targetId"],
           "properties": {
+            "op": { "type": "string" },
             "type": { "$ref": "#/definitions/RelationshipType" },
             "sourceId": { "type": "string", "description": "Source element ID or tempId" },
             "targetId": { "type": "string", "description": "Target element ID or tempId" },
             "tempId": { "type": "string", "description": "Temporary ID for cross-referencing within the same batch" },
             "name": { "type": "string" }
-          }
+          },
+          "additionalProperties": false
         },
         "else": {
           "if": {
@@ -150,10 +155,12 @@
           "then": {
             "required": ["op", "name"],
             "properties": {
+              "op": { "type": "string" },
               "name": { "type": "string", "minLength": 1 },
               "tempId": { "type": "string", "description": "Temporary ID for cross-referencing within the same batch" },
               "documentation": { "type": "string" }
-            }
+            },
+            "additionalProperties": false
           },
           "else": {
             "if": {
@@ -162,10 +169,12 @@
             "then": {
               "required": ["op", "name"],
               "properties": {
+                "op": { "type": "string" },
                 "name": { "type": "string", "minLength": 1 },
                 "parentId": { "type": "string", "description": "ID of the parent folder" },
                 "parentType": { "type": "string", "description": "Type of the parent folder (e.g. application, business)" }
               },
+              "additionalProperties": false,
               "anyOf": [
                 { "required": ["parentId"] },
                 { "required": ["parentType"] }

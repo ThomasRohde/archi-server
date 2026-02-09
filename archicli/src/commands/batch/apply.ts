@@ -294,6 +294,14 @@ export function batchApplyCommand(): Command {
           // Progress stream: use stdout in TTY mode (ensures ordering), suppress when piped
           const progressStream = process.stdout.isTTY ? process.stdout : null;
 
+          // Warn if running without --poll (almost always a mistake)
+          if (!options.poll) {
+            process.stderr.write(
+              'Warning: Running without --poll. Operation results will not be tracked.\n' +
+              '         Use --poll to wait for completion and save ID mappings.\n\n'
+            );
+          }
+
           // Submit each chunk, carrying tempId→realId map across chunks
           const results: Array<Record<string, unknown>> = [];
           let hadOperationErrors = false;

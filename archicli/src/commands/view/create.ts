@@ -30,9 +30,22 @@ const VALID_VIEWPOINTS = new Set([
 
 export function viewCreateCommand(): Command {
   return new Command('create')
-    .description('Create a new ArchiMate view in the model')
+    .description(
+      'Create a new ArchiMate view in the model\n\n' +
+      'VALID VIEWPOINTS:\n' +
+      '  Strategy:      strategy, capability, value_stream, outcome_realization\n' +
+      '  Business:      organization, business_process_cooperation, product\n' +
+      '  Application:   application_cooperation, application_usage, information_structure\n' +
+      '  Technology:    technology, technology_usage, physical\n' +
+      '  Cross-layer:   layered, implementation_and_deployment, service_realization\n' +
+      '  Motivation:    motivation, goal_realization, requirements_realization\n' +
+      '  Migration:     implementation_and_migration, migration, project\n\n' +
+      'EXAMPLES:\n' +
+      '  archicli view create "Application Overview" --viewpoint application_cooperation\n' +
+      '  archicli view create "Technology Stack" --viewpoint layered'
+    )
     .argument('<name>', 'name for the new view')
-    .option('-p, --viewpoint <viewpoint>', 'ArchiMate viewpoint (e.g., application_cooperation, layered, strategy)')
+    .option('-p, --viewpoint <viewpoint>', 'ArchiMate viewpoint (see valid viewpoints above)')
     .option('-f, --folder <folder>', 'target folder path or ID')
     .option('-d, --documentation <text>', 'view documentation')
     .action(async (name: string, options: { viewpoint?: string; folder?: string; documentation?: string }, cmd: Command) => {

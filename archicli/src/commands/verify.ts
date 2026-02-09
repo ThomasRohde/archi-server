@@ -212,13 +212,21 @@ export function verifyCommand(): Command {
         if (!schema) {
           schema = detectSchema(data);
           if (!schema) {
-            print(
-              failure(
-                'SCHEMA_UNKNOWN',
-                'Could not auto-detect schema. Use --schema to specify one of: ' +
-                  SCHEMA_NAMES.join(', ')
-              )
-            );
+            let hint = 'Could not auto-detect schema.';
+
+            // Provide diagnostic hints based on what's missing
+            const obj = data as Record<string, unknown>;
+            if (!obj.version) {
+              hint += ' Hint: BOM files require a top-level "version" field set to "1.0" for auto-detection.';
+            } else if (obj.version !== '1.0') {
+              hint += ` Hint: BOM "version" must be "1.0", found "${obj.version}".`;
+            } else if (!obj.changes && !obj.includes) {
+              hint += ' Hint: BOM files require either a "changes" array or an "includes" array.';
+            }
+
+            hint += ' Use --schema to specify one of: ' + SCHEMA_NAMES.join(', ');
+
+            print(failure('SCHEMA_UNKNOWN', hint));
             cmd.error('', { exitCode: 1 });
             return;
           }
