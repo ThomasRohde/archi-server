@@ -1126,6 +1126,41 @@
                     compound.add(relNameCmd);
                 }
 
+                // Set documentation if provided
+                if (operation.documentation) {
+                    var relDocCreateCmd = new EObjectFeatureCommand(
+                        "Set Documentation",
+                        rel,
+                        pkg.getDocumentable_Documentation(),
+                        operation.documentation
+                    );
+                    compound.add(relDocCreateCmd);
+                }
+
+                // Set accessType for access relationships
+                if (operation.accessType !== undefined && typeof rel.setAccessType === 'function') {
+                    var accessPkgCreate = pkg.getAccessRelationship_AccessType();
+                    var accessCmdCreate = new EObjectFeatureCommand(
+                        "Set Access Type",
+                        rel,
+                        accessPkgCreate,
+                        operation.accessType
+                    );
+                    compound.add(accessCmdCreate);
+                }
+
+                // Set strength for influence relationships
+                if (operation.strength !== undefined && typeof rel.setStrength === 'function') {
+                    var strengthPkgCreate = pkg.getInfluenceRelationship_Strength();
+                    var strengthCmdCreate = new EObjectFeatureCommand(
+                        "Set Influence Strength",
+                        rel,
+                        strengthPkgCreate,
+                        operation.strength
+                    );
+                    compound.add(strengthCmdCreate);
+                }
+
                 // Add to folder
                 var relFolder = getFolderForType(model, operation.type);
                 var relAddCmd = createAddToFolderCommand(

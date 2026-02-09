@@ -135,41 +135,53 @@
 
             var FlushRunnable = Java.extend(Runnable, {
                 run: function() {
-                    if (!self._timerRunning || self._logTextWidget.isDisposed()) {
+                    // Check if timer is still running and widget is valid
+                    if (!self._timerRunning) {
                         return;
                     }
+                    
+                    // Check widget validity, but continue timer even if disposed
+                    // (this allows other Display activity to continue)
+                    var widgetValid = self._logTextWidget && !self._logTextWidget.isDisposed();
 
-                    // Drain up to maxLinesPerCycle lines from queue
-                    var lines = [];
-                    var maxLines = self.config.maxLinesPerCycle;
-                    while (lines.length < maxLines && !self.queue.isEmpty()) {
-                        lines.push(self.queue.poll());
-                    }
-
-                    // Append to log text and console (safe: we're on UI thread)
-                    if (lines.length > 0) {
-                        // Output to console (safe here since we're on UI thread)
-                        lines.forEach(function(line) {
-                            console.log(line);
-                        });
-
-                        var currentText = self._logTextWidget.getText();
-                        var newText = currentText + (currentText.length > 0 ? lineSeparator : "") + lines.join(lineSeparator);
-
-                        // Limit total lines to config.maxLines
-                        var allLines = newText.split(lineSeparator);
-                        if (allLines.length > self.config.maxLines) {
-                            allLines = allLines.slice(-self.config.maxLines);
-                            newText = allLines.join(lineSeparator);
+                    if (widgetValid) {
+                        // Drain up to maxLinesPerCycle lines from queue
+                        var lines = [];
+                        var maxLines = self.config.maxLinesPerCycle;
+                        while (lines.length < maxLines && !self.queue.isEmpty()) {
+                            lines.push(self.queue.poll());
                         }
 
-                        self._logTextWidget.setText(newText);
+                        // Append to log text and console (safe: we're on UI thread)
+                        if (lines.length > 0) {
+                            try {
+                                // Output to console (safe here since we're on UI thread)
+                                lines.forEach(function(line) {
+                                    console.log(line);
+                                });
 
-                        // Auto-scroll to end
-                        self._logTextWidget.setSelection(self._logTextWidget.getCharCount());
+                                var currentText = self._logTextWidget.getText();
+                                var newText = currentText + (currentText.length > 0 ? lineSeparator : "") + lines.join(lineSeparator);
+
+                                // Limit total lines to config.maxLines
+                                var allLines = newText.split(lineSeparator);
+                                if (allLines.length > self.config.maxLines) {
+                                    allLines = allLines.slice(-self.config.maxLines);
+                                    newText = allLines.join(lineSeparator);
+                                }
+
+                                self._logTextWidget.setText(newText);
+
+                                // Auto-scroll to end
+                                self._logTextWidget.setSelection(self._logTextWidget.getCharCount());
+                            } catch (e) {
+                                // Silently handle errors during flush
+                            }
+                        }
                     }
 
-                    // Schedule next flush
+                    // Schedule next flush regardless of whether widget is valid
+                    // This keeps the Display thread active even during idle periods
                     if (self._timerRunning) {
                         self._scheduleFlush();
                     }

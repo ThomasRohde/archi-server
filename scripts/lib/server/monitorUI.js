@@ -49,6 +49,7 @@
          */
         _isShuttingDown: false,
         _serverRunning: true,
+        _heartbeatTimer: null,
 
         /**
          * Create monitor dialog
@@ -180,6 +181,46 @@
 
             // Show dialog
             this.shell.open();
+
+            // Start heartbeat to keep window responsive during idle periods
+            this._startHeartbeat(display);
+        },
+
+        /**
+         * Start heartbeat timer to prevent ghost window during idle periods
+         * @param {org.eclipse.swt.widgets.Display} display - SWT Display
+         * @private
+         */
+        _startHeartbeat: function(display) {
+            var self = this;
+            var Runnable = Java.type("java.lang.Runnable");
+            
+            var HeartbeatRunnable = Java.extend(Runnable, {
+                run: function() {
+                    // Check if shell is disposed or shutting down
+                    if (!self.shell || self.shell.isDisposed() || self._isShuttingDown) {
+                        return;
+                    }
+                    
+                    try {
+                        // Force a minimal update to keep the Display thread active
+                        // This prevents Windows from marking the window as unresponsive
+                        if (!self.shell.isDisposed()) {
+                            self.shell.update();
+                        }
+                    } catch (e) {
+                        // Silently ignore errors during heartbeat
+                    }
+                    
+                    // Reschedule heartbeat
+                    if (!self._isShuttingDown && !self.shell.isDisposed()) {
+                        display.timerExec(2000, new HeartbeatRunnable());
+                    }
+                }
+            });
+            
+            // Initial heartbeat schedule (every 2 seconds)
+            display.timerExec(2000, new HeartbeatRunnable());
         },
 
         /**
@@ -207,6 +248,7 @@
          * Close the monitor dialog
          */
         close: function() {
+            this._isShuttingDown = true;  // Signal heartbeat to stop
             if (this.shell && !this.shell.isDisposed()) {
                 this.shell.close();
             }

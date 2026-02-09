@@ -4,6 +4,7 @@ import { viewGetCommand } from './get';
 import { viewCreateCommand } from './create';
 import { viewExportCommand } from './export';
 import { viewDeleteCommand } from './delete';
+import { viewLayoutCommand } from './layout';
 
 export function viewCommand(): Command {
   return new Command('view')
@@ -24,5 +25,6 @@ export function viewCommand(): Command {
     .addCommand(viewGetCommand())
     .addCommand(viewCreateCommand())
     .addCommand(viewExportCommand())
-    .addCommand(viewDeleteCommand());
+    .addCommand(viewDeleteCommand())
+    .addCommand(viewLayoutCommand());
 }

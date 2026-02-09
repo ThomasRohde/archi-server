@@ -20,6 +20,18 @@ function formatViewDetailsText(data: Record<string, unknown>): string {
   lines.push(`connectionRouter: ${connectionRouter}`);
 
   const elements = Array.isArray(data.elements) ? data.elements as Array<Record<string, unknown>> : [];
+
+  // Build a lookup map: visualId -> element name, and conceptId -> element name
+  const visualIdToName = new Map<string, string>();
+  const conceptIdToName = new Map<string, string>();
+  for (const element of elements) {
+    const elementId = typeof element.id === 'string' ? element.id : '';
+    const elementName = typeof element.name === 'string' ? element.name : '';
+    const conceptId = typeof element.conceptId === 'string' ? element.conceptId : '';
+    if (elementId) visualIdToName.set(elementId, elementName);
+    if (conceptId) conceptIdToName.set(conceptId, elementName);
+  }
+
   lines.push('');
   lines.push(`elements (${elements.length}):`);
   if (elements.length === 0) {
@@ -48,15 +60,15 @@ function formatViewDetailsText(data: Record<string, unknown>): string {
   } else {
     for (const connection of connections) {
       const connectionId = typeof connection.id === 'string' ? connection.id : '';
-      const connectionName = typeof connection.name === 'string' ? connection.name : '';
       const sourceId = typeof connection.sourceId === 'string' ? connection.sourceId : '-';
       const targetId = typeof connection.targetId === 'string' ? connection.targetId : '-';
-      const conceptId = typeof connection.conceptId === 'string' ? connection.conceptId : '-';
       const conceptType = typeof connection.conceptType === 'string' ? connection.conceptType : '-';
-      lines.push(`  - ${connectionName} (${connectionId})`);
-      lines.push(`    source: ${sourceId}`);
-      lines.push(`    target: ${targetId}`);
-      lines.push(`    concept: ${conceptType} (${conceptId})`);
+
+      const sourceName = visualIdToName.get(sourceId) ?? sourceId;
+      const targetName = visualIdToName.get(targetId) ?? targetId;
+
+      lines.push(`  [conn] ${conceptType}: ${sourceName} \u2500\u2500\u25B6 ${targetName} (${sourceId} \u2192 ${targetId})`);
+      lines.push(`    connectionId: ${connectionId}`);
     }
   }
 

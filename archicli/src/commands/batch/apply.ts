@@ -215,6 +215,19 @@ export function batchApplyCommand(): Command {
       '--allow-empty',
       'allow empty BOMs to succeed (exit 0) instead of failing'
     )
+    .option(
+      '--layout',
+      'after successful apply, auto-layout any views that were created or populated'
+    )
+    .option(
+      '--rankdir <dir>',
+      'layout direction when using --layout: TB, LR, BT, RL',
+      'TB'
+    )
+    .option(
+      '--continue-on-error',
+      'continue processing independent chunks when a chunk fails'
+    )
     .action(
       async (
         file: string,
@@ -228,6 +241,9 @@ export function batchApplyCommand(): Command {
           allowIncompleteIdfiles?: boolean;
           skipExisting?: boolean;
           allowEmpty?: boolean;
+          layout?: boolean;
+          rankdir: string;
+          continueOnError?: boolean;
         },
         cmd: Command
       ) => {
@@ -339,12 +355,42 @@ export function batchApplyCommand(): Command {
           const results: Array<Record<string, unknown>> = [];
           const skippedOperations: SkippedOperation[] = [];
           let hadOperationErrors = false;
+          const failedChunkTempIds = new Set<string>();
           for (let i = 0; i < chunks.length; i++) {
             const chunkStartIndex = i * chunkSize;
             const pendingOps: ChunkOperation[] = chunks[i].map((change, index) => ({
               change,
               originalIndexInChunk: index,
             }));
+
+            // --continue-on-error: skip chunks with unresolved deps from failed prior chunks
+            if (options.continueOnError && failedChunkTempIds.size > 0) {
+              const hasUnresolvedDep = pendingOps.some((op) => {
+                const source = op.change as Record<string, unknown>;
+                for (const field of ['sourceId', 'targetId', 'elementId', 'viewId', 'relationshipId', 'sourceVisualId', 'targetVisualId', 'parentId', 'folderId'] as const) {
+                  const value = source[field];
+                  if (typeof value === 'string' && failedChunkTempIds.has(value)) {
+                    return true;
+                  }
+                }
+                return false;
+              });
+              if (hasUnresolvedDep) {
+                results.push({
+                  chunk: i + 1,
+                  of: chunks.length,
+                  operationId: null,
+                  status: 'skipped',
+                  message: 'Skipped due to unresolved dependencies from a failed chunk',
+                });
+                // Track tempIds from this skipped chunk as also failed
+                for (const op of pendingOps) {
+                  const tempId = (op.change as { tempId?: string }).tempId;
+                  if (tempId) failedChunkTempIds.add(tempId);
+                }
+                continue;
+              }
+            }
 
             let resp: ApplyResponse | null = null;
             while (true) {
@@ -403,6 +449,23 @@ export function batchApplyCommand(): Command {
                     continue;
                   }
                 }
+                // --continue-on-error: record failure and move to next chunk
+                if (options.continueOnError) {
+                  hadOperationErrors = true;
+                  for (const op of pendingOps) {
+                    const tempId = (op.change as { tempId?: string }).tempId;
+                    if (tempId) failedChunkTempIds.add(tempId);
+                  }
+                  results.push({
+                    chunk: i + 1,
+                    of: chunks.length,
+                    operationId: null,
+                    status: 'error',
+                    error: String(err),
+                  });
+                  resp = null;
+                  break;
+                }
                 throw err;
               }
             }
@@ -430,6 +493,13 @@ export function batchApplyCommand(): Command {
 
               if ((pollResult as { status?: string }).status === 'error') {
                 hadOperationErrors = true;
+                // Track tempIds from this failed chunk for --continue-on-error
+                if (options.continueOnError) {
+                  for (const op of pendingOps) {
+                    const tempId = (op.change as { tempId?: string }).tempId;
+                    if (tempId) failedChunkTempIds.add(tempId);
+                  }
+                }
               }
 
               const opResults = (pollResult as {
@@ -460,9 +530,50 @@ export function batchApplyCommand(): Command {
           }
 
           const shouldSave = options.saveIds !== false;
-          if (shouldSave && options.poll && Object.keys(tempIdMap).length > 0) {
-            const idsPath = resolveIdsOutputPath(file, options.saveIds);
-            writeFileSync(idsPath, JSON.stringify(tempIdMap, null, 2));
+          const savedIdCount = Object.keys(tempIdMap).length;
+          let idsSavedPath: string | undefined;
+          if (shouldSave && options.poll && savedIdCount > 0) {
+            idsSavedPath = resolveIdsOutputPath(file, options.saveIds);
+            writeFileSync(idsSavedPath, JSON.stringify(tempIdMap, null, 2));
+          }
+
+          // --layout: auto-layout views that were created or populated
+          const layoutResults: Array<Record<string, unknown>> = [];
+          if (options.layout && options.poll && !hadOperationErrors) {
+            const viewIdsToLayout = new Set<string>();
+            for (const chunkResult of results) {
+              const opResults = (chunkResult as {
+                result?: Array<{
+                  op?: string;
+                  viewId?: string;
+                  tempId?: string;
+                }>;
+              }).result;
+              if (!Array.isArray(opResults)) continue;
+              for (const opResult of opResults) {
+                if (opResult.viewId) {
+                  viewIdsToLayout.add(opResult.viewId);
+                }
+              }
+            }
+            if (viewIdsToLayout.size > 0) {
+              const rankdir = options.rankdir?.toUpperCase() ?? 'TB';
+              for (const viewId of viewIdsToLayout) {
+                try {
+                  const layoutData = await post(`/views/${encodeURIComponent(viewId)}/layout`, {
+                    algorithm: 'dagre',
+                    rankdir,
+                    ranksep: 80,
+                    nodesep: 50,
+                  }) as Record<string, unknown>;
+                  layoutResults.push({ viewId, status: 'ok', nodesPositioned: layoutData.nodesPositioned });
+                  process.stderr.write(`Laid out view ${viewId}: ${layoutData.nodesPositioned} nodes\n`);
+                } catch (err) {
+                  layoutResults.push({ viewId, status: 'error', error: String(err) });
+                  process.stderr.write(`Layout failed for ${viewId}: ${String(err)}\n`);
+                }
+              }
+            }
           }
 
           const output: Record<string, unknown> = {
@@ -472,6 +583,12 @@ export function batchApplyCommand(): Command {
             skippedOperations,
             results,
           };
+          if (layoutResults.length > 0) {
+            output['layoutResults'] = layoutResults;
+          }
+          if (idsSavedPath) {
+            output['idsSaved'] = { path: idsSavedPath, count: savedIdCount };
+          }
           if (allChanges.length === 0) {
             output['warning'] = 'Empty BOM -- no changes were applied';            if (!options.allowEmpty) {
               print(

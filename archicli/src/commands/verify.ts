@@ -161,6 +161,69 @@ async function validateBomSemantics(
     checkReferences(operation, index);
   }
 
+  // Phase 4: Validate addConnectionToView direction consistency
+  // Build maps of relationship tempId -> { sourceId, targetId }
+  // and addToView tempId -> elementId
+  const relationshipMeta = new Map<string, { sourceId: string; targetId: string }>();
+  const visualToElement = new Map<string, string>();
+
+  for (const change of changes) {
+    const operation = change as BomOperation;
+    if (operation.op === 'createRelationship') {
+      const tempId = typeof operation.tempId === 'string' ? operation.tempId : '';
+      const sourceId = typeof operation.sourceId === 'string' ? operation.sourceId : '';
+      const targetId = typeof operation.targetId === 'string' ? operation.targetId : '';
+      if (tempId && sourceId && targetId) {
+        relationshipMeta.set(tempId, { sourceId, targetId });
+      }
+    }
+    if (operation.op === 'addToView') {
+      const tempId = typeof operation.tempId === 'string' ? operation.tempId : '';
+      const elementId = typeof operation.elementId === 'string' ? operation.elementId : '';
+      if (tempId && elementId) {
+        visualToElement.set(tempId, elementId);
+      }
+    }
+  }
+
+  for (const [index, change] of changes.entries()) {
+    const operation = change as BomOperation;
+    if (operation.op !== 'addConnectionToView') continue;
+
+    const relationshipId = typeof operation.relationshipId === 'string' ? operation.relationshipId : '';
+    const sourceVisualId = typeof operation.sourceVisualId === 'string' ? operation.sourceVisualId : '';
+    const targetVisualId = typeof operation.targetVisualId === 'string' ? operation.targetVisualId : '';
+
+    // Only validate if we have BOM-local metadata for all three references
+    const relMeta = relationshipMeta.get(relationshipId);
+    if (!relMeta) continue;
+    const sourceElementId = visualToElement.get(sourceVisualId);
+    const targetElementId = visualToElement.get(targetVisualId);
+    if (!sourceElementId || !targetElementId) continue;
+
+    if (sourceElementId === relMeta.sourceId && targetElementId === relMeta.targetId) {
+      // Correct direction
+      continue;
+    }
+
+    if (sourceElementId === relMeta.targetId && targetElementId === relMeta.sourceId) {
+      errors.push({
+        path: `/changes/${index}/sourceVisualId`,
+        message: `Change ${index} (addConnectionToView): sourceVisualId/targetVisualId are swapped relative to relationship direction`,
+        hint: `Relationship '${relationshipId}' connects '${relMeta.sourceId}' → '${relMeta.targetId}', ` +
+          `but sourceVisualId '${sourceVisualId}' represents '${sourceElementId}' and targetVisualId '${targetVisualId}' represents '${targetElementId}'. ` +
+          `Swap sourceVisualId and targetVisualId.`,
+      });
+    } else {
+      errors.push({
+        path: `/changes/${index}/sourceVisualId`,
+        message: `Change ${index} (addConnectionToView): visual objects do not match relationship source/target`,
+        hint: `Relationship '${relationshipId}' connects '${relMeta.sourceId}' → '${relMeta.targetId}', ` +
+          `but sourceVisualId '${sourceVisualId}' represents '${sourceElementId}' and targetVisualId '${targetVisualId}' represents '${targetElementId}'.`,
+      });
+    }
+  }
+
   return {
     valid: errors.length === 0,
     errors,

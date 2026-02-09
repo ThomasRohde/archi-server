@@ -225,7 +225,21 @@ paths:
       description: |
         Persists the current model state to its file on disk.
         Use this after making changes to ensure they are saved.
+        file-picker dialog, blocking the server thread.
       operationId: postModelSave
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                path:
+                  type: string
+                  description: |
+                    Absolute file path to save the model to (e.g. "/path/to/model.archimate").
+                    Required when the model has never been saved before.
+                    The .archimate extension is appended automatically if missing.
       responses:
         '200':
           description: Model saved successfully
@@ -233,6 +247,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SaveResponse'
+        '400':
+          description: Path required (model has never been saved)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '500':
           description: Save failed
           content:

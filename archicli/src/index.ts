@@ -10,6 +10,8 @@ import { modelCommand } from './commands/model/index';
 import { viewCommand } from './commands/view/index';
 import { opsCommand } from './commands/ops/index';
 import { completionCommand } from './commands/completion';
+import { folderCommand } from './commands/folder/index';
+import { idsCommand } from './commands/ids';
 
 export function createProgram(): Command {
   const program = new Command();
@@ -87,6 +89,8 @@ export function createProgram(): Command {
     .addCommand(modelCommand())
     .addCommand(viewCommand())
     .addCommand(opsCommand())
+    .addCommand(folderCommand())
+    .addCommand(idsCommand())
     .addCommand(completionCommand());
 
   return program;

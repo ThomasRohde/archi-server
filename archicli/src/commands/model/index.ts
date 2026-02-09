@@ -3,6 +3,7 @@ import { modelQueryCommand } from './query';
 import { modelApplyCommand } from './apply';
 import { modelSearchCommand } from './search';
 import { modelElementCommand } from './element';
+import { modelSaveCommand } from './save';
 
 export function modelCommand(): Command {
   return new Command('model')
@@ -22,5 +23,6 @@ export function modelCommand(): Command {
     .addCommand(modelQueryCommand())
     .addCommand(modelApplyCommand())
     .addCommand(modelSearchCommand())
-    .addCommand(modelElementCommand());
+    .addCommand(modelElementCommand())
+    .addCommand(modelSaveCommand());
 }

@@ -759,15 +759,56 @@
                     throw new Error("No model reference available");
                 }
 
+                var body = request.body || {};
+                var requestedPath = body.path || null;
                 var IEditorModelManager = Java.type("com.archimatetool.editor.model.IEditorModelManager");
                 var modelManager = IEditorModelManager.INSTANCE;
-                
+
+                // Use jArchi model.getPath() to check if model has been saved before
+                var currentPath = (typeof model !== "undefined" && model && typeof model.getPath === "function")
+                    ? model.getPath()
+                    : null;
+                var hasExistingFile = (currentPath !== null && currentPath !== undefined);
+
+                if (!hasExistingFile && !requestedPath) {
+                    // Model has never been saved and no path provided — would open file dialog
+                    response.statusCode = 400;
+                    response.body = {
+                        error: {
+                            code: "PathRequired",
+                            message: "Model has not been saved before. Provide a 'path' (e.g. \"/path/to/model.archimate\") in the request body to save it for the first time."
+                        }
+                    };
+                    return;
+                }
+
+                // If a path was provided, set the file on the model before saving
+                if (requestedPath) {
+                    var File = Java.type("java.io.File");
+                    var targetFile = new File(String(requestedPath));
+                    // Ensure .archimate extension
+                    if (!String(requestedPath).endsWith(".archimate")) {
+                        targetFile = new File(String(requestedPath) + ".archimate");
+                    }
+                    // Ensure parent directory exists
+                    var parentDir = targetFile.getParentFile();
+                    if (parentDir && !parentDir.exists()) {
+                        parentDir.mkdirs();
+                    }
+                    serverState.modelRef.setFile(targetFile);
+                }
+
                 var startTime = Date.now();
                 modelManager.saveModel(serverState.modelRef);
                 var durationMs = Date.now() - startTime;
 
+                // Get the resolved file path for the response (use jArchi API)
+                var savedPath = (typeof model !== "undefined" && model && typeof model.getPath === "function")
+                    ? model.getPath()
+                    : null;
+
                 if (typeof loggingQueue !== "undefined" && loggingQueue) {
-                    loggingQueue.log("[" + request.requestId + "] Model saved (" + durationMs + "ms)");
+                    loggingQueue.log("[" + request.requestId + "] Model saved to " + (savedPath || "existing path") + " (" + durationMs + "ms)");
                 }
 
                 response.body = {
@@ -775,6 +816,7 @@
                     message: "Model saved successfully",
                     modelName: serverState.modelRef.getName() || '',
                     modelId: serverState.modelRef.getId(),
+                    path: savedPath,
                     durationMs: durationMs
                 };
 

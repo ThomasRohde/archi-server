@@ -145,7 +145,17 @@
             "sourceId": { "type": "string", "description": "Source element ID or tempId" },
             "targetId": { "type": "string", "description": "Target element ID or tempId" },
             "tempId": { "type": "string", "description": "Temporary ID for cross-referencing within the same batch" },
-            "name": { "type": "string" }
+            "name": { "type": "string" },
+            "documentation": { "type": "string", "description": "Documentation text for the relationship" },
+            "accessType": {
+              "type": "integer",
+              "enum": [0, 1, 2, 3],
+              "description": "Access type for access-relationship: 0=write, 1=read, 2=access, 3=readwrite"
+            },
+            "strength": {
+              "type": "string",
+              "description": "Influence strength for influence-relationship (e.g., '+', '-', '++', '--', or custom)"
+            }
           },
           "additionalProperties": false
         },
