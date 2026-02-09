@@ -35,21 +35,176 @@ export function failure(code: string, message: string, details?: unknown): CLIRe
 
 export function print(response: CLIResponse): void {
   const config = getConfig();
-  if (config.output === 'json') {
-    console.log(JSON.stringify(response, null, 2));
-  } else {
+  if (response.success && config.quiet) {
+    printByFormat(pickQuietData(response.data), config.output);
+    return;
+  }
+
+  if (config.output === 'text') {
     if (response.success) {
       console.log(formatText(response.data));
-    } else {
-      const code = response.error?.code ?? 'UNKNOWN';
-      const message = response.error?.message ?? 'Unknown error';
-      console.error(`Error [${code}]: ${message}`);
-      const detailsText = formatErrorDetails(response.error?.details);
-      if (detailsText) {
-        console.error(detailsText);
-      }
+      return;
+    }
+    const code = response.error?.code ?? 'UNKNOWN';
+    const message = response.error?.message ?? 'Unknown error';
+    console.error(`Error [${code}]: ${message}`);
+    const detailsText = formatErrorDetails(response.error?.details);
+    if (detailsText) {
+      console.error(detailsText);
+    }
+    return;
+  }
+
+  if (config.output === 'yaml') {
+    console.log(toYamlString(response));
+    return;
+  }
+
+  console.log(JSON.stringify(response, null, 2));
+}
+
+function printByFormat(data: unknown, output: 'json' | 'text' | 'yaml'): void {
+  if (data === undefined) return;
+  if (output === 'json') {
+    console.log(JSON.stringify(data, null, 2));
+    return;
+  }
+  if (output === 'yaml') {
+    console.log(toYamlString(data));
+    return;
+  }
+  if (typeof data === 'string' || typeof data === 'number' || typeof data === 'boolean') {
+    console.log(String(data));
+    return;
+  }
+  if (data === null) {
+    console.log('null');
+    return;
+  }
+  const text = formatText(data);
+  if (text.length > 0) {
+    console.log(text);
+  }
+}
+
+function isObjectRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+export function pickQuietData(data: unknown): unknown {
+  if (data === null || data === undefined) return data;
+  if (typeof data !== 'object') return data;
+
+  if (Array.isArray(data)) {
+    return data;
+  }
+
+  const record = data as Record<string, unknown>;
+
+  if (typeof record.operationId === 'string') {
+    return {
+      operationId: record.operationId,
+      ...(typeof record.status === 'string' ? { status: record.status } : {}),
+    };
+  }
+  if (typeof record.viewId === 'string') return { viewId: record.viewId };
+  if (typeof record.elementId === 'string') return { elementId: record.elementId };
+  if (typeof record.id === 'string') return { id: record.id };
+  if (typeof record.filePath === 'string') return { filePath: record.filePath };
+  if (typeof record.indexFile === 'string') return { indexFile: record.indexFile };
+  if (typeof record.status === 'string') return { status: record.status };
+  if (typeof record.total === 'number') return { total: record.total };
+
+  if (Array.isArray(record.results)) {
+    const operationIds = record.results
+      .map((item) =>
+        isObjectRecord(item) && typeof item.operationId === 'string' ? item.operationId : null
+      )
+      .filter((value): value is string => value !== null);
+    if (operationIds.length > 0) {
+      return { operationIds };
     }
   }
+
+  return record;
+}
+
+function yamlQuote(value: string): string {
+  const safe = /^[A-Za-z0-9._\-/:]+$/.test(value);
+  if (safe) return value;
+  return `'${value.replace(/'/g, "''")}'`;
+}
+
+function isYamlScalar(value: unknown): boolean {
+  return (
+    value === null ||
+    typeof value === 'string' ||
+    typeof value === 'number' ||
+    typeof value === 'boolean'
+  );
+}
+
+function yamlScalar(value: unknown): string {
+  if (value === null) return 'null';
+  if (typeof value === 'string') return yamlQuote(value);
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  return yamlQuote(String(value));
+}
+
+function toYamlLines(value: unknown, indent: number): string[] {
+  const pad = ' '.repeat(indent);
+
+  if (isYamlScalar(value)) {
+    return [`${pad}${yamlScalar(value)}`];
+  }
+
+  if (Array.isArray(value)) {
+    if (value.length === 0) return [`${pad}[]`];
+    const lines: string[] = [];
+    for (const item of value) {
+      if (isYamlScalar(item)) {
+        lines.push(`${pad}- ${yamlScalar(item)}`);
+      } else if (Array.isArray(item) && item.length === 0) {
+        lines.push(`${pad}- []`);
+      } else if (isObjectRecord(item) && Object.keys(item).length === 0) {
+        lines.push(`${pad}- {}`);
+      } else {
+        lines.push(`${pad}-`);
+        lines.push(...toYamlLines(item, indent + 2));
+      }
+    }
+    return lines;
+  }
+
+  if (isObjectRecord(value)) {
+    const entries = Object.entries(value);
+    if (entries.length === 0) return [`${pad}{}`];
+    const lines: string[] = [];
+    for (const [key, item] of entries) {
+      const yamlKey = yamlQuote(key);
+      if (isYamlScalar(item)) {
+        lines.push(`${pad}${yamlKey}: ${yamlScalar(item)}`);
+        continue;
+      }
+      if (Array.isArray(item) && item.length === 0) {
+        lines.push(`${pad}${yamlKey}: []`);
+        continue;
+      }
+      if (isObjectRecord(item) && Object.keys(item).length === 0) {
+        lines.push(`${pad}${yamlKey}: {}`);
+        continue;
+      }
+      lines.push(`${pad}${yamlKey}:`);
+      lines.push(...toYamlLines(item, indent + 2));
+    }
+    return lines;
+  }
+
+  return [`${pad}${yamlQuote(String(value))}`];
+}
+
+export function toYamlString(value: unknown): string {
+  return toYamlLines(value, 0).join('\n');
 }
 
 function formatTable(rows: Record<string, unknown>[], indent = ''): string {
@@ -196,5 +351,10 @@ function formatErrorDetails(details: unknown, indent = '  '): string {
 }
 
 export function printRaw(data: unknown): void {
+  const config = getConfig();
+  if (config.output === 'yaml') {
+    console.log(toYamlString(data));
+    return;
+  }
   console.log(JSON.stringify(data, null, 2));
 }

@@ -3,6 +3,7 @@ import { viewListCommand } from './list';
 import { viewGetCommand } from './get';
 import { viewCreateCommand } from './create';
 import { viewExportCommand } from './export';
+import { viewDeleteCommand } from './delete';
 
 export function viewCommand(): Command {
   return new Command('view')
@@ -22,5 +23,6 @@ export function viewCommand(): Command {
     .addCommand(viewListCommand())
     .addCommand(viewGetCommand())
     .addCommand(viewCreateCommand())
-    .addCommand(viewExportCommand());
+    .addCommand(viewExportCommand())
+    .addCommand(viewDeleteCommand());
 }

@@ -37,22 +37,31 @@ export function createProgram(): Command {
         '    a visual subset. Use addToView then addConnectionToView to populate views.\n' +
         '  VISUAL IDs vs CONCEPT IDs: addToView returns a visualId (diagram object ID)\n' +
         '    distinct from the element conceptId. addConnectionToView requires visual IDs.\n\n' +
-        'OUTPUT: In --output json mode, all command and usage failures are JSON envelopes.\n' +
-        '  In --output text mode, usage failures are plain text. Exit code 1 on error.\n' +
+        'OUTPUT: --output supports json, text, and yaml.\n' +
+        '  In json mode, command/usage failures are JSON envelopes.\n' +
+        '  In text mode, usage failures are plain text. Exit code 1 on error.\n' +
+        '  Use --quiet to suppress non-essential success output.\n' +
         'ENV: Set ARCHI_BASE_URL to override the default server URL.'
     )
     .version('0.1.0')
     .option('-u, --base-url <url>', 'Archi server base URL', process.env['ARCHI_BASE_URL'] ?? 'http://127.0.0.1:8765')
-    .option('--output <format>', 'output format: json or text', 'json')
+    .option('--output <format>', 'output format: json, text, or yaml', 'json')
+    .option('-q, --quiet', 'suppress non-essential success output')
     .option('-v, --verbose', 'enable verbose HTTP logging')
     .hook('preAction', (_thisCommand, actionCommand) => {
-      const opts = actionCommand.optsWithGlobals<{ baseUrl: string; output: string; verbose?: boolean }>();
-      if (!['json', 'text'].includes(opts.output)) {
-        actionCommand.error(`Unknown output format '${opts.output}'. Valid formats: json, text`);
+      const opts = actionCommand.optsWithGlobals<{
+        baseUrl: string;
+        output: string;
+        quiet?: boolean;
+        verbose?: boolean;
+      }>();
+      if (!['json', 'text', 'yaml'].includes(opts.output)) {
+        actionCommand.error(`Unknown output format '${opts.output}'. Valid formats: json, text, yaml`);
       }
       setConfig({
         baseUrl: opts.baseUrl,
-        output: opts.output as 'json' | 'text',
+        output: opts.output as 'json' | 'text' | 'yaml',
+        quiet: opts.quiet ?? false,
         verbose: opts.verbose ?? false,
       });
     });

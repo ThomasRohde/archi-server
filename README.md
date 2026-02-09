@@ -75,12 +75,16 @@ npm link          # makes `archicli` available globally
 
 ```bash
 archicli health                                  # verify server is running
-archicli model query                             # inspect the model
+archicli model query --show-relationships        # inspect model + relationship sample
 archicli model search --type application-component
+archicli model search --type application-component --strict-types
 archicli model search --name ".*Service.*" --no-relationships
 archicli verify changes.json                     # validate a BOM file
+archicli verify changes.json --semantic          # semantic tempId checks
 archicli batch apply changes.json --poll         # apply and wait for results
+archicli batch apply changes.json --poll --skip-existing
 archicli view create "Application Overview" --viewpoint application_cooperation
+archicli view delete id-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 archicli ops list                                # list recent operation IDs
 ```
 
@@ -94,6 +98,8 @@ Numeric CLI options are also strict: invalid integers/floats are rejected (no si
 Examples: `--limit 1.5`, `--chunk-size -1`, `--margin abc`.
 
 Use `archicli verify --semantic` for tempId preflight checks, and add `--resolve-names` to mirror `batch apply --resolve-names` behavior against a running server.
+By default, `verify --semantic` and `batch apply` fail when declared `idFiles` are missing/malformed; use
+`--allow-incomplete-idfiles` only when you intentionally want best-effort behavior.
 
 Example:
 
@@ -121,6 +127,8 @@ archicli batch apply changes.json --poll --save-ids out/my-mappings.ids.json
 
 If you run `batch apply` without `--poll`, requests are still submitted, but completion is not tracked and ID mappings are not saved. The CLI prints a warning in that mode.
 
+For idempotent re-runs, use `--skip-existing` to skip duplicate create operations and continue processing the rest of the BOM.
+
 ### Key concepts
 
 | Concept | Description |
@@ -135,16 +143,17 @@ If you run `batch apply` without `--poll`, requests are still submitted, but com
 ```
 archicli health                      Check server connectivity and model stats
 archicli verify <file>               Validate BOM JSON before sending
-archicli model query                 Model overview: counts + sample elements
-archicli model search [options]      Search by type, name, or property
+archicli model query                 Model overview: counts + sample elements (optional relationship sample)
+archicli model search [options]      Search by type, name, or property (--strict-types available)
 archicli model element <id>          Full detail for one element
 archicli model apply <file> --poll   Low-level single-file apply
-archicli batch apply <file> --poll   Apply BOM with auto-chunking + polling
-archicli batch split <file>          Split large BOM into linked chunk files
+archicli batch apply <file> --poll   Apply BOM with auto-chunking + polling (--skip-existing available)
+archicli batch split <file>          Split large BOM into linked chunk files (--chunk-size, alias --size)
 archicli view list                   List all views
 archicli view get <id>               View detail with visual object IDs
-archicli view create <name> [options] Create view (invalid --viewpoint values are rejected)
-archicli view export <id>            Export view as PNG/JPEG
+archicli view create <name> [options] Create view synchronously (invalid --viewpoint values are rejected)
+archicli view delete <id>            Delete a view
+archicli view export <id>            Export view as PNG/JPEG (--file or --output-file)
 archicli ops list                    List recent async operations
 archicli ops status <opId> --poll    Poll async operation to completion
 archicli completion <shell>          Generate completion script (bash|zsh|fish|pwsh)
@@ -168,7 +177,10 @@ archicli --output text completion fish > ~/.config/fish/completions/archicli.fis
 archicli --output text completion pwsh > archicli-completion.ps1
 ```
 
+Completion scripts include `model search --type` ArchiMate type value suggestions.
+
 In `--output json` mode, command/usage errors (unknown command/flag, missing args, invalid global options) are emitted as JSON envelopes.
+`--output yaml` is also supported. Use `--quiet` / `-q` to print only essential success values.
 
 ## Project Structure
 

@@ -2,9 +2,14 @@ import { Command } from 'commander';
 import { readFileSync, writeFileSync } from 'fs';
 import { basename, dirname, extname, resolve } from 'path';
 import { validate } from '../../schemas/registry';
-import { post } from '../../utils/api';
+import { post, ApiError } from '../../utils/api';
 import { ArgumentValidationError, parsePositiveInt } from '../../utils/args';
-import { findDuplicateTempIds, loadBom, loadIdFilesWithDiagnostics } from '../../utils/bom';
+import {
+  findDuplicateTempIds,
+  loadBom,
+  loadIdFilesWithDiagnostics,
+  summarizeIdFileCompleteness,
+} from '../../utils/bom';
 import { isCommanderError } from '../../utils/commander';
 import { getConfig } from '../../utils/config';
 import { print, success, failure } from '../../utils/output';
@@ -17,12 +22,36 @@ interface ApplyResponse {
   message?: string;
 }
 
+interface ChunkOperation {
+  change: unknown;
+  originalIndexInChunk: number;
+}
+
+interface SkippedOperation {
+  chunk: number;
+  of: number;
+  opIndex: number;
+  originalChunkIndex: number;
+  globalIndex: number;
+  op: string;
+  reason: string;
+}
+
 export function resolveIdsOutputPath(file: string, saveIdsOption?: string | boolean): string {
   const sourceFile = resolve(file);
   if (typeof saveIdsOption === 'string') {
     return resolve(saveIdsOption);
   }
   return resolve(dirname(sourceFile), basename(sourceFile, extname(sourceFile)) + '.ids.json');
+}
+
+export function parseDuplicateExistingChangeIndex(message: string): number | null {
+  if (!/already exists/i.test(message)) return null;
+  const match = message.match(/Change\s+(\d+)\s+\([^)]+\):/i);
+  if (!match) return null;
+  const value = Number(match[1]);
+  if (!Number.isSafeInteger(value) || value < 0) return null;
+  return value;
 }
 
 function buildChunkFailureMessage(results: Array<Record<string, unknown>>): string {
@@ -72,11 +101,13 @@ function buildChunkFailureMessage(results: Array<Record<string, unknown>>): stri
 
 function summarizeBatchOutputForText(
   output: Record<string, unknown>,
-  results: Array<Record<string, unknown>>
+  results: Array<Record<string, unknown>>,
+  skippedOperations: SkippedOperation[]
 ): Record<string, unknown> {
   const complete = results.filter((r) => r.status === 'complete').length;
   const failed = results.filter((r) => r.status === 'error').length;
-  const inFlight = results.length - complete - failed;
+  const skippedChunks = results.filter((r) => r.status === 'skipped').length;
+  const inFlight = results.length - complete - failed - skippedChunks;
   const idFiles = (output['idFiles'] ?? null) as
     | {
         loaded?: number;
@@ -108,6 +139,7 @@ function summarizeBatchOutputForText(
     chunkStatus: {
       complete,
       error: failed,
+      skipped: skippedChunks,
       inFlight,
     },
     idFiles: {
@@ -115,8 +147,13 @@ function summarizeBatchOutputForText(
       missing: Array.isArray(idFiles?.missing) ? idFiles?.missing.length : 0,
       malformed: Array.isArray(idFiles?.malformed) ? idFiles?.malformed.length : 0,
     },
+    skippedOperations: skippedOperations.length,
     results: summarizedResults,
   };
+
+  if (skippedOperations.length > 0) {
+    summary['skippedOperationDetails'] = skippedOperations;
+  }
 
   if (typeof output['warning'] === 'string') {
     summary['warning'] = output['warning'];
@@ -139,6 +176,9 @@ export function batchApplyCommand(): Command {
         '  1. Declared "idFiles" in the BOM (loaded upfront)\n' +
         '  2. Results from previously polled chunks in this run\n' +
         '  3. Model name lookup if --resolve-names is set\n\n' +
+        'SYNC VS ASYNC NOTE:\n' +
+        '  "view create" is synchronous, but BOM createView runs through this async\n' +
+        '  queue path. Use --poll whenever the run depends on created view IDs.\n\n' +
         'EXAMPLE WORKFLOW:\n' +
         '  archicli batch apply model/elements.json --poll\n' +
         '  # creates model/elements.ids.json with tempId->realId map\n' +
@@ -153,6 +193,14 @@ export function batchApplyCommand(): Command {
     .option('--save-ids [path]', 'save tempId→realId map after apply (default: <file>.ids.json)')
     .option('--no-save-ids', 'skip saving the ID map after apply')
     .option('--resolve-names', 'query model by name for any unresolved tempId references')
+    .option(
+      '--allow-incomplete-idfiles',
+      'allow apply to continue when declared idFiles are missing or malformed'
+    )
+    .option(
+      '--skip-existing',
+      'on duplicate create validation errors, skip only the duplicate change and continue'
+    )
     .action(
       async (
         file: string,
@@ -163,6 +211,8 @@ export function batchApplyCommand(): Command {
           pollTimeout: string;
           saveIds?: string | boolean;
           resolveNames?: boolean;
+          allowIncompleteIdfiles?: boolean;
+          skipExisting?: boolean;
         },
         cmd: Command
       ) => {
@@ -223,6 +273,20 @@ export function batchApplyCommand(): Command {
 
           const { map: tempIdMap, diagnostics: idFileDiagnostics } =
             loadIdFilesWithDiagnostics(idFilePaths);
+          const idFilesCompleteness = summarizeIdFileCompleteness(idFileDiagnostics);
+          if (!options.allowIncompleteIdfiles && !idFilesCompleteness.complete) {
+            print(
+              failure(
+                'IDFILES_INCOMPLETE',
+                'Declared idFiles could not be fully loaded; apply would run with incomplete tempId mappings',
+                {
+                  idFiles: idFileDiagnostics,
+                }
+              )
+            );
+            cmd.error('', { exitCode: 1 });
+            return;
+          }
 
           if (options.dryRun) {
             print(
@@ -258,10 +322,71 @@ export function batchApplyCommand(): Command {
           }
 
           const results: Array<Record<string, unknown>> = [];
+          const skippedOperations: SkippedOperation[] = [];
           let hadOperationErrors = false;
           for (let i = 0; i < chunks.length; i++) {
-            const chunk = substituteIds(chunks[i], tempIdMap);
-            const resp = await post<ApplyResponse>('/model/apply', { changes: chunk });
+            const chunkStartIndex = i * chunkSize;
+            const pendingOps: ChunkOperation[] = chunks[i].map((change, index) => ({
+              change,
+              originalIndexInChunk: index,
+            }));
+
+            let resp: ApplyResponse | null = null;
+            while (true) {
+              if (pendingOps.length === 0) {
+                results.push({
+                  chunk: i + 1,
+                  of: chunks.length,
+                  operationId: null,
+                  status: 'skipped',
+                  message: 'All operations in this chunk were skipped as duplicates',
+                });
+                break;
+              }
+
+              const currentChunk = substituteIds(
+                pendingOps.map((op) => op.change),
+                tempIdMap
+              );
+
+              try {
+                resp = await post<ApplyResponse>('/model/apply', { changes: currentChunk });
+                break;
+              } catch (err) {
+                if (
+                  options.skipExisting &&
+                  err instanceof ApiError &&
+                  err.status === 400 &&
+                  err.code === 'ValidationError'
+                ) {
+                  const duplicateIndex = parseDuplicateExistingChangeIndex(err.message);
+                  if (duplicateIndex !== null && duplicateIndex < pendingOps.length) {
+                    const skipped = pendingOps[duplicateIndex];
+                    const opValue = (skipped.change as { op?: unknown }).op;
+                    const op = typeof opValue === 'string' ? opValue : 'unknown';
+                    if (!op.startsWith('create')) {
+                      throw err;
+                    }
+                    pendingOps.splice(duplicateIndex, 1);
+                    skippedOperations.push({
+                      chunk: i + 1,
+                      of: chunks.length,
+                      opIndex: duplicateIndex,
+                      originalChunkIndex: skipped.originalIndexInChunk,
+                      globalIndex: chunkStartIndex + skipped.originalIndexInChunk,
+                      op,
+                      reason: err.message,
+                    });
+                    continue;
+                  }
+                }
+                throw err;
+              }
+            }
+
+            if (!resp) {
+              continue;
+            }
 
             let chunkResult: Record<string, unknown> = {
               chunk: i + 1,
@@ -321,6 +446,7 @@ export function batchApplyCommand(): Command {
             totalChanges: allChanges.length,
             chunks: chunks.length,
             idFiles: idFileDiagnostics,
+            skippedOperations,
             results,
           };
           if (allChanges.length === 0) {
@@ -329,7 +455,9 @@ export function batchApplyCommand(): Command {
 
           if (hadOperationErrors) {
             const failureDetails =
-              getConfig().output === 'text' ? summarizeBatchOutputForText(output, results) : output;
+              getConfig().output === 'text'
+                ? summarizeBatchOutputForText(output, results, skippedOperations)
+                : output;
             print(
               failure('BATCH_APPLY_PARTIAL_FAILURE', buildChunkFailureMessage(results), failureDetails)
             );
@@ -338,7 +466,9 @@ export function batchApplyCommand(): Command {
           }
 
           const successData =
-            getConfig().output === 'text' ? summarizeBatchOutputForText(output, results) : output;
+            getConfig().output === 'text'
+              ? summarizeBatchOutputForText(output, results, skippedOperations)
+              : output;
           print(success(successData));
         } catch (err) {
           if (isCommanderError(err)) throw err;

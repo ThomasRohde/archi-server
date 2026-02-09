@@ -23,6 +23,20 @@ export interface IdFileDiagnostics {
   loadedFiles: string[];
 }
 
+export interface IdFileCompleteness {
+  complete: boolean;
+  missingCount: number;
+  malformedCount: number;
+  details: {
+    declared: number;
+    loaded: number;
+    missing: string[];
+    malformed: string[];
+    declaredFiles: string[];
+    loadedFiles: string[];
+  };
+}
+
 export interface LoadedBom {
   changes: unknown[];
   idFilePaths: string[];
@@ -169,6 +183,24 @@ export function loadIdFilesWithDiagnostics(
       malformed,
       declaredFiles: uniquePaths.map(formatPath),
       loadedFiles,
+    },
+  };
+}
+
+export function summarizeIdFileCompleteness(diagnostics: IdFileDiagnostics): IdFileCompleteness {
+  const missingCount = diagnostics.missing.length;
+  const malformedCount = diagnostics.malformed.length;
+  return {
+    complete: missingCount === 0 && malformedCount === 0,
+    missingCount,
+    malformedCount,
+    details: {
+      declared: diagnostics.declared,
+      loaded: diagnostics.loaded,
+      missing: diagnostics.missing,
+      malformed: diagnostics.malformed,
+      declaredFiles: diagnostics.declaredFiles,
+      loadedFiles: diagnostics.loadedFiles,
     },
   };
 }

@@ -15,7 +15,9 @@ export function modelApplyCommand(): Command {
         'This is a low-level command. For most use cases prefer "batch apply" which\n' +
         'handles validation, chunking, polling, and tempId→realId persistence.\n\n' +
         'The apply operation is ASYNC. Without --poll the response contains only\n' +
-        'an operationId. Use --poll or "ops status <id>" to get results.'
+        'an operationId. Use --poll or "ops status <id>" to get results.\n\n' +
+        'WARNING: without --poll, tempId mappings from this operation are not\n' +
+        'captured or persisted and cannot be recovered later.'
     )
     .argument('<file>', 'path to JSON file with { "changes": [...] }')
     .option('--poll', 'poll /ops/status until operation completes')

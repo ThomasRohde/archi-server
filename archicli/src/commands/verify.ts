@@ -2,7 +2,13 @@ import { Command } from 'commander';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { validate, detectSchema, SCHEMA_NAMES, type KnownSchema } from '../schemas/registry';
-import { findDuplicateTempIds, loadBom, loadIdFilesWithDiagnostics, type IdFileDiagnostics } from '../utils/bom';
+import {
+  findDuplicateTempIds,
+  loadBom,
+  loadIdFilesWithDiagnostics,
+  summarizeIdFileCompleteness,
+  type IdFileDiagnostics,
+} from '../utils/bom';
 import { isCommanderError } from '../utils/commander';
 import { print, success, failure } from '../utils/output';
 import { REFERENCE_ID_FIELDS, resolveTempIdsByName } from '../utils/tempIds';
@@ -184,10 +190,20 @@ export function verifyCommand(): Command {
     .option('--semantic', 'run semantic BOM checks (tempId reference preflight)')
     .option('--preflight', 'alias for --semantic')
     .option('--resolve-names', 'resolve unresolved tempIds by exact name lookup (requires running server)')
+    .option(
+      '--allow-incomplete-idfiles',
+      'allow semantic validation to continue when declared idFiles are missing or malformed'
+    )
     .action(
       async (
         file: string,
-        options: { schema?: string; semantic?: boolean; preflight?: boolean; resolveNames?: boolean },
+        options: {
+          schema?: string;
+          semantic?: boolean;
+          preflight?: boolean;
+          resolveNames?: boolean;
+          allowIncompleteIdfiles?: boolean;
+        },
         cmd: Command
       ) => {
         try {
@@ -275,6 +291,25 @@ export function verifyCommand(): Command {
               const semanticResult = await validateBomSemantics(loaded.changes, loaded.idFilePaths, {
                 resolveNames: options.resolveNames,
               });
+              const idFilesCompleteness = summarizeIdFileCompleteness(semanticResult.idFiles);
+              if (!options.allowIncompleteIdfiles && !idFilesCompleteness.complete) {
+                print(
+                  failure(
+                    'IDFILES_INCOMPLETE',
+                    'Declared idFiles could not be fully loaded; semantic validation is incomplete',
+                    {
+                      file,
+                      schema,
+                      checkedOperations: semanticResult.checkedOperations,
+                      resolveNames: semanticResult.resolveNames,
+                      idFilesLoaded: semanticResult.idFilesLoaded,
+                      idFiles: semanticResult.idFiles,
+                    }
+                  )
+                );
+                cmd.error('', { exitCode: 1 });
+                return;
+              }
 
               if (!semanticResult.valid) {
                 print(

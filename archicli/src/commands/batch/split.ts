@@ -11,12 +11,19 @@ export function batchSplitCommand(): Command {
   return new Command('split')
     .description(
       'Split a large BOM into N chunk files and produce a new index BOM that\n' +
-        'links them all via "includes". Useful for version-controlling large change sets.'
+        'links them all via "includes". Useful for version-controlling large change sets.\n\n' +
+        '--chunk-size is the preferred flag name. --size remains as a deprecated alias.'
     )
     .argument('<file>', 'path to source BOM JSON file')
-    .option('-s, --size <n>', 'operations per chunk file', '100')
+    .option('-c, --chunk-size <n>', 'operations per chunk file', '100')
+    .option('-s, --size <n>', 'deprecated alias for --chunk-size')
     .option('-o, --output-dir <dir>', 'directory for chunk files (default: <basename>-parts/)')
-    .action((file: string, options: { size: string; outputDir?: string }, cmd: Command) => {
+    .action(
+      (
+        file: string,
+        options: { chunkSize?: string; size?: string; outputDir?: string },
+        cmd: Command
+      ) => {
       try {
         // Validate BOM
         const content = readFileSync(resolve(file), 'utf-8');
@@ -41,7 +48,13 @@ export function batchSplitCommand(): Command {
           return;
         }
 
-        const size = parsePositiveInt(options.size, '--size');
+        const sizeRaw = options.chunkSize ?? options.size ?? '100';
+        if (options.size !== undefined && options.chunkSize === undefined) {
+          process.stderr.write(
+            'warning: --size is deprecated and will be removed in a future release; use --chunk-size instead\n'
+          );
+        }
+        const size = parsePositiveInt(sizeRaw, '--chunk-size');
 
         // Determine output directory
         const sourceAbs = resolve(file);

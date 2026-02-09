@@ -365,7 +365,17 @@
          * @param {Object} serverState - Server state object (unused)
          */
         handleQuery: function(request, response, serverState) {
-            var limit = request.body && request.body.limit ? request.body.limit : 10;
+            var body = request.body || {};
+            var limit = body.limit !== undefined ? parseInt(String(body.limit), 10) : 10;
+            if (!isFinite(limit) || limit < 1) limit = 10;
+
+            var relationshipLimit = null;
+            if (body.relationshipLimit !== undefined && body.relationshipLimit !== null) {
+                relationshipLimit = parseInt(String(body.relationshipLimit), 10);
+                if (!isFinite(relationshipLimit) || relationshipLimit < 1) {
+                    relationshipLimit = null;
+                }
+            }
 
             if (typeof loggingQueue !== "undefined" && loggingQueue) {
                 loggingQueue.log("[" + request.requestId + "] Query: limit=" + limit);
@@ -396,14 +406,25 @@
                     sampleElements.push(elements[i]);
                 }
 
+                var sampleRelationships = [];
+                if (relationshipLimit !== null) {
+                    for (var j = 0; j < relationships.length && j < relationshipLimit; j++) {
+                        sampleRelationships.push(relationships[j]);
+                    }
+                }
+
                 if (typeof loggingQueue !== "undefined" && loggingQueue) {
                     loggingQueue.log("[" + request.requestId + "] Query completed: " + summary.elements + " elements");
                 }
 
-                response.body = {
+                var responseBody = {
                     summary: summary,
                     elements: sampleElements
                 };
+                if (relationshipLimit !== null) {
+                    responseBody.relationships = sampleRelationships;
+                }
+                response.body = responseBody;
 
             } catch (e) {
                 if (typeof loggingQueue !== "undefined" && loggingQueue) {

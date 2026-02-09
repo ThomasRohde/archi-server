@@ -83,5 +83,21 @@ describe('Model Query Endpoint', () => {
       expectSuccessResponse(response);
       expect(Array.isArray(response.body.elements)).toBe(true);
     });
+
+    it('returns relationship sample when relationshipLimit is provided', async () => {
+      const response = await httpClient.post('/model/query', { limit: 5, relationshipLimit: 3 });
+
+      expectSuccessResponse(response);
+      expect(response.body).toHaveProperty('relationships');
+      expect(Array.isArray(response.body.relationships)).toBe(true);
+      expect(response.body.relationships.length).toBeLessThanOrEqual(3);
+    });
+
+    it('preserves legacy response shape when relationshipLimit is omitted', async () => {
+      const response = await httpClient.post('/model/query', { limit: 5 });
+
+      expectSuccessResponse(response);
+      expect(response.body).not.toHaveProperty('relationships');
+    });
   });
 });

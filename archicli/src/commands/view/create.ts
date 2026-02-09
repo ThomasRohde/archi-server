@@ -33,6 +33,9 @@ export function viewCreateCommand(): Command {
   return new Command('create')
     .description(
       'Create a new ArchiMate view in the model\n\n' +
+      'This command is synchronous and returns the new view ID immediately.\n' +
+      'Note: createView inside a BOM (batch/model apply) runs asynchronously\n' +
+      'through the operation queue and should be used with --poll.\n\n' +
       'Invalid viewpoint values are rejected. Use only keys from the list below.\n\n' +
       'VALID VIEWPOINTS:\n' +
       '  Strategy:      strategy, capability, value_stream, outcome_realization\n' +

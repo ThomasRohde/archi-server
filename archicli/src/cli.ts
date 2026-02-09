@@ -4,15 +4,17 @@ import { createProgram } from './index';
 import { setConfig } from './utils/config';
 import { failure, print } from './utils/output';
 
-function detectRequestedOutput(argv: string[]): 'json' | 'text' {
+function detectRequestedOutput(argv: string[]): 'json' | 'text' | 'yaml' {
   for (let i = 2; i < argv.length; i++) {
     const token = argv[i];
     if (token === '--output') {
       const value = argv[i + 1];
+      if (value === 'yaml') return 'yaml';
       return value === 'text' ? 'text' : 'json';
     }
     if (token.startsWith('--output=')) {
       const value = token.slice('--output='.length);
+      if (value === 'yaml') return 'yaml';
       return value === 'text' ? 'text' : 'json';
     }
   }
@@ -62,7 +64,7 @@ async function main(): Promise<void> {
       const message = typeof err.message === 'string' ? err.message.trim() : '';
       if (message.length > 0) {
         const normalizedMessage = normalizeCommanderMessage(message);
-        if (output === 'json') {
+        if (output !== 'text') {
           print(
             failure('CLI_USAGE_ERROR', normalizedMessage, {
               commanderCode: err.code,

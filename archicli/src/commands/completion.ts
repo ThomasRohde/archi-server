@@ -2,13 +2,14 @@ import { Command } from 'commander';
 import { print, success, failure } from '../utils/output';
 import { isCommanderError } from '../utils/commander';
 import { getConfig } from '../utils/config';
+import { ARCHIMATE_TYPES } from '../utils/archimateTypes';
 
-type CompletionShell = 'bash' | 'zsh' | 'fish' | 'pwsh';
+export type CompletionShell = 'bash' | 'zsh' | 'fish' | 'pwsh';
 
 const TOP_LEVEL_COMMANDS = ['health', 'verify', 'model', 'batch', 'view', 'ops', 'completion'];
 const MODEL_COMMANDS = ['query', 'search', 'element', 'apply'];
 const BATCH_COMMANDS = ['apply', 'split'];
-const VIEW_COMMANDS = ['list', 'get', 'create', 'export'];
+const VIEW_COMMANDS = ['list', 'get', 'create', 'export', 'delete'];
 const OPS_COMMANDS = ['status', 'list'];
 const COMPLETION_SHELLS: CompletionShell[] = ['bash', 'zsh', 'fish', 'pwsh'];
 
@@ -26,10 +27,24 @@ _archicli_complete() {
   local view="${VIEW_COMMANDS.join(' ')}"
   local ops="${OPS_COMMANDS.join(' ')}"
   local shells="${COMPLETION_SHELLS.join(' ')}"
+  local archimate_types="${ARCHIMATE_TYPES.join(' ')}"
 
   if [[ \${COMP_CWORD} -eq 1 ]]; then
     COMPREPLY=( $(compgen -W "\${top}" -- "\${cur}") )
     return 0
+  fi
+
+  if [[ "\${COMP_WORDS[1]}" == "model" && "\${COMP_WORDS[2]}" == "search" ]]; then
+    if [[ "\${prev}" == "--type" || "\${prev}" == "-t" ]]; then
+      COMPREPLY=( $(compgen -W "\${archimate_types}" -- "\${cur}") )
+      return 0
+    fi
+    if [[ "\${cur}" == --type=* ]]; then
+      local value="\${cur#--type=}"
+      local matches=( $(compgen -W "\${archimate_types}" -- "\${value}") )
+      COMPREPLY=( "\${matches[@]/#/--type=}" )
+      return 0
+    fi
   fi
 
   case "\${COMP_WORDS[1]}" in
@@ -59,17 +74,34 @@ function zshScript(): string {
   return `#compdef archicli
 # archicli zsh completion
 _archicli_complete() {
-  local -a top model batch view ops shells
+  local -a top model batch view ops shells archimate_types
   top=(${TOP_LEVEL_COMMANDS.join(' ')})
   model=(${MODEL_COMMANDS.join(' ')})
   batch=(${BATCH_COMMANDS.join(' ')})
   view=(${VIEW_COMMANDS.join(' ')})
   ops=(${OPS_COMMANDS.join(' ')})
   shells=(${COMPLETION_SHELLS.join(' ')})
+  archimate_types=(${ARCHIMATE_TYPES.join(' ')})
 
   if (( CURRENT == 2 )); then
     _describe 'command' top
     return
+  fi
+
+  if [[ "\${words[2]}" == "model" && "\${words[3]}" == "search" ]]; then
+    if (( CURRENT > 1 )) && [[ "\${words[CURRENT-1]}" == "--type" || "\${words[CURRENT-1]}" == "-t" ]]; then
+      _describe 'archimate type' archimate_types
+      return
+    fi
+    if [[ "\${PREFIX}" == --type=* ]]; then
+      local -a prefixed
+      prefixed=()
+      for candidate in \${archimate_types[@]}; do
+        prefixed+=("--type=\${candidate}")
+      done
+      _describe 'archimate type' prefixed
+      return
+    fi
   fi
 
   case "\${words[2]}" in
@@ -92,6 +124,7 @@ function fishScript(): string {
   const view = VIEW_COMMANDS.join(' ');
   const ops = OPS_COMMANDS.join(' ');
   const shells = COMPLETION_SHELLS.join(' ');
+  const archimateTypes = ARCHIMATE_TYPES.join(' ');
 
   return `# archicli fish completion
 complete -c archicli -f
@@ -101,6 +134,7 @@ complete -c archicli -n "__fish_seen_subcommand_from batch" -a "${batch}"
 complete -c archicli -n "__fish_seen_subcommand_from view" -a "${view}"
 complete -c archicli -n "__fish_seen_subcommand_from ops" -a "${ops}"
 complete -c archicli -n "__fish_seen_subcommand_from completion" -a "${shells}"
+complete -c archicli -n "__fish_seen_subcommand_from model; and __fish_seen_subcommand_from search" -l type -s t -a "${archimateTypes}"
 `;
 }
 
@@ -122,12 +156,22 @@ Register-ArgumentCompleter -CommandName archicli -ScriptBlock {
   $view = @(${VIEW_COMMANDS.map((cmd) => `'${cmd}'`).join(', ')})
   $ops = @(${OPS_COMMANDS.map((cmd) => `'${cmd}'`).join(', ')})
   $shells = @(${COMPLETION_SHELLS.map((cmd) => `'${cmd}'`).join(', ')})
+  $archimateTypes = @(${ARCHIMATE_TYPES.map((cmd) => `'${cmd}'`).join(', ')})
+  $normalizedTokens = @($tokens | ForEach-Object { $_.Trim('"').Trim("'") })
+  $prevToken = if ($normalizedTokens.Count -gt 0) { $normalizedTokens[$normalizedTokens.Count - 1] } else { '' }
 
   $candidates = @()
-  if ($tokens.Count -le 2) {
+  if ($normalizedTokens.Count -ge 3 -and $normalizedTokens[1] -eq 'model' -and $normalizedTokens[2] -eq 'search') {
+    if ($prevToken -eq '--type' -or $prevToken -eq '-t') {
+      $candidates = $archimateTypes
+    } elseif ($wordToComplete -like '--type=*') {
+      $prefix = $wordToComplete.Substring('--type='.Length)
+      $candidates = @($archimateTypes | Where-Object { $_ -like "$prefix*" } | ForEach-Object { "--type=$_" })
+    }
+  } elseif ($normalizedTokens.Count -le 2) {
     $candidates = $top
   } else {
-    switch ($tokens[1].Trim('"').Trim("'")) {
+    switch ($normalizedTokens[1]) {
       'model' { $candidates = $model }
       'batch' { $candidates = $batch }
       'view' { $candidates = $view }
@@ -146,7 +190,7 @@ Register-ArgumentCompleter -CommandName archicli -ScriptBlock {
 `;
 }
 
-function buildScript(shell: CompletionShell): string {
+export function buildCompletionScript(shell: CompletionShell): string {
   switch (shell) {
     case 'bash':
       return bashScript();
@@ -180,11 +224,11 @@ export function completionCommand(): Command {
           cmd.error('', { exitCode: 1 });
           return;
         }
-        const script = buildScript(shell);
-        if (getConfig().output === 'json') {
-          print(success({ shell, script }));
-        } else {
+        const script = buildCompletionScript(shell);
+        if (getConfig().output === 'text') {
           process.stdout.write(script);
+        } else {
+          print(success({ shell, script }));
         }
       } catch (err) {
         if (isCommanderError(err)) throw err;

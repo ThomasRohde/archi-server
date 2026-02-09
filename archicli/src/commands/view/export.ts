@@ -15,14 +15,29 @@ export function viewExportCommand(): Command {
     .argument('<id>', 'view ID to export')
     .option('-f, --format <format>', 'image format: PNG, JPEG, or JPG', 'PNG')
     .option('-o, --file <path>', 'output file path (relative paths resolved from current directory)')
+    .option('--output-file <path>', 'alias for --file')
     .option('-s, --scale <n>', 'image scale factor (0.5 to 4)')
     .option('-m, --margin <n>', 'margin in pixels')
-    .action(async (id: string, options: { format: string; file?: string; scale?: string; margin?: string }, cmd: Command) => {
+    .action(
+      async (
+        id: string,
+        options: { format: string; file?: string; outputFile?: string; scale?: string; margin?: string },
+        cmd: Command
+      ) => {
       try {
         const validFormats = ['PNG', 'JPEG', 'JPG'];
         const fmt = options.format.toUpperCase();
         if (!validFormats.includes(fmt)) {
           print(failure('INVALID_FORMAT', `Invalid format '${fmt}'. Valid formats: ${validFormats.join(', ')}`));
+          cmd.error('', { exitCode: 1 });
+          return;
+        }
+        if (
+          options.file &&
+          options.outputFile &&
+          resolve(process.cwd(), options.file) !== resolve(process.cwd(), options.outputFile)
+        ) {
+          print(failure('INVALID_ARGUMENT', 'Use only one of --file or --output-file'));
           cmd.error('', { exitCode: 1 });
           return;
         }
@@ -33,8 +48,9 @@ export function viewExportCommand(): Command {
           ? parseNonNegativeInt(options.margin, '--margin')
           : undefined;
 
+        const filePath = options.file ?? options.outputFile;
         const body: Record<string, unknown> = { format: fmt };
-        if (options.file) body['outputPath'] = resolve(process.cwd(), options.file);
+        if (filePath) body['outputPath'] = resolve(process.cwd(), filePath);
         if (scale !== undefined) body['scale'] = scale;
         if (margin !== undefined) body['margin'] = margin;
 

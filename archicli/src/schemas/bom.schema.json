@@ -113,7 +113,8 @@
             "moveViewObject",
             "createNote",
             "createGroup",
-            "createView"
+            "createView",
+            "deleteView"
           ]
         }
       },
@@ -184,6 +185,19 @@
                 { "required": ["parentId"] },
                 { "required": ["parentType"] }
               ]
+            },
+            "else": {
+              "if": {
+                "properties": { "op": { "const": "deleteView" } }
+              },
+              "then": {
+                "required": ["op", "viewId"],
+                "properties": {
+                  "op": { "type": "string" },
+                  "viewId": { "type": "string", "description": "View ID to delete" }
+                },
+                "additionalProperties": false
+              }
             }
           }
         }

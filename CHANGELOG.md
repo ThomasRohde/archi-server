@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### CLI
+
+* add strict `idFiles` handling for `verify --semantic` and `batch apply` with `--allow-incomplete-idfiles` override
+* add `model search --strict-types`, duplicate `--type` rejection, and client-side `--name` regex validation
+* add `batch apply --skip-existing` for duplicate-create idempotent reruns
+* add `view delete <id>` command
+* add `model query --show-relationships --relationship-limit <n>`
+* add global `--output yaml` and `--quiet` flags
+* add `view export --output-file` alias
+* standardize split flag naming to `--chunk-size` with deprecated `--size` alias
+* improve `view get` text output readability and completion support for `model search --type` values
+
+### Server/API
+
+* extend `POST /model/query` to accept `relationshipLimit` and return sampled `relationships`
+* align OpenAPI `ChangeOperation` mappings with `createView` and `deleteView`
+
+### Schemas/Docs
+
+* add `deleteView` support to BOM schema
+* update CLI and README help text around sync/async behavior, polling caveats, and new flags
+
 ## [1.3.0](https://github.com/ThomasRohde/archi-server/compare/v1.2.0...v1.3.0) (2026-02-07)
 
 

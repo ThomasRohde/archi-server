@@ -97,6 +97,7 @@ paths:
       summary: Query model snapshot
       description: |
         Returns a summary of the model and a sample of elements.
+        Optionally include relationship samples by passing `relationshipLimit`.
         The snapshot is captured when the server starts and refreshed after mutations.
       operationId: postModelQuery
       requestBody:
@@ -964,6 +965,10 @@ components:
           type: integer
           default: 10
           description: Maximum number of sample elements to return
+        relationshipLimit:
+          type: integer
+          minimum: 1
+          description: Optional maximum number of relationship samples to return
 
     QueryResponse:
       type: object
@@ -981,6 +986,11 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ElementSummary'
+        relationships:
+          type: array
+          description: Present only when relationshipLimit is specified in the request
+          items:
+            $ref: '#/components/schemas/RelationshipSummary'
 
     ElementSummary:
       type: object
@@ -1059,6 +1069,8 @@ components:
           moveViewObject: '#/components/schemas/MoveViewObjectOp'
           createNote: '#/components/schemas/CreateNoteOp'
           createGroup: '#/components/schemas/CreateGroupOp'
+          createView: '#/components/schemas/CreateViewOp'
+          deleteView: '#/components/schemas/DeleteViewOp'
       oneOf:
         - $ref: '#/components/schemas/CreateElementOp'
         - $ref: '#/components/schemas/CreateRelationshipOp'
@@ -1077,6 +1089,8 @@ components:
         - $ref: '#/components/schemas/MoveViewObjectOp'
         - $ref: '#/components/schemas/CreateNoteOp'
         - $ref: '#/components/schemas/CreateGroupOp'
+        - $ref: '#/components/schemas/CreateViewOp'
+        - $ref: '#/components/schemas/DeleteViewOp'
 
     CreateElementOp:
       type: object
@@ -1515,6 +1529,44 @@ components:
           type: integer
           description: Height (default 300)
 
+    CreateViewOp:
+      type: object
+      required:
+        - op
+        - name
+      description: Create a new view in the model
+      properties:
+        op:
+          type: string
+          enum: [createView]
+        name:
+          type: string
+          description: View name
+        tempId:
+          type: string
+          description: Temporary ID for referencing in subsequent operations
+        documentation:
+          type: string
+          description: View documentation
+        viewpoint:
+          type: string
+          pattern: '^[a-z0-9_]+$'
+          description: ArchiMate viewpoint ID (for example application_cooperation)
+
+    DeleteViewOp:
+      type: object
+      required:
+        - op
+        - viewId
+      description: Delete a view by ID
+      properties:
+        op:
+          type: string
+          enum: [deleteView]
+        viewId:
+          type: string
+          description: View ID to delete
+
     ApplyResponse:
       type: object
       properties:
@@ -1717,6 +1769,22 @@ components:
           type: string
         documentation:
           type: string
+
+    RelationshipSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+        source:
+          type: string
+          nullable: true
+        target:
+          type: string
+          nullable: true
         sourceId:
           type: string
           nullable: true

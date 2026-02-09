@@ -33,9 +33,12 @@ export function batchCommand(): Command {
         '  styleConnection        viewId, connectionId, [lineColor, fontColor, ...]\n' +
         '  createNote             viewId, content, [x, y, width, height, tempId]\n' +
         '  createGroup            viewId, name, [x, y, width, height, tempId]\n\n' +
+        '  deleteView             viewId\n\n' +
         'TEMPID SYSTEM: Assign "tempId" on any create op. Later ops in the same batch\n' +
         '  can use that tempId as the value for id/sourceId/targetId/viewId/elementId.\n' +
-        '  After --poll completes, mappings are saved to <file>.ids.json automatically.'
+        '  After --poll completes, mappings are saved to <file>.ids.json automatically.\n\n' +
+        'SPLITTING: Use "batch split --chunk-size <n>" to split large BOM files.\n' +
+        '  The legacy alias "--size" is still accepted with a deprecation warning.'
     )
     .action(function (this: Command) {
       if (this.args.length > 0) {
