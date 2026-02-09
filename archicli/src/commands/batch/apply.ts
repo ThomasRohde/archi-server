@@ -14,7 +14,7 @@ import { isCommanderError } from '../../utils/commander';
 import { getConfig } from '../../utils/config';
 import { print, success, failure } from '../../utils/output';
 import { pollUntilDone, type OperationErrorDetails } from '../../utils/poll';
-import { collectTempIdRefs, resolveTempIdsByName, substituteIds } from '../../utils/tempIds';
+import { collectTempIdRefs, REFERENCE_ID_FIELDS, resolveTempIdsByName, substituteIds } from '../../utils/tempIds';
 
 interface ApplyResponse {
   operationId: string;
@@ -367,7 +367,7 @@ export function batchApplyCommand(): Command {
             if (options.continueOnError && failedChunkTempIds.size > 0) {
               const hasUnresolvedDep = pendingOps.some((op) => {
                 const source = op.change as Record<string, unknown>;
-                for (const field of ['sourceId', 'targetId', 'elementId', 'viewId', 'relationshipId', 'sourceVisualId', 'targetVisualId', 'parentId', 'folderId'] as const) {
+                for (const field of REFERENCE_ID_FIELDS.filter(f => f !== 'id')) {
                   const value = source[field];
                   if (typeof value === 'string' && failedChunkTempIds.has(value)) {
                     return true;

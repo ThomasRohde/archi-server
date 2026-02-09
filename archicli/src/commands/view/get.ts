@@ -49,6 +49,10 @@ function formatViewDetailsText(data: Record<string, unknown>): string {
       lines.push(`  - ${elementName} (${elementId})`);
       lines.push(`    bounds: x=${x}, y=${y}, width=${width}, height=${height}`);
       lines.push(`    concept: ${conceptType} (${conceptId})`);
+      const parentId = typeof element.parentId === 'string' ? element.parentId : '';
+      if (parentId) {
+        lines.push(`    parent: ${parentId}`);
+      }
     }
   }
 

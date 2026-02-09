@@ -13,6 +13,8 @@ export const REFERENCE_ID_FIELDS = [
   'folderId',
   'viewObjectId',
   'connectionId',
+  'parentVisualId',
+  'visualId',
 ] as const;
 
 interface SearchResponse {

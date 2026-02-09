@@ -209,6 +209,44 @@
                   "viewId": { "type": "string", "description": "View ID to delete" }
                 },
                 "additionalProperties": false
+              },
+              "else": {
+                "if": {
+                  "properties": { "op": { "const": "addToView" } }
+                },
+                "then": {
+                  "required": ["op", "viewId", "elementId"],
+                  "properties": {
+                    "op": { "type": "string" },
+                    "viewId": { "type": "string" },
+                    "elementId": { "type": "string" },
+                    "tempId": { "type": "string" },
+                    "parentVisualId": { "type": "string", "description": "Parent visual object to nest inside" },
+                    "x": { "type": "integer" },
+                    "y": { "type": "integer" },
+                    "width": { "type": "integer" },
+                    "height": { "type": "integer" },
+                    "autoNest": { "type": "boolean" }
+                  },
+                  "additionalProperties": false
+                },
+                "else": {
+                  "if": {
+                    "properties": { "op": { "const": "nestInView" } }
+                  },
+                  "then": {
+                    "required": ["op", "viewId", "visualId", "parentVisualId"],
+                    "properties": {
+                      "op": { "type": "string" },
+                      "viewId": { "type": "string" },
+                      "visualId": { "type": "string", "description": "Visual object ID or tempId to move" },
+                      "parentVisualId": { "type": "string", "description": "Target parent visual object ID or tempId" },
+                      "x": { "type": "integer", "description": "X position relative to parent (default 10)" },
+                      "y": { "type": "integer", "description": "Y position relative to parent (default 10)" }
+                    },
+                    "additionalProperties": false
+                  }
+                }
               }
             }
           }
