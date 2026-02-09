@@ -102,7 +102,7 @@ function buildChunkFailureMessage(results: Array<Record<string, unknown>>): stri
       const hintText = hint ? ` Hint: ${hint}` : '';
       return `Chunk ${chunkNo}/${chunkOf}: ${context}${message}${ref}${hintText}`;
     })
-    .join(' | ');
+    .join('\n');
 }
 
 function summarizeBatchOutputForText(
@@ -189,7 +189,11 @@ export function batchApplyCommand(): Command {
         '  archicli batch apply model/elements.json --poll\n' +
         '  # creates model/elements.ids.json with tempId->realId map\n' +
         '  archicli batch apply model/views.json --poll\n' +
-        '  # views.json declares "idFiles": ["elements.ids.json"] to resolve element refs'
+        '  # views.json declares "idFiles": ["elements.ids.json"] to resolve element refs\n\n' +
+        'IDEMPOTENT RE-APPLY:\n' +
+        '  archicli batch apply model/elements.json --poll --skip-existing\n' +
+        '  # safely re-run: skips createElement ops that already exist,\n' +
+        '  # recovers their real IDs, and continues with remaining ops'
     )
     .argument('<file>', 'path to BOM JSON file')
     .option('-c, --chunk-size <n>', 'operations per API request (max 1000)', '100')
@@ -469,9 +473,9 @@ export function batchApplyCommand(): Command {
             results,
           };
           if (allChanges.length === 0) {
-            output['warning'] = 'Empty BOM — no changes were applied';            if (!options.allowEmpty) {
+            output['warning'] = 'Empty BOM -- no changes were applied';            if (!options.allowEmpty) {
               print(
-                failure('EMPTY_BOM', 'Empty BOM \u2014 no changes to apply. Use --allow-empty to permit this.')
+                failure('EMPTY_BOM', 'Empty BOM -- no changes to apply. Use --allow-empty to permit this.')
               );
               cmd.error('', { exitCode: 1 });
               return;

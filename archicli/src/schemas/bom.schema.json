@@ -9,7 +9,7 @@
     "version": {
       "type": "string",
       "const": "1.0",
-      "description": "Schema version — must be '1.0'"
+      "description": "Schema version -- must be '1.0'"
     },
     "description": {
       "type": "string",

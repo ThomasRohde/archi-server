@@ -9,7 +9,7 @@ export function opsCommand(): Command {
         'All model mutations are async: the server queues them and returns an\n' +
         'operationId immediately. Use "ops status <id> --poll" to wait for completion.\n\n' +
         'Use "ops list" to recover recent operation IDs.\n' +
-        'TIP: Use "batch apply --poll" for batch workflows — it polls automatically.'
+        'TIP: Use "batch apply --poll" for batch workflows -- it polls automatically.'
     )
     .action(function (this: Command) {
       if (this.args.length > 0) {

@@ -24,3 +24,7 @@ export const ARCHIMATE_TYPES = [
 ] as const;
 
 export const ARCHIMATE_TYPE_SET = new Set<string>(ARCHIMATE_TYPES);
+
+export const RELATIONSHIP_TYPE_SET = new Set<string>(
+  ARCHIMATE_TYPES.filter((t) => t.endsWith('-relationship'))
+);

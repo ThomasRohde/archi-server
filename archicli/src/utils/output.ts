@@ -60,7 +60,7 @@ export function print(response: CLIResponse): void {
     return;
   }
 
-  console.log(JSON.stringify(response, null, 2));
+  console.log(JSON.stringify(response, null, 2).replace(/\n{3,}/g, '\n\n'));
 }
 
 function printByFormat(data: unknown, output: 'json' | 'text' | 'yaml'): void {
@@ -246,12 +246,11 @@ function formatTable(rows: Record<string, unknown>[], indent = ''): string {
     return truncate(String(val), key, columnLimitFor(key));
   };
 
-  const widths = keys.map((k) =>
-    Math.max(
-      Math.min(k.length, columnLimitFor(k)),
-      ...rows.map((r) => cellToString(r[k], k).length)
-    )
-  );
+  const widths = keys.map((k) => {
+    const limit = columnLimitFor(k);
+    const maxData = Math.max(0, ...rows.map((r) => cellToString(r[k], k).length));
+    return Math.min(limit, Math.max(k.length, maxData));
+  });
   const header = keys
     .map((k, i) => truncate(k.toUpperCase(), k, widths[i]).padEnd(widths[i]))
     .join('  ');

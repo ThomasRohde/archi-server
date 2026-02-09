@@ -19,7 +19,8 @@ export function batchCommand(): Command {
         '  createRelationship     type, sourceId, targetId, [tempId, name]\n' +
         '  updateElement          id, [name, documentation]\n' +
         '  updateRelationship     id, [name, documentation]\n' +
-        '  deleteElement          id\n' +
+        '  deleteElement          id [cascade]  (default: cascade=true, removes related\n' +
+        '                         relationships and view references for the element)\n' +
         '  deleteRelationship     id\n' +
         '  setProperty            id, key, value\n' +
         '  createView             name, [tempId, documentation, viewpoint]\n' +
@@ -37,6 +38,9 @@ export function batchCommand(): Command {
         'TEMPID SYSTEM: Assign "tempId" on any create op. Later ops in the same batch\n' +
         '  can use that tempId as the value for id/sourceId/targetId/viewId/elementId.\n' +
         '  After --poll completes, mappings are saved to <file>.ids.json automatically.\n\n' +
+        'IDEMPOTENT RE-APPLY: Use --skip-existing with "batch apply" to safely re-run\n' +
+        '  a BOM that was already applied. Duplicate create ops are skipped and their\n' +
+        '  real IDs are recovered so downstream ops still resolve correctly.\n\n' +
         'SPLITTING: Use "batch split --chunk-size <n>" to split large BOM files.\n' +
         '  The legacy alias "--size" is still accepted with a deprecation warning.'
     )

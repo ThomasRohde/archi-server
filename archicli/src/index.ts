@@ -1,6 +1,9 @@
 import { Command } from 'commander';
 import { setConfig } from './utils/config';
 import { healthCommand } from './commands/health';
+
+// Read version from package.json so it stays in sync with archi-server releases
+const pkg = require('../package.json') as { version: string };
 import { verifyCommand } from './commands/verify';
 import { batchCommand } from './commands/batch/index';
 import { modelCommand } from './commands/model/index';
@@ -14,7 +17,7 @@ export function createProgram(): Command {
   program
     .name('archicli')
     .description(
-      'CLI for the Archi Model API Server — programmatic control of ArchiMate models.\n\n' +
+      'CLI for the Archi Model API Server -- programmatic control of ArchiMate models.\n\n' +
         'PREREQUISITES:\n' +
         '  1. Archi (5.7+) with jArchi plugin must be running\n' +
         '  2. An ArchiMate model must be open with at least one view active\n' +
@@ -27,7 +30,7 @@ export function createProgram(): Command {
         '  archicli verify changes.json                  # 4. validate BOM before sending\n' +
         '  archicli batch apply changes.json --poll      # 5. apply and wait for completion\n\n' +
         'KEY CONCEPTS:\n' +
-        '  ASYNC MUTATIONS: /model/apply is async — returns operationId immediately.\n' +
+        'ASYNC MUTATIONS: /model/apply is async -- returns operationId immediately.\n' +
         '    Always use --poll or "ops status <id>" to confirm success before proceeding.\n' +
         '    If operation IDs are lost, use "ops list" to recover recent ones.\n' +
         '  TEMPIDS: Assign friendly names (e.g. "my-server") to new elements in BOM files.\n' +
@@ -43,12 +46,12 @@ export function createProgram(): Command {
         '  Use --quiet to suppress non-essential success output.\n' +
         'ENV: Set ARCHI_BASE_URL to override the default server URL.'
     )
-    .version('0.1.0')
+    .version(pkg.version)
     .option('-u, --base-url <url>', 'Archi server base URL', process.env['ARCHI_BASE_URL'] ?? 'http://127.0.0.1:8765')
     .option('--output <format>', 'output format: json, text, or yaml', 'json')
     .option('-q, --quiet', 'suppress non-essential success output')
     .option('-v, --verbose', 'enable verbose HTTP logging')
-    .option('-w, --wide', 'disable column truncation in text output tables')
+    .option('-w, --wide', 'disable column truncation (only affects --output text)')
     .hook('preAction', (_thisCommand, actionCommand) => {
       const opts = actionCommand.optsWithGlobals<{
         baseUrl: string;

@@ -1,10 +1,14 @@
 import { Command } from 'commander';
-import { resolve } from 'path';
-import { post } from '../../utils/api';
+import { resolve, join } from 'path';
+import { get, post } from '../../utils/api';
 import { ArgumentValidationError, parseBoundedFloat, parseNonNegativeInt } from '../../utils/args';
 import { isCommanderError } from '../../utils/commander';
 import { getConfig } from '../../utils/config';
 import { print, success, failure } from '../../utils/output';
+
+function sanitizeFilename(name: string): string {
+  return name.replace(/[<>:"/\\|?*]+/g, '_').replace(/\s+/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+}
 
 export function viewExportCommand(): Command {
   return new Command('export')
@@ -15,7 +19,7 @@ export function viewExportCommand(): Command {
     )
     .argument('<id>', 'view ID to export')
     .option('-f, --format <format>', 'image format: PNG, JPEG, or JPG', 'PNG')
-    .option('-o, --file <path>', 'output file path (relative paths resolved from current directory)')
+    .option('-o, --file <path>', 'output file path (default: <viewName>.<format> in current directory)')
     .option('--output-file <path>', 'alias for --file')
     .option('-s, --scale <n>', 'image scale factor (0.5 to 4)')
     .option('-m, --margin <n>', 'margin in pixels')
@@ -51,7 +55,23 @@ export function viewExportCommand(): Command {
 
         const filePath = options.file ?? options.outputFile;
         const body: Record<string, unknown> = { format: fmt };
-        if (filePath) body['outputPath'] = resolve(process.cwd(), filePath);
+        if (filePath) {
+          body['outputPath'] = resolve(process.cwd(), filePath);
+        } else {
+          // Default to <viewName>.<format> in cwd
+          try {
+            const viewData = await get(`/views/${encodeURIComponent(id)}`) as Record<string, unknown>;
+            const viewName = typeof viewData.name === 'string' && viewData.name.length > 0
+              ? sanitizeFilename(viewData.name)
+              : id;
+            const ext = fmt.toLowerCase() === 'jpeg' ? 'jpg' : fmt.toLowerCase();
+            const defaultPath = join(process.cwd(), `${viewName}.${ext}`);
+            body['outputPath'] = defaultPath;
+            process.stderr.write(`Exporting to: ${defaultPath}\n`);
+          } catch {
+            // If view lookup fails, let the server decide (fallback to temp dir)
+          }
+        }
         if (scale !== undefined) body['scale'] = scale;
         if (margin !== undefined) body['margin'] = margin;
 

@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import { readFileSync, writeFileSync, mkdirSync } from 'fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync } from 'fs';
 import { resolve, dirname, basename, extname, join } from 'path';
 import { print, success, failure } from '../../utils/output';
 import { ArgumentValidationError, parsePositiveInt } from '../../utils/args';
@@ -18,10 +18,11 @@ export function batchSplitCommand(): Command {
     .option('-c, --chunk-size <n>', 'operations per chunk file')
     .option('-s, --size <n>', 'deprecated alias for --chunk-size')
     .option('-o, --output-dir <dir>', 'directory for chunk files (default: <basename>-parts/)')
+    .option('--force', 'overwrite existing output files without warning')
     .action(
       (
         file: string,
-        options: { chunkSize?: string; size?: string; outputDir?: string },
+        options: { chunkSize?: string; size?: string; outputDir?: string; force?: boolean },
         cmd: Command
       ) => {
       try {
@@ -62,6 +63,17 @@ export function batchSplitCommand(): Command {
         const sourceBase = basename(sourceAbs, extname(sourceAbs));
         const outputDir = resolve(options.outputDir ?? join(sourceDir, `${sourceBase}-parts`));
 
+        if (!options.force && existsSync(outputDir)) {
+          try {
+            const existing = readdirSync(outputDir);
+            if (existing.length > 0) {
+              print(failure('OUTPUT_EXISTS', `Output directory already contains files: ${outputDir}. Use --force to overwrite.`));
+              cmd.error('', { exitCode: 1 });
+              return;
+            }
+          } catch { /* directory not readable, proceed */ }
+        }
+
         mkdirSync(outputDir, { recursive: true });
 
         // Split into chunks and write files
@@ -85,7 +97,7 @@ export function batchSplitCommand(): Command {
         const relativePaths = chunkFiles.map((f) => basename(f));
         const indexBom = {
           version: '1.0',
-          description: `Index for ${sourceBase} — ${allChanges.length} operations in ${chunkFiles.length} chunks`,
+          description: `Index for ${sourceBase} -- ${allChanges.length} operations in ${chunkFiles.length} chunks`,
           includes: relativePaths,
         };
         writeFileSync(indexPath, JSON.stringify(indexBom, null, 2));

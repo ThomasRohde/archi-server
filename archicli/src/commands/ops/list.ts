@@ -43,6 +43,16 @@ export function opsListCommand(): Command {
         }
 
         const data = await get(`/ops/list?${params.toString()}`);
+        const ops = Array.isArray(data)
+          ? data
+          : (data as Record<string, unknown>).operations;
+        if (Array.isArray(ops) && ops.length === 0) {
+          const msg = options.status
+            ? `No operations matching status '${options.status}'`
+            : 'No operations found';
+          print(success({ ...(data as object), message: msg }));
+          return;
+        }
         print(success(data));
       } catch (err) {
         if (isCommanderError(err)) throw err;

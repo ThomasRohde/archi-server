@@ -3,7 +3,7 @@ import { post } from '../../utils/api';
 import { ArgumentValidationError, parsePositiveInt } from '../../utils/args';
 import { isCommanderError } from '../../utils/commander';
 import { print, success, failure } from '../../utils/output';
-import { ARCHIMATE_TYPE_SET, ARCHIMATE_TYPES } from '../../utils/archimateTypes';
+import { ARCHIMATE_TYPE_SET, ARCHIMATE_TYPES, RELATIONSHIP_TYPE_SET } from '../../utils/archimateTypes';
 
 function rawArgsForCommand(cmd: Command): string[] {
   const programArgs = (cmd.parent?.parent as { rawArgs?: string[] } | undefined)?.rawArgs;
@@ -79,6 +79,7 @@ export function modelSearchCommand(): Command {
     .option('-k, --property-key <key>', 'filter by property key')
     .option('-V, --property-value <value>', 'filter by property value (used with --property-key)')
     .option('--no-relationships', 'exclude relationship concepts from results')
+    .option('--no-elements', 'exclude elements from results (show relationships only)')
     .option('--strict-types', 'fail on unknown --type values instead of warning')
     .option('-l, --limit <n>', 'max results to return', '100')
     .action(
@@ -89,6 +90,7 @@ export function modelSearchCommand(): Command {
           propertyKey?: string;
           propertyValue?: string;
           relationships?: boolean;
+          elements?: boolean;
           strictTypes?: boolean;
           limit: string;
         },
@@ -142,7 +144,23 @@ export function modelSearchCommand(): Command {
         if (options.propertyValue && options.propertyKey) body['propertyValue'] = options.propertyValue;
         if (options.relationships === false) body['includeRelationships'] = false;
 
-        const data = await post('/model/search', body);
+        let data = await post('/model/search', body);
+
+        // Client-side filter for --no-elements
+        if (options.elements === false && data && typeof data === 'object') {
+          const record = data as Record<string, unknown>;
+          if (Array.isArray(record.results)) {
+            record.results = record.results.filter((item: unknown) => {
+              if (typeof item === 'object' && item !== null) {
+                const type = (item as Record<string, unknown>).type;
+                return typeof type === 'string' && RELATIONSHIP_TYPE_SET.has(type);
+              }
+              return true;
+            });
+          }
+          data = record;
+        }
+
         print(success(warning ? { ...data as object, warning } : data));
       } catch (err) {
         if (isCommanderError(err)) throw err;

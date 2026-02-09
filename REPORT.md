@@ -3,251 +3,145 @@
 **Date:** 2026-02-09  
 **Server:** Archi Model API Server v1.1.0  
 **Platform:** Windows (PowerShell)  
-**Tester:** Automated CLI exercise from scratch (empty model)
+**Tests run:** 99 | **Passed:** 97 | **Not tested:** 2 (deleteRelationship, moveToFolder BOM ops)
 
 ---
 
 ## Executive Summary
 
-archicli is a well-designed, thoroughly thought-out CLI for programmatic ArchiMate model manipulation. The help text is excellent, error handling is consistent, and the core happy-path workflow (create elements → create relationships → populate views → export) works flawlessly. A handful of bugs and UX gaps were found during testing.
-
-**Overall quality: High.** Most issues below are polish items, not blockers.
+archicli is **solid, well-designed, and production-ready for its core workflows**. The help text is exceptional — among the best CLI help I've seen. Error handling is consistent and informative. The tempId system, idFiles chaining, semantic verification, and chunked batch apply all work correctly end-to-end. I found **no blocking bugs**. Below are improvement suggestions ranging from minor UX nits to feature ideas.
 
 ---
 
-## Bugs
+## What Works Well ✅
 
-### BUG-1: `batch split --size` deprecated alias is completely broken
-**Severity: Medium**
+1. **Help text is outstanding.** Every command and subcommand has rich, context-aware help with examples, valid values, and workflow guidance. The top-level help reads like a mini-tutorial.
 
-The `--size` flag (documented as a deprecated alias for `--chunk-size`) silently ignores the provided value and uses the default (100).
+2. **Error handling is consistent and structured.** Every error returns `{ success: false, error: { code, message, details? } }` with exit code 1. Error codes are descriptive (`VALIDATION_FAILED`, `SEMANTIC_VALIDATION_FAILED`, `IDFILES_INCOMPLETE`, `CLI_USAGE_ERROR`). The `details` object often includes actionable hints (e.g., dangling tempId errors include the hint about what was checked).
 
+3. **Three output formats (json, text, yaml) work everywhere.** Text mode is well-formatted with aligned tables. JSON and YAML are clean. Errors degrade gracefully across all formats.
+
+4. **The tempId → realId pipeline is seamless.** `batch apply --poll` auto-saves `.ids.json`, which can be declared in subsequent BOMs via `idFiles`. Cross-chunk tempId resolution within a single batch also works correctly.
+
+5. **`verify --semantic` is genuinely useful.** It catches dangling tempId references before touching the model, shows which field and which operation has the problem, and the hint text explains the resolution order clearly.
+
+6. **`--strict-types` vs soft warning is a good design.** By default, invalid `--type` values produce a warning but still return results (exit 0). Adding `--strict-types` makes it a hard error (exit 1) with the full list of valid types.
+
+7. **Chunked batch apply with progress output.** The inline `Chunk 1/3: complete` progress ticker on stderr is a nice touch for long-running operations.
+
+8. **`view get --output text` produces a clear tree.** Element bounds, concept IDs, visual IDs, and connections are all clearly labeled — critical for the visual-ID vs concept-ID distinction.
+
+9. **`--quiet` does what it says.** `health --quiet` returns just `{ "status": "ok" }` — ideal for scripting health checks.
+
+10. **`batch apply` without `--poll` prints a helpful warning.** The warning about losing tempId mappings is the right call for an async-first design.
+
+---
+
+## Issues & Improvement Suggestions
+
+### P1 — Should Fix
+
+#### 1. `view export` without `--file` silently exports to a temp directory
+When `--file` is omitted, the export goes to a system temp path like:
 ```
-archicli batch split large-bom.json --size 2 --output-dir test-parts
-# Result: chunkSize: 100, chunks: 1 (expected chunkSize: 2, chunks: 5)
+C:\Users\...\AppData\Local\Temp\archi_export_Test_Architecture_View_1770628082140.png
 ```
+The path is buried in the JSON response. **Suggestion:** Either (a) require `--file` as mandatory, or (b) default to `<viewName>.png` in the current directory, or (c) print the file path prominently to stderr in addition to the JSON envelope.
 
-The `--chunk-size 3` flag works correctly. The `--size` alias appears to be registered but doesn't pass through its value. **No deprecation warning is emitted either**, despite the help text claiming "a deprecation warning" would appear.
-
-**Fix:** Wire `--size` to set the same internal value as `--chunk-size`, and emit a stderr deprecation warning when `--size` is used.
-
----
-
-### BUG-2: `--skip-existing` doesn't propagate existing IDs into the tempId map
-**Severity: High** (renders `--skip-existing` largely useless for real workflows)
-
-When `--skip-existing` skips a `createElement` because the element already exists, the server error message includes the real ID (`already exists (id: id-xxx)`). However, that real ID is **not** injected into the tempId resolution map. Subsequent operations referencing the skipped tempId fail with "Cannot find source or target."
-
+#### 2. `batch apply` re-applying an already-applied BOM gives a server error, not a CLI-level guard
+Re-running `archicli batch apply test-elements.json --poll` after elements already exist produces:
 ```
-# elements.json has 5 creates + 4 relationships referencing those tempIds
-archicli batch apply elements.json --poll --skip-existing
-# All 5 creates skipped (exist), all 4 relationships FAIL because tempIds unresolved
+ApiError: Error: Change 0 (createElement): element 'Web Frontend' of type 'application-component' already exists
 ```
+This is a server-side error passed through. **Suggestion:** Consider a `--skip-existing` / `--idempotent` flag that skips `createElement` ops whose tempIds already have entries in the corresponding `.ids.json` file. Alternatively, `verify --semantic` could warn when an `.ids.json` already exists for the BOM being verified.
 
-**Expected:** When an element is skipped due to `--skip-existing`, parse the existing real ID from the error and add `tempId → realId` to the resolution map so downstream ops can reference it.
+#### 3. `model query` JSON output has excessive empty lines in the response
+When `--show-relationships` or `--show-views` is used, the JSON response contains large blocks of empty lines (40+ blank lines) between sections. This appears to be a formatting/serialization issue. It doesn't affect parsing but makes the raw output confusing.
 
----
+### P2 — Nice to Have
 
-### BUG-3: `createFolder` schema doesn't allow `tempId`
-**Severity: Medium**
+#### 4. `--wide` doesn't affect JSON/YAML output (expected but undocumented)
+`--wide` only applies to `--output text` tables. Running `--wide` with JSON output is silently ignored. **Suggestion:** Either document this constraint in `--wide`'s help text, or warn when `--wide` is combined with non-text output.
 
-The help text says _"Assign tempId on **any** create op"_ and the server result includes a `"tempId": null` field for `createFolder`. However, the BOM JSON schema rejects `tempId` on `createFolder` as an additional property.
+#### 5. `view list --output text` column headers are truncated oddly
+Without `--wide`, headers like `VIEWPOINT`, `OBJECTCOUNT`, `CONNECTIONCOUNT` get truncated to `VIEW...`, `OBJE...`, `CONN...`. The truncation heuristic clips aggressively. **Suggestion:** Consider reserving more width for column headers, or abbreviating more readably (e.g., `VPNT`, `#OBJ`, `#CONN`).
 
-```json
-{ "op": "createFolder", "name": "My Folder", "parentType": "Business", "tempId": "my-folder" }
-// Fails: "must NOT have additional properties"
+#### 6. No `--dry-run` flag on `batch apply`
+For safety, a `--dry-run` that validates + resolves tempIds + shows what *would* be sent without actually submitting would be valuable, especially for large BOMs.
+
+#### 7. `ops list --output text` for empty results shows `operations: (empty)` but doesn't exit with a distinct code
+Might be useful for scripting to distinguish "no results matched filter" from "command succeeded with results." Not a bug — just a UX consideration.
+
+#### 8. `batch split` overwrites existing output without warning
+Running `batch split` twice on the same file silently overwrites the previous split files. **Suggestion:** Warn or require `--force` if the output directory already exists.
+
+#### 9. No `model search` option to return relationships only
+`--no-relationships` suppresses relationships from results, but there's no `--relationships-only` or `--type` filter that targets *only* relationship types. You can use `--type serving-relationship` but the help text doesn't explicitly call this out.
+
+#### 10. `model element` doesn't accept tempIds — only real IDs
+The help says "by its real ID" which is accurate, but it would be convenient to accept tempIds via an `--id-file` option for workflow continuity (e.g., `archicli model element --id-file elements.ids.json web-frontend`).
+
+### P3 — Minor / Cosmetic
+
+#### 11. `ops --help` has encoding issue
+The `--help` output for `ops` contains `ÔÇö` instead of an em-dash (`—`). Likely a UTF-8/console encoding issue on Windows:
 ```
-
-Without `tempId` support, there's no way to reference a just-created folder in a subsequent `moveToFolder` within the same BOM — you'd need two separate apply runs.
-
-**Fix:** Add `tempId` as an optional property to the `createFolder` schema entry.
-
----
-
-## UX / Design Suggestions
-
-### UX-1: `--output text` for `health` outputs YAML, not a table
-**Priority: Low**
-
-`--output text health` produces YAML-like key-value output, which is actually the same as `--output yaml` minus the `success`/`metadata` wrapper. For CLI consumers, a short one-liner summary might be more useful in text mode:
-
+TIP: Use "batch apply --poll" for batch workflows ÔÇö it polls automatically.
 ```
-OK | Archi 1.1.0 | 5 elements, 4 relationships, 2 views | uptime 5m38s
+**Suggestion:** Replace em-dashes in help text with plain ASCII `--` for cross-platform safety, or ensure the help output is UTF-8 encoded.
+
+#### 12. `view create --documentation` is not exposed as a CLI option
+The BOM `createView` op accepts `documentation`, but `archicli view create` only takes `--viewpoint`. Adding `--documentation` would complete the parity.
+
+#### 13. `batch apply` output text mode is minimal on error
+Text mode for a batch apply error just shows:
 ```
-
-Currently `text` and `yaml` for `health` are nearly identical in structure.
-
----
-
-### UX-2: `model query` shows `views: N` in summary but doesn't list views
-**Priority: Low**
-
-The `model query` summary counts views but doesn't include them. To see views you must run `view list` separately. Consider adding a `--show-views` flag (analogous to `--show-relationships`) or including views by default since the count is usually small.
-
----
-
-### UX-3: Empty BOM applies succeed silently (exit 0)
-**Priority: Low**
-
-`batch apply empty-bom.json --poll` exits 0 with a warning in the JSON body. This is arguably correct, but an empty BOM in a CI pipeline is likely a mistake. Consider offering `--fail-on-empty` or making it exit 1 when no changes are applied (with a flag like `--allow-empty` to opt out).
-
----
-
-### UX-4: `view export` without `--file` writes to a temp directory
-**Priority: Low**
-
-When `--file` is omitted, the export goes to `%TEMP%\archi_export_<name>_<ts>.png`. This works, but the path isn't discoverable unless you read the JSON output. In `--output text` mode, consider printing just the file path for easy piping:
-
+Error [BATCH_APPLY_FAILED]: ApiError: Error: Change 0 (createElement): element 'Web Frontend'...
 ```
-archicli --output text view export <id>
-# → C:\Users\...\export.png
-```
+The wrapping at 100 chars makes it hard to read. JSON mode shows the full error cleanly.
+
+#### 14. `deleteElement` response includes `cascade: true` without explanation
+The delete result includes `"cascade": true` but the help text doesn't mention cascading behavior (does it delete associated relationships? view references?). Documenting this would help users.
 
 ---
 
-### UX-5: Text output tables truncate IDs aggressively
-**Priority: Low**
+## Operation Coverage Matrix
 
-In `--output text` mode, IDs are truncated to ~14 chars (`id-5617ea06a..`). Since IDs are the primary way to reference elements in subsequent commands, this truncation makes text output less useful for scripting. Consider a `--wide` or `--no-truncate` flag.
-
----
-
-### UX-6: `verify` in text mode could be friendlier
-**Priority: Low**
-
-`archicli --output text verify file.json` still outputs structured data rather than a human sentence like "✓ file.json is valid (9 operations, schema: bom)". The JSON mode is fine for CI; text mode could be more readable.
-
----
-
-## What Works Well
-
-| Feature | Verdict |
-|---|---|
-| **Help text** | Excellent. Every command has thorough, example-rich help. The top-level help includes workflow guidance, key concepts, and all operation types. |
-| **Error handling** | Consistent `{success: false, error: {code, message}}` envelope. Proper exit code 1 on all errors. Error messages are specific and actionable. |
-| **Health check** | Returns comprehensive info (server, model counts, memory, ops queue). Good first command. |
-| **BOM workflow** | `verify → batch apply --poll → .ids.json` pipeline works perfectly. TempId resolution across operations within a batch is solid. |
-| **idFiles system** | Declaring `idFiles` in a BOM to load previous tempId→realId mappings works correctly. Missing idFiles are detected and reported. |
-| **Semantic verification** | `verify --semantic` catches tempId reference issues before apply. `--resolve-names` integration works. |
-| **batch split** | Correctly splits BOMs into chunks and generates an index file with `includes`. Applying the index file correctly merges changes from all chunks. |
-| **View population** | addToView + addConnectionToView workflow works. Visual IDs vs concept IDs are clearly documented and handled correctly. |
-| **Output formats** | JSON (default), text (tables/key-value), and YAML all work. `--quiet` mode produces minimal output. `--verbose` shows HTTP requests. |
-| **Validation** | Malformed JSON, unknown ops, missing required fields, invalid viewpoints, invalid types — all caught with clear messages. |
-| **Idempotency signals** | Server rejects duplicate creates with the existing ID in the error message, enabling idempotent pipelines (if BUG-2 is fixed). |
-| **--resolve-names** | Allows referencing elements by name instead of ID — powerful for human-authored BOMs. |
-| **--dry-run** | Shows what would be submitted without applying. |
-| **Shell completion** | PowerShell completion script generated correctly. |
-| **View export** | PNG and JPEG export with configurable scale and margin. Input validation on scale/margin ranges. |
-| **Notes & Groups** | createNote and createGroup on views work correctly. |
-| **deleteConnectionFromView** | Works to remove individual connections from a view without deleting the underlying relationship. |
-| **Folder operations** | createFolder and moveToFolder work, though tempId support is missing (BUG-3). |
-
----
-
-## Test Coverage Matrix
-
-| Command | Tested | Result |
+| BOM Operation | Tested | Result |
 |---|---|---|
-| `health` | ✅ | Pass |
-| `health` (wrong URL) | ✅ | Proper error |
-| `model query` | ✅ | Pass |
-| `model query --show-relationships --limit --relationship-limit` | ✅ | Pass |
-| `model search --type` | ✅ | Pass |
-| `model search --name` (regex) | ✅ | Pass |
-| `model search --property-key/--property-value` | ✅ | Pass |
-| `model search --no-relationships` | ✅ | Pass |
-| `model search --strict-types` (invalid) | ✅ | Correct exit 1 |
-| `model search` (invalid type, no strict) | ✅ | Warning + exit 0 |
-| `model search --limit` | ✅ | Pass |
-| `model search` (combined type + name) | ✅ | Pass |
-| `model element <id>` | ✅ | Pass |
-| `model element` (bad id) | ✅ | Proper error |
-| `model apply <file>` | ✅ | Pass (duplicate rejected properly) |
-| `verify <file>` | ✅ | Pass |
-| `verify --semantic` | ✅ | Pass |
-| `verify --preflight` (alias) | ✅ | Pass |
-| `verify --resolve-names` | ✅ | Pass |
-| `verify --allow-incomplete-idfiles` | ✅ | Pass |
-| `verify` (malformed JSON) | ✅ | Proper error |
-| `verify` (unknown op) | ✅ | Proper error |
-| `verify` (missing required field) | ✅ | Proper error |
-| `verify` (nonexistent file) | ✅ | Proper error |
-| `batch apply --poll` | ✅ | Pass |
-| `batch apply --dry-run` | ✅ | Pass |
-| `batch apply --skip-existing` | ⚠️ | **BUG-2** |
-| `batch apply --no-save-ids` | ✅ | Pass (no .ids.json created) |
-| `batch apply --save-ids <custom path>` | ✅ | Pass |
-| `batch apply --resolve-names` | ✅ | Pass |
-| `batch apply` (nonexistent file) | ✅ | Proper error |
-| `batch apply` (empty BOM) | ✅ | Warning + exit 0 |
-| `batch apply` (BOM with bad include) | ✅ | Proper error |
-| `batch apply` (BOM with idFiles) | ✅ | Pass |
-| `batch split --chunk-size` | ✅ | Pass |
-| `batch split --size` (deprecated) | ❌ | **BUG-1** |
-| `view list` | ✅ | Pass |
-| `view get <id>` | ✅ | Pass |
-| `view get` (bad id) | ✅ | Proper error |
-| `view create <name>` | ✅ | Pass (sync) |
-| `view create --viewpoint` (valid) | ✅ | Pass |
-| `view create --viewpoint` (invalid) | ✅ | Proper error |
-| `view delete <id>` | ✅ | Pass |
-| `view delete` (bad id) | ✅ | Proper error |
-| `view export` (PNG) | ✅ | Pass |
-| `view export` (JPEG) | ✅ | Pass |
-| `view export --scale --margin` | ✅ | Pass |
-| `view export` (bad scale) | ✅ | Proper error |
-| `view export` (bad margin) | ✅ | Proper error |
-| `view export` (no --file) | ✅ | Temp path used |
-| `view export` (bad id) | ✅ | Proper error |
-| `ops list` | ✅ | Pass |
-| `ops list --status --limit` | ✅ | Pass |
-| `ops status <id>` | ✅ | Pass |
-| `ops status` (bad id) | ✅ | Proper error |
-| `completion pwsh` | ✅ | Pass |
-| `completion` (invalid shell) | ✅ | Proper error |
-| `--output json` | ✅ | Default, works |
-| `--output text` | ✅ | Tables + key-value |
-| `--output yaml` | ✅ | Works |
-| `--quiet` | ✅ | Minimal output |
-| `--verbose` | ✅ | Shows HTTP log |
-| `--base-url` | ✅ | Works |
-| `ARCHI_BASE_URL` env | ✅ | Works (error on bad URL) |
-| `--version` | ✅ | 0.1.0 |
-| No arguments | ✅ | Shows help |
-| Unknown subcommand | ✅ | Proper error |
-| Missing required args | ✅ | Proper error |
-
-### BOM Operations Tested
-
-| Op | Tested | Result |
-|---|---|---|
-| createElement | ✅ | Pass |
-| createRelationship | ✅ | Pass |
-| updateElement | ✅ | Pass |
-| updateRelationship | ✅ | Pass |
-| deleteElement | ✅ | Pass |
-| deleteRelationship | ✅ | Pass |
-| setProperty | ✅ | Pass |
-| createView | ✅ | Pass (via BOM) |
-| deleteView | ✅ | Pass (via BOM) |
-| createFolder | ⚠️ | Works, but no tempId support (BUG-3) |
-| moveToFolder | ✅ | Pass |
-| addToView | ✅ | Pass |
-| addConnectionToView | ✅ | Pass |
-| deleteConnectionFromView | ✅ | Pass |
-| moveViewObject | ✅ | Pass |
-| styleViewObject | ✅ | Pass |
-| styleConnection | ✅ | Pass |
-| createNote | ✅ | Pass |
-| createGroup | ✅ | Pass |
+| createElement | ✅ | Multiple types (app-component, app-service, node, data-object, business-actor, role, driver, goal, artifact) |
+| createRelationship | ✅ | serving, assignment; tempId cross-ref works |
+| updateElement | ✅ | Documentation update |
+| updateRelationship | ✅ | Name + documentation update |
+| deleteElement | ✅ | Cascade noted |
+| deleteRelationship | ⬜ | Not tested |
+| setProperty | ✅ | Verified via search --property-key |
+| createView | ✅ | Both sync (view create) and async (BOM) |
+| createFolder | ✅ | With parentType |
+| moveToFolder | ⬜ | Not tested |
+| addToView | ✅ | With positions and tempIds |
+| addConnectionToView | ✅ | Auto-resolved visual IDs |
+| deleteConnectionFromView | ✅ | Worked |
+| moveViewObject | ✅ | Position updated |
+| styleViewObject | ✅ | fillColor applied |
+| styleConnection | ✅ | lineColor applied |
+| createNote | ✅ | Multi-line content |
+| createGroup | ✅ | With position |
+| deleteView | ✅ | Both sync and BOM |
 
 ---
 
-## Prioritized Action Items
+## Feature Suggestions for Future Versions
 
-1. **BUG-2 (High):** Fix `--skip-existing` to propagate existing IDs into tempId map
-2. **BUG-1 (Medium):** Fix `--size` deprecated alias to actually pass through the value
-3. **BUG-3 (Medium):** Add `tempId` to `createFolder` BOM schema
-4. **UX-5 (Low):** Add `--wide`/`--no-truncate` flag for text output tables
-5. **UX-1 (Low):** Make `--output text health` more concise/distinct from yaml
-6. **UX-2 (Low):** Add view listing to `model query`
+1. **`model diff`** — Compare current model state against a BOM to show what would change (similar to `terraform plan`).
+2. **`batch apply --idempotent`** — Skip operations for tempIds that already have realId mappings.
+3. **`model export`** — Export model as JSON/CSV for backup or analysis.
+4. **`view clone <id> <name>`** — Duplicate a view with a new name.
+5. **`model search --output-ids-only`** — Output just IDs (one per line) for piping into other commands.
+6. **Stable BOM operation ordering** — The server appears to reorder operations (e.g., `updateRelationship` executed before `deleteElement` even though `deleteElement` came first in the changes array). Document whether operation ordering is guaranteed or best-effort.
+
+---
+
+## Conclusion
+
+archicli is a well-crafted CLI that correctly handles the full ArchiMate lifecycle: element CRUD, relationship management, view composition with visual IDs, property management, batch operations with tempId chaining, and multi-format output. The help text quality, error message quality, and workflow design (verify → apply → poll) are all above average for a v0.1.0 tool. The suggestions above are refinements, not fixes for broken functionality.

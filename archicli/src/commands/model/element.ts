@@ -2,6 +2,7 @@ import { Command } from 'commander';
 import { get } from '../../utils/api';
 import { isCommanderError } from '../../utils/commander';
 import { print, success, failure } from '../../utils/output';
+import { loadIdFilesWithDiagnostics } from '../../utils/bom';
 
 export function modelElementCommand(): Command {
   return new Command('element')
@@ -9,12 +10,25 @@ export function modelElementCommand(): Command {
       'Get full details for a single element by its real ID.\n\n' +
         'Returns: name, type, documentation, all properties, relationships\n' +
         '(as both source and target), and which views the element appears in.\n\n' +
-        'Use "model search" to find element IDs first.'
+        'Use "model search" to find element IDs first.\n' +
+        'Use --id-file to resolve a tempId from a .ids.json file.'
     )
-    .argument('<id>', 'element real ID (format: id-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx)')
-    .action(async (id: string, _options: unknown, cmd: Command) => {
+    .argument('<id>', 'element real ID or tempId (with --id-file)')
+    .option('--id-file <path>', 'resolve the given ID as a tempId from this .ids.json file')
+    .action(async (id: string, options: { idFile?: string }, cmd: Command) => {
       try {
-        const data = await get(`/model/element/${encodeURIComponent(id)}`);
+        let resolvedId = id;
+        if (options.idFile) {
+          const { map } = loadIdFilesWithDiagnostics([options.idFile]);
+          if (map[id]) {
+            resolvedId = map[id];
+          } else {
+            print(failure('TEMPID_NOT_FOUND', `tempId '${id}' not found in ${options.idFile}`));
+            cmd.error('', { exitCode: 1 });
+            return;
+          }
+        }
+        const data = await get(`/model/element/${encodeURIComponent(resolvedId)}`);
         print(success(data));
       } catch (err) {
         if (isCommanderError(err)) throw err;
