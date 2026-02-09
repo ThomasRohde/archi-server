@@ -224,28 +224,6 @@ archi-server/
 │   │   └── utils/                 # api, config, output, poll helpers
 │   ├── package.json
 │   └── tsconfig.json
-├── model/                         # Example BOM files documenting this project
-│   ├── index.json                 # Master BOM (uses includes)
-│   ├── 01-strategy.json           # Capabilities and value streams
-│   ├── 02-business.json           # Actors, roles, processes
-│   ├── 03-application.json        # Server components
-│   ├── 04-technology.json         # Runtime environment
-│   ├── 05-relationships.json      # Cross-layer relationships
-│   └── 06-views.json              # Views with element placement
-├── .claude/                       # Claude Code integration
-│   ├── skills/                    # Shared AI agent skills (Agent Skills standard)
-│   │   ├── archi-server-api/      # API execution reference
-│   │   ├── archimate-modeling/    # Element selection guidance
-│   │   ├── archimate-relationships/ # Relationship rules
-│   │   ├── archimate-patterns/    # Architecture pattern templates
-│   │   └── archimate-quality/     # Model quality audit rules
-│   ├── commands/                  # Claude Code slash commands
-│   └── agents/                    # Claude Code agents
-├── .github/
-│   ├── prompts/                   # Copilot prompt files (/element, /pattern, /view, /audit)
-│   ├── agents/                    # Copilot agents (@archimate-modeler)
-│   └── copilot-instructions.md   # Copilot project instructions
-├── context/                       # Development documentation
 ├── openapi.yaml                   # API specification
 └── README.md
 ```
