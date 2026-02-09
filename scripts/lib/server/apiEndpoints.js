@@ -58,6 +58,9 @@
         handleShutdown: function(request, response, serverState) {
             return healthEndpoints.handleShutdown(request, response, serverState);
         },
+        handleDiagnostics: function(request, response, serverState) {
+            return healthEndpoints.handleDiagnostics(request, response, serverState);
+        },
 
         // Model operation endpoints
         handleQuery: function(request, response, serverState) {

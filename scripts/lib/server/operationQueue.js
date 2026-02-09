@@ -53,6 +53,8 @@
         _modelRef: null,
         _processorCycleCount: 0,
         _onUpdateCountCallback: null,
+        _commandStackListenerHandle: null,
+        _isProcessingBatch: false,
 
         /**
          * Get configuration from serverConfig or use defaults
@@ -530,6 +532,40 @@
             this._modelRef = options.modelRef;
             this._onUpdateCountCallback = options.onUpdateCount || null;
 
+            // Register CommandStack listener to auto-refresh snapshot on external changes
+            // (e.g., user pressing Ctrl+Z in Archi, or command stack silently undoing)
+            if (typeof undoableCommands !== "undefined" && undoableCommands.registerCommandStackListener &&
+                this._modelRef && typeof modelSnapshot !== "undefined") {
+                var self = this;
+                try {
+                    this._commandStackListenerHandle = undoableCommands.registerCommandStackListener(
+                        this._modelRef,
+                        function(eventType) {
+                            // Only refresh snapshot for changes NOT initiated by our own batch processing
+                            if (!self._isProcessingBatch && modelSnapshot) {
+                                try {
+                                    modelSnapshot.refreshSnapshot(self._modelRef);
+                                    if (loggingQueue) {
+                                        loggingQueue.log("Snapshot refreshed due to external command stack change");
+                                    }
+                                } catch (refreshErr) {
+                                    if (loggingQueue) {
+                                        loggingQueue.error("Snapshot refresh on command stack change failed: " + refreshErr);
+                                    }
+                                }
+                            }
+                        }
+                    );
+                    if (loggingQueue) {
+                        loggingQueue.log("CommandStack listener registered for external change detection");
+                    }
+                } catch (listenerErr) {
+                    if (loggingQueue) {
+                        loggingQueue.error("Failed to register CommandStack listener: " + listenerErr);
+                    }
+                }
+            }
+
             this._scheduleProcessor();
         },
 
@@ -538,6 +574,17 @@
          */
         stopProcessor: function() {
             this._processorRunning = false;
+
+            // Unregister CommandStack listener
+            if (this._commandStackListenerHandle) {
+                try {
+                    this._commandStackListenerHandle.remove();
+                    if (loggingQueue) {
+                        loggingQueue.log("CommandStack listener unregistered");
+                    }
+                } catch (e) { /* ignore */ }
+                this._commandStackListenerHandle = null;
+            }
         },
 
         /**
@@ -574,12 +621,31 @@
                             loggingQueue.log("Model ref available: " + (self._modelRef !== null));
                         }
 
+                        // Mark that we're processing a batch so the CommandStack listener
+                        // doesn't trigger redundant snapshot refreshes during execution
+                        self._isProcessingBatch = true;
+
                         // Use undoableCommands.executeBatch for proper undo/redo support
                         var batchLabel = "API Operation " + operation.id;
                         var results = undoableCommands.executeBatch(self._modelRef, batchLabel, operation.changes);
 
-                        // Refresh model snapshot
+                        self._isProcessingBatch = false;
+
+                        // Delayed snapshot refresh: allow async GEF rollback to settle
+                        // before capturing the new snapshot state
+                        var refreshDelayMs = 100;
+                        if (typeof serverConfig !== "undefined" && serverConfig.operations &&
+                            serverConfig.operations.snapshotRefreshDelayMs !== undefined) {
+                            refreshDelayMs = serverConfig.operations.snapshotRefreshDelayMs;
+                        }
+
                         if (modelSnapshot) {
+                            if (refreshDelayMs > 0) {
+                                try {
+                                    var Thread = Java.type("java.lang.Thread");
+                                    Thread.sleep(refreshDelayMs);
+                                } catch (sleepErr) { /* ignore */ }
+                            }
                             modelSnapshot.refreshSnapshot(self._modelRef);
                         }
 
@@ -595,6 +661,7 @@
                         }
 
                     } catch (e) {
+                        self._isProcessingBatch = false;
                         var errorMsg = "Operation failed: " + operation.id + " - " + String(e);
                         var errorDetails = self._buildOperationErrorDetails(operation, e);
 

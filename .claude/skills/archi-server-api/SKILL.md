@@ -277,7 +277,7 @@ curl -s -X POST http://localhost:8765/model/save
 
 5. **Nesting for compound elements**: When an element visually contains children (e.g., Application Component composing others), use `parentVisualId` on `addToView` to place children inside the parent. The child's `x`, `y` coordinates become **relative to the parent container**. Alternatively, use `nestInView` to reparent an already-placed visual object. Without nesting, children appear as siblings even if overlapping the parent.
 
-6. **Limits**: Max 1000 changes per request. 1MB body limit. 200 requests/minute rate limit.
+6. **Limits**: Max 1000 changes per request. 1MB body limit. 200 requests/minute rate limit. Keep batches ≤20 ops when creating relationships to avoid silent GEF rollback. The server internally chunks large CompoundCommands and verifies created objects persist.
 
 7. **Layout options**: Only `dagre` algorithm. `rankdir`: `TB` (top-bottom), `BT`, `LR` (left-right), `RL`. `nodesep`/`ranksep` in pixels.
 
@@ -288,6 +288,8 @@ curl -s -X POST http://localhost:8765/model/save
 9. **Delete cascade**: `deleteElement` with `cascade: true` (default) removes the element, all its relationships, and all visual references across all views.
 
 10. **Search supports regex**: `namePattern` in `/model/search` accepts regex patterns (e.g., `"^Order.*"` to find all elements starting with "Order").
+
+11. **Model diagnostics**: `GET /model/diagnostics` detects orphan/ghost objects — elements or relationships that exist in the EMF resource but are missing from folder structure.
 
 ## Additional Resources
 

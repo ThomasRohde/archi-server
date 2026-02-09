@@ -1,0 +1,246 @@
+{
+  "version": "1.0",
+  "description": "Fix5 regression (Bug 5): 40 elements in single batch — tests large element batch persistence",
+  "changes": [
+    {
+      "op": "createElement",
+      "type": "business-actor",
+      "name": "Fix5 Customer",
+      "tempId": "fix5-e1"
+    },
+    {
+      "op": "createElement",
+      "type": "business-actor",
+      "name": "Fix5 Employee",
+      "tempId": "fix5-e2"
+    },
+    {
+      "op": "createElement",
+      "type": "business-role",
+      "name": "Fix5 Buyer",
+      "tempId": "fix5-e3"
+    },
+    {
+      "op": "createElement",
+      "type": "business-role",
+      "name": "Fix5 Seller",
+      "tempId": "fix5-e4"
+    },
+    {
+      "op": "createElement",
+      "type": "business-process",
+      "name": "Fix5 Order Process",
+      "tempId": "fix5-e5"
+    },
+    {
+      "op": "createElement",
+      "type": "business-process",
+      "name": "Fix5 Payment Process",
+      "tempId": "fix5-e6"
+    },
+    {
+      "op": "createElement",
+      "type": "business-service",
+      "name": "Fix5 Order Service",
+      "tempId": "fix5-e7"
+    },
+    {
+      "op": "createElement",
+      "type": "business-service",
+      "name": "Fix5 Payment Service",
+      "tempId": "fix5-e8"
+    },
+    {
+      "op": "createElement",
+      "type": "business-object",
+      "name": "Fix5 Order",
+      "tempId": "fix5-e9"
+    },
+    {
+      "op": "createElement",
+      "type": "business-object",
+      "name": "Fix5 Invoice",
+      "tempId": "fix5-e10"
+    },
+    {
+      "op": "createElement",
+      "type": "business-event",
+      "name": "Fix5 Order Received",
+      "tempId": "fix5-e11"
+    },
+    {
+      "op": "createElement",
+      "type": "business-function",
+      "name": "Fix5 Sales Mgmt",
+      "tempId": "fix5-e12"
+    },
+    {
+      "op": "createElement",
+      "type": "application-component",
+      "name": "Fix5 CRM",
+      "tempId": "fix5-e13"
+    },
+    {
+      "op": "createElement",
+      "type": "application-component",
+      "name": "Fix5 ERP",
+      "tempId": "fix5-e14"
+    },
+    {
+      "op": "createElement",
+      "type": "application-service",
+      "name": "Fix5 API Gateway",
+      "tempId": "fix5-e15"
+    },
+    {
+      "op": "createElement",
+      "type": "application-service",
+      "name": "Fix5 Auth Service",
+      "tempId": "fix5-e16"
+    },
+    {
+      "op": "createElement",
+      "type": "application-function",
+      "name": "Fix5 Validation",
+      "tempId": "fix5-e17"
+    },
+    {
+      "op": "createElement",
+      "type": "application-function",
+      "name": "Fix5 Transform",
+      "tempId": "fix5-e18"
+    },
+    {
+      "op": "createElement",
+      "type": "application-process",
+      "name": "Fix5 ETL",
+      "tempId": "fix5-e19"
+    },
+    {
+      "op": "createElement",
+      "type": "application-process",
+      "name": "Fix5 Reporting",
+      "tempId": "fix5-e20"
+    },
+    {
+      "op": "createElement",
+      "type": "data-object",
+      "name": "Fix5 User Profile",
+      "tempId": "fix5-e21"
+    },
+    {
+      "op": "createElement",
+      "type": "data-object",
+      "name": "Fix5 Transaction",
+      "tempId": "fix5-e22"
+    },
+    {
+      "op": "createElement",
+      "type": "node",
+      "name": "Fix5 Web Server",
+      "tempId": "fix5-e23"
+    },
+    {
+      "op": "createElement",
+      "type": "node",
+      "name": "Fix5 DB Server",
+      "tempId": "fix5-e24"
+    },
+    {
+      "op": "createElement",
+      "type": "device",
+      "name": "Fix5 Firewall",
+      "tempId": "fix5-e25"
+    },
+    {
+      "op": "createElement",
+      "type": "system-software",
+      "name": "Fix5 Kubernetes",
+      "tempId": "fix5-e26"
+    },
+    {
+      "op": "createElement",
+      "type": "artifact",
+      "name": "Fix5 Docker Image",
+      "tempId": "fix5-e27"
+    },
+    {
+      "op": "createElement",
+      "type": "technology-service",
+      "name": "Fix5 Compute",
+      "tempId": "fix5-e28"
+    },
+    {
+      "op": "createElement",
+      "type": "communication-network",
+      "name": "Fix5 LAN",
+      "tempId": "fix5-e29"
+    },
+    {
+      "op": "createElement",
+      "type": "technology-process",
+      "name": "Fix5 Monitoring",
+      "tempId": "fix5-e30"
+    },
+    {
+      "op": "createElement",
+      "type": "stakeholder",
+      "name": "Fix5 CTO",
+      "tempId": "fix5-e31"
+    },
+    {
+      "op": "createElement",
+      "type": "goal",
+      "name": "Fix5 99% Uptime",
+      "tempId": "fix5-e32"
+    },
+    {
+      "op": "createElement",
+      "type": "requirement",
+      "name": "Fix5 Encryption",
+      "tempId": "fix5-e33"
+    },
+    {
+      "op": "createElement",
+      "type": "driver",
+      "name": "Fix5 Compliance",
+      "tempId": "fix5-e34"
+    },
+    {
+      "op": "createElement",
+      "type": "principle",
+      "name": "Fix5 Security First",
+      "tempId": "fix5-e35"
+    },
+    {
+      "op": "createElement",
+      "type": "constraint",
+      "name": "Fix5 Budget Limit",
+      "tempId": "fix5-e36"
+    },
+    {
+      "op": "createElement",
+      "type": "capability",
+      "name": "Fix5 Digital Commerce",
+      "tempId": "fix5-e37"
+    },
+    {
+      "op": "createElement",
+      "type": "resource",
+      "name": "Fix5 Dev Team",
+      "tempId": "fix5-e38"
+    },
+    {
+      "op": "createElement",
+      "type": "work-package",
+      "name": "Fix5 Phase 1",
+      "tempId": "fix5-e39"
+    },
+    {
+      "op": "createElement",
+      "type": "deliverable",
+      "name": "Fix5 Platform",
+      "tempId": "fix5-e40"
+    }
+  ]
+}

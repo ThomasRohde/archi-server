@@ -131,6 +131,47 @@
         },
 
         /**
+         * Handle GET /model/diagnostics - Detect ghost/orphan objects and model health
+         * @param {Object} request - HTTP request object
+         * @param {Object} response - HTTP response object
+         * @param {Object} serverState - Server state object with modelRef
+         */
+        handleDiagnostics: function(request, response, serverState) {
+            if (!serverState.modelRef) {
+                response.status = 400;
+                response.body = { error: "No model loaded" };
+                return;
+            }
+
+            var result = {
+                timestamp: new Date().toISOString(),
+                model: {
+                    name: serverState.modelRef.getName(),
+                    id: serverState.modelRef.getId()
+                }
+            };
+
+            // Run orphan detection if modelSnapshot supports it
+            if (typeof modelSnapshot !== "undefined" && modelSnapshot.detectOrphans) {
+                try {
+                    var orphanResult = modelSnapshot.detectOrphans(serverState.modelRef);
+                    result.orphans = orphanResult;
+                } catch (e) {
+                    result.orphans = { error: "Orphan detection failed: " + String(e) };
+                }
+            } else {
+                result.orphans = { error: "Orphan detection not available" };
+            }
+
+            // Include snapshot summary
+            if (typeof modelSnapshot !== "undefined" && modelSnapshot.getSummary) {
+                result.snapshot = modelSnapshot.getSummary();
+            }
+
+            response.body = result;
+        },
+
+        /**
          * Handle POST /shutdown - Trigger server shutdown
          * @param {Object} request - HTTP request object
          * @param {Object} response - HTTP response object

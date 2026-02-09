@@ -1,0 +1,25 @@
+{
+  "version": "1.0",
+  "description": "Smoke test: create 2 relationships referencing smoke elements",
+  "idFiles": [
+    "smoke-elements.ids.json"
+  ],
+  "changes": [
+    {
+      "op": "createRelationship",
+      "type": "serving-relationship",
+      "sourceId": "s-app",
+      "targetId": "s-actor",
+      "name": "Serves",
+      "tempId": "s-rel-serving"
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "s-node",
+      "targetId": "s-app",
+      "name": "Hosts",
+      "tempId": "s-rel-assoc"
+    }
+  ]
+}

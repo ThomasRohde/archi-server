@@ -1,0 +1,25 @@
+{
+  "version": "1.0",
+  "description": "Verify: well-formed BOM with 2 elements",
+  "changes": [
+    {
+      "op": "createElement",
+      "type": "business-actor",
+      "name": "Valid Actor",
+      "tempId": "v-actor"
+    },
+    {
+      "op": "createElement",
+      "type": "business-role",
+      "name": "Valid Role",
+      "tempId": "v-role"
+    },
+    {
+      "op": "createRelationship",
+      "type": "assignment-relationship",
+      "sourceId": "v-actor",
+      "targetId": "v-role",
+      "tempId": "v-rel"
+    }
+  ]
+}

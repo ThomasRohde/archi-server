@@ -1,0 +1,289 @@
+{
+  "version": "1.0",
+  "description": "Fix1 regression (Bug 1): 35 relationships in single batch — tests silent rollback threshold",
+  "idFiles": [
+    "fix1-elements.ids.json"
+  ],
+  "changes": [
+    {
+      "op": "createRelationship",
+      "type": "serving-relationship",
+      "sourceId": "fix1-e1",
+      "targetId": "fix1-e2",
+      "name": "Fix1 Rel 1",
+      "tempId": "fix1-r1"
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "fix1-e1",
+      "targetId": "fix1-e3",
+      "name": "Fix1 Rel 2",
+      "tempId": "fix1-r2"
+    },
+    {
+      "op": "createRelationship",
+      "type": "triggering-relationship",
+      "sourceId": "fix1-e1",
+      "targetId": "fix1-e4",
+      "name": "Fix1 Rel 3",
+      "tempId": "fix1-r3"
+    },
+    {
+      "op": "createRelationship",
+      "type": "flow-relationship",
+      "sourceId": "fix1-e1",
+      "targetId": "fix1-e5",
+      "name": "Fix1 Rel 4",
+      "tempId": "fix1-r4"
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "fix1-e2",
+      "targetId": "fix1-e3",
+      "name": "Fix1 Rel 5",
+      "tempId": "fix1-r5"
+    },
+    {
+      "op": "createRelationship",
+      "type": "serving-relationship",
+      "sourceId": "fix1-e2",
+      "targetId": "fix1-e4",
+      "name": "Fix1 Rel 6",
+      "tempId": "fix1-r6"
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "fix1-e2",
+      "targetId": "fix1-e5",
+      "name": "Fix1 Rel 7",
+      "tempId": "fix1-r7"
+    },
+    {
+      "op": "createRelationship",
+      "type": "triggering-relationship",
+      "sourceId": "fix1-e2",
+      "targetId": "fix1-e6",
+      "name": "Fix1 Rel 8",
+      "tempId": "fix1-r8"
+    },
+    {
+      "op": "createRelationship",
+      "type": "flow-relationship",
+      "sourceId": "fix1-e3",
+      "targetId": "fix1-e4",
+      "name": "Fix1 Rel 9",
+      "tempId": "fix1-r9"
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "fix1-e3",
+      "targetId": "fix1-e5",
+      "name": "Fix1 Rel 10",
+      "tempId": "fix1-r10"
+    },
+    {
+      "op": "createRelationship",
+      "type": "serving-relationship",
+      "sourceId": "fix1-e3",
+      "targetId": "fix1-e6",
+      "name": "Fix1 Rel 11",
+      "tempId": "fix1-r11"
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "fix1-e3",
+      "targetId": "fix1-e7",
+      "name": "Fix1 Rel 12",
+      "tempId": "fix1-r12"
+    },
+    {
+      "op": "createRelationship",
+      "type": "triggering-relationship",
+      "sourceId": "fix1-e4",
+      "targetId": "fix1-e5",
+      "name": "Fix1 Rel 13",
+      "tempId": "fix1-r13"
+    },
+    {
+      "op": "createRelationship",
+      "type": "flow-relationship",
+      "sourceId": "fix1-e4",
+      "targetId": "fix1-e6",
+      "name": "Fix1 Rel 14",
+      "tempId": "fix1-r14"
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "fix1-e4",
+      "targetId": "fix1-e7",
+      "name": "Fix1 Rel 15",
+      "tempId": "fix1-r15"
+    },
+    {
+      "op": "createRelationship",
+      "type": "serving-relationship",
+      "sourceId": "fix1-e4",
+      "targetId": "fix1-e8",
+      "name": "Fix1 Rel 16",
+      "tempId": "fix1-r16"
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "fix1-e5",
+      "targetId": "fix1-e6",
+      "name": "Fix1 Rel 17",
+      "tempId": "fix1-r17"
+    },
+    {
+      "op": "createRelationship",
+      "type": "triggering-relationship",
+      "sourceId": "fix1-e5",
+      "targetId": "fix1-e7",
+      "name": "Fix1 Rel 18",
+      "tempId": "fix1-r18"
+    },
+    {
+      "op": "createRelationship",
+      "type": "flow-relationship",
+      "sourceId": "fix1-e5",
+      "targetId": "fix1-e8",
+      "name": "Fix1 Rel 19",
+      "tempId": "fix1-r19"
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "fix1-e5",
+      "targetId": "fix1-e9",
+      "name": "Fix1 Rel 20",
+      "tempId": "fix1-r20"
+    },
+    {
+      "op": "createRelationship",
+      "type": "serving-relationship",
+      "sourceId": "fix1-e6",
+      "targetId": "fix1-e7",
+      "name": "Fix1 Rel 21",
+      "tempId": "fix1-r21"
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "fix1-e6",
+      "targetId": "fix1-e8",
+      "name": "Fix1 Rel 22",
+      "tempId": "fix1-r22"
+    },
+    {
+      "op": "createRelationship",
+      "type": "triggering-relationship",
+      "sourceId": "fix1-e6",
+      "targetId": "fix1-e9",
+      "name": "Fix1 Rel 23",
+      "tempId": "fix1-r23"
+    },
+    {
+      "op": "createRelationship",
+      "type": "flow-relationship",
+      "sourceId": "fix1-e6",
+      "targetId": "fix1-e10",
+      "name": "Fix1 Rel 24",
+      "tempId": "fix1-r24"
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "fix1-e7",
+      "targetId": "fix1-e8",
+      "name": "Fix1 Rel 25",
+      "tempId": "fix1-r25"
+    },
+    {
+      "op": "createRelationship",
+      "type": "serving-relationship",
+      "sourceId": "fix1-e7",
+      "targetId": "fix1-e9",
+      "name": "Fix1 Rel 26",
+      "tempId": "fix1-r26"
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "fix1-e7",
+      "targetId": "fix1-e10",
+      "name": "Fix1 Rel 27",
+      "tempId": "fix1-r27"
+    },
+    {
+      "op": "createRelationship",
+      "type": "triggering-relationship",
+      "sourceId": "fix1-e8",
+      "targetId": "fix1-e9",
+      "name": "Fix1 Rel 28",
+      "tempId": "fix1-r28"
+    },
+    {
+      "op": "createRelationship",
+      "type": "flow-relationship",
+      "sourceId": "fix1-e8",
+      "targetId": "fix1-e10",
+      "name": "Fix1 Rel 29",
+      "tempId": "fix1-r29"
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "fix1-e9",
+      "targetId": "fix1-e10",
+      "name": "Fix1 Rel 30",
+      "tempId": "fix1-r30"
+    },
+    {
+      "op": "createRelationship",
+      "type": "serving-relationship",
+      "sourceId": "fix1-e10",
+      "targetId": "fix1-e1",
+      "name": "Fix1 Rel 31",
+      "tempId": "fix1-r31"
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "fix1-e10",
+      "targetId": "fix1-e2",
+      "name": "Fix1 Rel 32",
+      "tempId": "fix1-r32"
+    },
+    {
+      "op": "createRelationship",
+      "type": "triggering-relationship",
+      "sourceId": "fix1-e10",
+      "targetId": "fix1-e3",
+      "name": "Fix1 Rel 33",
+      "tempId": "fix1-r33"
+    },
+    {
+      "op": "createRelationship",
+      "type": "flow-relationship",
+      "sourceId": "fix1-e10",
+      "targetId": "fix1-e4",
+      "name": "Fix1 Rel 34",
+      "tempId": "fix1-r34"
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "fix1-e10",
+      "targetId": "fix1-e5",
+      "name": "Fix1 Rel 35",
+      "tempId": "fix1-r35"
+    }
+  ]
+}

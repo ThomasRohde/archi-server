@@ -1,0 +1,18 @@
+{
+  "version": "1.0",
+  "description": "Fix4 prerequisite: 2 elements for duplicate access-relationship test",
+  "changes": [
+    {
+      "op": "createElement",
+      "type": "application-process",
+      "name": "Fix4 Data Processor",
+      "tempId": "fix4-src"
+    },
+    {
+      "op": "createElement",
+      "type": "data-object",
+      "name": "Fix4 Customer Data",
+      "tempId": "fix4-tgt"
+    }
+  ]
+}

@@ -1,0 +1,1206 @@
+{
+  "version": "1.0",
+  "description": "Bulk stress test phase 1: 200 elements across all ArchiMate layers",
+  "changes": [
+    {
+      "op": "createElement",
+      "type": "resource",
+      "name": "IT Budget",
+      "tempId": "b-e1"
+    },
+    {
+      "op": "createElement",
+      "type": "resource",
+      "name": "Engineering Staff",
+      "tempId": "b-e2"
+    },
+    {
+      "op": "createElement",
+      "type": "resource",
+      "name": "Customer Data Asset",
+      "tempId": "b-e3"
+    },
+    {
+      "op": "createElement",
+      "type": "capability",
+      "name": "Digital Commerce",
+      "tempId": "b-e4"
+    },
+    {
+      "op": "createElement",
+      "type": "capability",
+      "name": "Data Analytics",
+      "tempId": "b-e5"
+    },
+    {
+      "op": "createElement",
+      "type": "capability",
+      "name": "Customer Management",
+      "tempId": "b-e6"
+    },
+    {
+      "op": "createElement",
+      "type": "capability",
+      "name": "Supply Chain Mgmt",
+      "tempId": "b-e7"
+    },
+    {
+      "op": "createElement",
+      "type": "value-stream",
+      "name": "Order to Cash",
+      "tempId": "b-e8"
+    },
+    {
+      "op": "createElement",
+      "type": "value-stream",
+      "name": "Customer Onboarding",
+      "tempId": "b-e9"
+    },
+    {
+      "op": "createElement",
+      "type": "value-stream",
+      "name": "Customer Support",
+      "tempId": "b-e10"
+    },
+    {
+      "op": "createElement",
+      "type": "value-stream",
+      "name": "Product Development",
+      "tempId": "b-e11"
+    },
+    {
+      "op": "createElement",
+      "type": "course-of-action",
+      "name": "Cloud Migration",
+      "tempId": "b-e12"
+    },
+    {
+      "op": "createElement",
+      "type": "course-of-action",
+      "name": "Digital Transformation",
+      "tempId": "b-e13"
+    },
+    {
+      "op": "createElement",
+      "type": "course-of-action",
+      "name": "Security Enhancement",
+      "tempId": "b-e14"
+    },
+    {
+      "op": "createElement",
+      "type": "course-of-action",
+      "name": "Agile Adoption",
+      "tempId": "b-e15"
+    },
+    {
+      "op": "createElement",
+      "type": "business-actor",
+      "name": "Customer",
+      "tempId": "b-e16"
+    },
+    {
+      "op": "createElement",
+      "type": "business-actor",
+      "name": "Employee",
+      "tempId": "b-e17"
+    },
+    {
+      "op": "createElement",
+      "type": "business-actor",
+      "name": "Business Partner",
+      "tempId": "b-e18"
+    },
+    {
+      "op": "createElement",
+      "type": "business-actor",
+      "name": "Supplier",
+      "tempId": "b-e19"
+    },
+    {
+      "op": "createElement",
+      "type": "business-actor",
+      "name": "Account Manager",
+      "tempId": "b-e20"
+    },
+    {
+      "op": "createElement",
+      "type": "business-actor",
+      "name": "System Admin",
+      "tempId": "b-e21"
+    },
+    {
+      "op": "createElement",
+      "type": "business-role",
+      "name": "Buyer",
+      "tempId": "b-e22"
+    },
+    {
+      "op": "createElement",
+      "type": "business-role",
+      "name": "Seller",
+      "tempId": "b-e23"
+    },
+    {
+      "op": "createElement",
+      "type": "business-role",
+      "name": "Approver",
+      "tempId": "b-e24"
+    },
+    {
+      "op": "createElement",
+      "type": "business-role",
+      "name": "Auditor",
+      "tempId": "b-e25"
+    },
+    {
+      "op": "createElement",
+      "type": "business-role",
+      "name": "Support Agent",
+      "tempId": "b-e26"
+    },
+    {
+      "op": "createElement",
+      "type": "business-collaboration",
+      "name": "Sales Team",
+      "tempId": "b-e27"
+    },
+    {
+      "op": "createElement",
+      "type": "business-collaboration",
+      "name": "Operations Team",
+      "tempId": "b-e28"
+    },
+    {
+      "op": "createElement",
+      "type": "business-collaboration",
+      "name": "Development Team",
+      "tempId": "b-e29"
+    },
+    {
+      "op": "createElement",
+      "type": "business-interface",
+      "name": "Web Portal",
+      "tempId": "b-e30"
+    },
+    {
+      "op": "createElement",
+      "type": "business-interface",
+      "name": "Mobile App",
+      "tempId": "b-e31"
+    },
+    {
+      "op": "createElement",
+      "type": "business-interface",
+      "name": "Phone Line",
+      "tempId": "b-e32"
+    },
+    {
+      "op": "createElement",
+      "type": "business-interface",
+      "name": "Email Channel",
+      "tempId": "b-e33"
+    },
+    {
+      "op": "createElement",
+      "type": "business-process",
+      "name": "Place Order",
+      "tempId": "b-e34"
+    },
+    {
+      "op": "createElement",
+      "type": "business-process",
+      "name": "Process Payment",
+      "tempId": "b-e35"
+    },
+    {
+      "op": "createElement",
+      "type": "business-process",
+      "name": "Ship Product",
+      "tempId": "b-e36"
+    },
+    {
+      "op": "createElement",
+      "type": "business-process",
+      "name": "Handle Return",
+      "tempId": "b-e37"
+    },
+    {
+      "op": "createElement",
+      "type": "business-process",
+      "name": "Customer Onboarding",
+      "tempId": "b-e38"
+    },
+    {
+      "op": "createElement",
+      "type": "business-process",
+      "name": "Approval Workflow",
+      "tempId": "b-e39"
+    },
+    {
+      "op": "createElement",
+      "type": "business-process",
+      "name": "Audit Process",
+      "tempId": "b-e40"
+    },
+    {
+      "op": "createElement",
+      "type": "business-process",
+      "name": "Financial Reporting",
+      "tempId": "b-e41"
+    },
+    {
+      "op": "createElement",
+      "type": "business-function",
+      "name": "Sales Management",
+      "tempId": "b-e42"
+    },
+    {
+      "op": "createElement",
+      "type": "business-function",
+      "name": "Financial Management",
+      "tempId": "b-e43"
+    },
+    {
+      "op": "createElement",
+      "type": "business-function",
+      "name": "Human Resources",
+      "tempId": "b-e44"
+    },
+    {
+      "op": "createElement",
+      "type": "business-function",
+      "name": "Marketing",
+      "tempId": "b-e45"
+    },
+    {
+      "op": "createElement",
+      "type": "business-function",
+      "name": "Logistics Mgmt",
+      "tempId": "b-e46"
+    },
+    {
+      "op": "createElement",
+      "type": "business-interaction",
+      "name": "Price Negotiation",
+      "tempId": "b-e47"
+    },
+    {
+      "op": "createElement",
+      "type": "business-interaction",
+      "name": "Contract Signing",
+      "tempId": "b-e48"
+    },
+    {
+      "op": "createElement",
+      "type": "business-interaction",
+      "name": "Performance Review",
+      "tempId": "b-e49"
+    },
+    {
+      "op": "createElement",
+      "type": "business-event",
+      "name": "Order Received",
+      "tempId": "b-e50"
+    },
+    {
+      "op": "createElement",
+      "type": "business-event",
+      "name": "Payment Confirmed",
+      "tempId": "b-e51"
+    },
+    {
+      "op": "createElement",
+      "type": "business-event",
+      "name": "Shipment Dispatched",
+      "tempId": "b-e52"
+    },
+    {
+      "op": "createElement",
+      "type": "business-event",
+      "name": "Complaint Filed",
+      "tempId": "b-e53"
+    },
+    {
+      "op": "createElement",
+      "type": "business-service",
+      "name": "Ordering Service",
+      "tempId": "b-e54"
+    },
+    {
+      "op": "createElement",
+      "type": "business-service",
+      "name": "Billing Service",
+      "tempId": "b-e55"
+    },
+    {
+      "op": "createElement",
+      "type": "business-service",
+      "name": "Shipping Service",
+      "tempId": "b-e56"
+    },
+    {
+      "op": "createElement",
+      "type": "business-service",
+      "name": "Support Service",
+      "tempId": "b-e57"
+    },
+    {
+      "op": "createElement",
+      "type": "business-service",
+      "name": "Returns Service",
+      "tempId": "b-e58"
+    },
+    {
+      "op": "createElement",
+      "type": "business-service",
+      "name": "Reporting Service",
+      "tempId": "b-e59"
+    },
+    {
+      "op": "createElement",
+      "type": "business-service",
+      "name": "Auth Service",
+      "tempId": "b-e60"
+    },
+    {
+      "op": "createElement",
+      "type": "business-object",
+      "name": "Order",
+      "tempId": "b-e61"
+    },
+    {
+      "op": "createElement",
+      "type": "business-object",
+      "name": "Invoice",
+      "tempId": "b-e62"
+    },
+    {
+      "op": "createElement",
+      "type": "business-object",
+      "name": "Product Catalog",
+      "tempId": "b-e63"
+    },
+    {
+      "op": "createElement",
+      "type": "business-object",
+      "name": "Customer Record",
+      "tempId": "b-e64"
+    },
+    {
+      "op": "createElement",
+      "type": "business-object",
+      "name": "Service Contract",
+      "tempId": "b-e65"
+    },
+    {
+      "op": "createElement",
+      "type": "business-object",
+      "name": "Financial Report",
+      "tempId": "b-e66"
+    },
+    {
+      "op": "createElement",
+      "type": "contract",
+      "name": "Service Level Agreement",
+      "tempId": "b-e67"
+    },
+    {
+      "op": "createElement",
+      "type": "contract",
+      "name": "Non-Disclosure Agreement",
+      "tempId": "b-e68"
+    },
+    {
+      "op": "createElement",
+      "type": "contract",
+      "name": "Terms of Service",
+      "tempId": "b-e69"
+    },
+    {
+      "op": "createElement",
+      "type": "representation",
+      "name": "Order Receipt",
+      "tempId": "b-e70"
+    },
+    {
+      "op": "createElement",
+      "type": "representation",
+      "name": "Account Statement",
+      "tempId": "b-e71"
+    },
+    {
+      "op": "createElement",
+      "type": "product",
+      "name": "Basic Plan",
+      "tempId": "b-e72"
+    },
+    {
+      "op": "createElement",
+      "type": "product",
+      "name": "Premium Plan",
+      "tempId": "b-e73"
+    },
+    {
+      "op": "createElement",
+      "type": "product",
+      "name": "Enterprise Plan",
+      "tempId": "b-e74"
+    },
+    {
+      "op": "createElement",
+      "type": "product",
+      "name": "Add-on Services",
+      "tempId": "b-e75"
+    },
+    {
+      "op": "createElement",
+      "type": "application-component",
+      "name": "CRM Application",
+      "tempId": "b-e76"
+    },
+    {
+      "op": "createElement",
+      "type": "application-component",
+      "name": "ERP System",
+      "tempId": "b-e77"
+    },
+    {
+      "op": "createElement",
+      "type": "application-component",
+      "name": "E-Commerce Platform",
+      "tempId": "b-e78"
+    },
+    {
+      "op": "createElement",
+      "type": "application-component",
+      "name": "Content Mgmt System",
+      "tempId": "b-e79"
+    },
+    {
+      "op": "createElement",
+      "type": "application-component",
+      "name": "Analytics Engine",
+      "tempId": "b-e80"
+    },
+    {
+      "op": "createElement",
+      "type": "application-component",
+      "name": "Billing System",
+      "tempId": "b-e81"
+    },
+    {
+      "op": "createElement",
+      "type": "application-component",
+      "name": "Inventory Manager",
+      "tempId": "b-e82"
+    },
+    {
+      "op": "createElement",
+      "type": "application-component",
+      "name": "Notification Service",
+      "tempId": "b-e83"
+    },
+    {
+      "op": "createElement",
+      "type": "application-component",
+      "name": "Auth Service",
+      "tempId": "b-e84"
+    },
+    {
+      "op": "createElement",
+      "type": "application-component",
+      "name": "Search Engine",
+      "tempId": "b-e85"
+    },
+    {
+      "op": "createElement",
+      "type": "application-collaboration",
+      "name": "Payment Processing Cluster",
+      "tempId": "b-e86"
+    },
+    {
+      "op": "createElement",
+      "type": "application-collaboration",
+      "name": "Messaging Cluster",
+      "tempId": "b-e87"
+    },
+    {
+      "op": "createElement",
+      "type": "application-collaboration",
+      "name": "Cache Cluster",
+      "tempId": "b-e88"
+    },
+    {
+      "op": "createElement",
+      "type": "application-interface",
+      "name": "REST API",
+      "tempId": "b-e89"
+    },
+    {
+      "op": "createElement",
+      "type": "application-interface",
+      "name": "GraphQL API",
+      "tempId": "b-e90"
+    },
+    {
+      "op": "createElement",
+      "type": "application-interface",
+      "name": "gRPC Interface",
+      "tempId": "b-e91"
+    },
+    {
+      "op": "createElement",
+      "type": "application-interface",
+      "name": "Webhook Endpoint",
+      "tempId": "b-e92"
+    },
+    {
+      "op": "createElement",
+      "type": "application-interface",
+      "name": "SOAP Interface",
+      "tempId": "b-e93"
+    },
+    {
+      "op": "createElement",
+      "type": "application-function",
+      "name": "Data Validation",
+      "tempId": "b-e94"
+    },
+    {
+      "op": "createElement",
+      "type": "application-function",
+      "name": "Data Transformation",
+      "tempId": "b-e95"
+    },
+    {
+      "op": "createElement",
+      "type": "application-function",
+      "name": "Data Encryption",
+      "tempId": "b-e96"
+    },
+    {
+      "op": "createElement",
+      "type": "application-function",
+      "name": "User Authentication",
+      "tempId": "b-e97"
+    },
+    {
+      "op": "createElement",
+      "type": "application-function",
+      "name": "Cache Management",
+      "tempId": "b-e98"
+    },
+    {
+      "op": "createElement",
+      "type": "application-function",
+      "name": "Audit Logging",
+      "tempId": "b-e99"
+    },
+    {
+      "op": "createElement",
+      "type": "application-interaction",
+      "name": "Data Synchronization",
+      "tempId": "b-e100"
+    },
+    {
+      "op": "createElement",
+      "type": "application-interaction",
+      "name": "Database Replication",
+      "tempId": "b-e101"
+    },
+    {
+      "op": "createElement",
+      "type": "application-interaction",
+      "name": "Batch Processing",
+      "tempId": "b-e102"
+    },
+    {
+      "op": "createElement",
+      "type": "application-process",
+      "name": "Checkout Process",
+      "tempId": "b-e103"
+    },
+    {
+      "op": "createElement",
+      "type": "application-process",
+      "name": "ETL Pipeline",
+      "tempId": "b-e104"
+    },
+    {
+      "op": "createElement",
+      "type": "application-process",
+      "name": "Deployment Pipeline",
+      "tempId": "b-e105"
+    },
+    {
+      "op": "createElement",
+      "type": "application-process",
+      "name": "Backup Process",
+      "tempId": "b-e106"
+    },
+    {
+      "op": "createElement",
+      "type": "application-process",
+      "name": "Search Indexing",
+      "tempId": "b-e107"
+    },
+    {
+      "op": "createElement",
+      "type": "application-process",
+      "name": "Report Generation",
+      "tempId": "b-e108"
+    },
+    {
+      "op": "createElement",
+      "type": "application-event",
+      "name": "User Action Event",
+      "tempId": "b-e109"
+    },
+    {
+      "op": "createElement",
+      "type": "application-event",
+      "name": "System Alert Event",
+      "tempId": "b-e110"
+    },
+    {
+      "op": "createElement",
+      "type": "application-event",
+      "name": "Scheduled Task Event",
+      "tempId": "b-e111"
+    },
+    {
+      "op": "createElement",
+      "type": "application-service",
+      "name": "Order API Service",
+      "tempId": "b-e112"
+    },
+    {
+      "op": "createElement",
+      "type": "application-service",
+      "name": "Payment API Service",
+      "tempId": "b-e113"
+    },
+    {
+      "op": "createElement",
+      "type": "application-service",
+      "name": "User Mgmt Service",
+      "tempId": "b-e114"
+    },
+    {
+      "op": "createElement",
+      "type": "application-service",
+      "name": "Product Catalog Service",
+      "tempId": "b-e115"
+    },
+    {
+      "op": "createElement",
+      "type": "application-service",
+      "name": "Notification Service",
+      "tempId": "b-e116"
+    },
+    {
+      "op": "createElement",
+      "type": "application-service",
+      "name": "Reporting Service",
+      "tempId": "b-e117"
+    },
+    {
+      "op": "createElement",
+      "type": "application-service",
+      "name": "Search Service",
+      "tempId": "b-e118"
+    },
+    {
+      "op": "createElement",
+      "type": "application-service",
+      "name": "File Storage Service",
+      "tempId": "b-e119"
+    },
+    {
+      "op": "createElement",
+      "type": "data-object",
+      "name": "User Profile",
+      "tempId": "b-e120"
+    },
+    {
+      "op": "createElement",
+      "type": "data-object",
+      "name": "Order Record",
+      "tempId": "b-e121"
+    },
+    {
+      "op": "createElement",
+      "type": "data-object",
+      "name": "Transaction Log",
+      "tempId": "b-e122"
+    },
+    {
+      "op": "createElement",
+      "type": "data-object",
+      "name": "Product Data",
+      "tempId": "b-e123"
+    },
+    {
+      "op": "createElement",
+      "type": "data-object",
+      "name": "Configuration Data",
+      "tempId": "b-e124"
+    },
+    {
+      "op": "createElement",
+      "type": "data-object",
+      "name": "Session Data",
+      "tempId": "b-e125"
+    },
+    {
+      "op": "createElement",
+      "type": "node",
+      "name": "Web Server Cluster",
+      "tempId": "b-e126"
+    },
+    {
+      "op": "createElement",
+      "type": "node",
+      "name": "Application Server",
+      "tempId": "b-e127"
+    },
+    {
+      "op": "createElement",
+      "type": "node",
+      "name": "Database Server",
+      "tempId": "b-e128"
+    },
+    {
+      "op": "createElement",
+      "type": "node",
+      "name": "Cache Server",
+      "tempId": "b-e129"
+    },
+    {
+      "op": "createElement",
+      "type": "device",
+      "name": "Load Balancer",
+      "tempId": "b-e130"
+    },
+    {
+      "op": "createElement",
+      "type": "device",
+      "name": "Firewall Appliance",
+      "tempId": "b-e131"
+    },
+    {
+      "op": "createElement",
+      "type": "device",
+      "name": "NAS Storage",
+      "tempId": "b-e132"
+    },
+    {
+      "op": "createElement",
+      "type": "system-software",
+      "name": "Linux OS",
+      "tempId": "b-e133"
+    },
+    {
+      "op": "createElement",
+      "type": "system-software",
+      "name": "Docker Engine",
+      "tempId": "b-e134"
+    },
+    {
+      "op": "createElement",
+      "type": "system-software",
+      "name": "Kubernetes",
+      "tempId": "b-e135"
+    },
+    {
+      "op": "createElement",
+      "type": "system-software",
+      "name": "PostgreSQL",
+      "tempId": "b-e136"
+    },
+    {
+      "op": "createElement",
+      "type": "technology-interface",
+      "name": "HTTPS Endpoint",
+      "tempId": "b-e137"
+    },
+    {
+      "op": "createElement",
+      "type": "technology-interface",
+      "name": "TCP Socket",
+      "tempId": "b-e138"
+    },
+    {
+      "op": "createElement",
+      "type": "technology-interface",
+      "name": "SSH Interface",
+      "tempId": "b-e139"
+    },
+    {
+      "op": "createElement",
+      "type": "communication-network",
+      "name": "Corporate LAN",
+      "tempId": "b-e140"
+    },
+    {
+      "op": "createElement",
+      "type": "communication-network",
+      "name": "WAN",
+      "tempId": "b-e141"
+    },
+    {
+      "op": "createElement",
+      "type": "communication-network",
+      "name": "VPN Tunnel",
+      "tempId": "b-e142"
+    },
+    {
+      "op": "createElement",
+      "type": "technology-function",
+      "name": "Traffic Routing",
+      "tempId": "b-e143"
+    },
+    {
+      "op": "createElement",
+      "type": "technology-function",
+      "name": "Load Balancing",
+      "tempId": "b-e144"
+    },
+    {
+      "op": "createElement",
+      "type": "technology-function",
+      "name": "DNS Resolution",
+      "tempId": "b-e145"
+    },
+    {
+      "op": "createElement",
+      "type": "technology-process",
+      "name": "Server Provisioning",
+      "tempId": "b-e146"
+    },
+    {
+      "op": "createElement",
+      "type": "technology-process",
+      "name": "Health Monitoring",
+      "tempId": "b-e147"
+    },
+    {
+      "op": "createElement",
+      "type": "technology-process",
+      "name": "Patch Management",
+      "tempId": "b-e148"
+    },
+    {
+      "op": "createElement",
+      "type": "technology-service",
+      "name": "Compute Service",
+      "tempId": "b-e149"
+    },
+    {
+      "op": "createElement",
+      "type": "technology-service",
+      "name": "Storage Service",
+      "tempId": "b-e150"
+    },
+    {
+      "op": "createElement",
+      "type": "technology-service",
+      "name": "Network Service",
+      "tempId": "b-e151"
+    },
+    {
+      "op": "createElement",
+      "type": "artifact",
+      "name": "Application WAR",
+      "tempId": "b-e152"
+    },
+    {
+      "op": "createElement",
+      "type": "artifact",
+      "name": "Docker Image",
+      "tempId": "b-e153"
+    },
+    {
+      "op": "createElement",
+      "type": "artifact",
+      "name": "Config File",
+      "tempId": "b-e154"
+    },
+    {
+      "op": "createElement",
+      "type": "artifact",
+      "name": "Log File",
+      "tempId": "b-e155"
+    },
+    {
+      "op": "createElement",
+      "type": "equipment",
+      "name": "Server Rack",
+      "tempId": "b-e156"
+    },
+    {
+      "op": "createElement",
+      "type": "equipment",
+      "name": "UPS Unit",
+      "tempId": "b-e157"
+    },
+    {
+      "op": "createElement",
+      "type": "facility",
+      "name": "Data Center",
+      "tempId": "b-e158"
+    },
+    {
+      "op": "createElement",
+      "type": "facility",
+      "name": "DR Site",
+      "tempId": "b-e159"
+    },
+    {
+      "op": "createElement",
+      "type": "path",
+      "name": "Fiber Optic Link",
+      "tempId": "b-e160"
+    },
+    {
+      "op": "createElement",
+      "type": "path",
+      "name": "Wireless Link",
+      "tempId": "b-e161"
+    },
+    {
+      "op": "createElement",
+      "type": "technology-collaboration",
+      "name": "Server Cluster",
+      "tempId": "b-e162"
+    },
+    {
+      "op": "createElement",
+      "type": "technology-collaboration",
+      "name": "Service Mesh",
+      "tempId": "b-e163"
+    },
+    {
+      "op": "createElement",
+      "type": "technology-event",
+      "name": "Failover Event",
+      "tempId": "b-e164"
+    },
+    {
+      "op": "createElement",
+      "type": "technology-event",
+      "name": "Auto-Scale Event",
+      "tempId": "b-e165"
+    },
+    {
+      "op": "createElement",
+      "type": "stakeholder",
+      "name": "Board of Directors",
+      "tempId": "b-e166"
+    },
+    {
+      "op": "createElement",
+      "type": "stakeholder",
+      "name": "CTO",
+      "tempId": "b-e167"
+    },
+    {
+      "op": "createElement",
+      "type": "stakeholder",
+      "name": "Customer Group",
+      "tempId": "b-e168"
+    },
+    {
+      "op": "createElement",
+      "type": "driver",
+      "name": "Business Growth",
+      "tempId": "b-e169"
+    },
+    {
+      "op": "createElement",
+      "type": "driver",
+      "name": "Regulatory Compliance",
+      "tempId": "b-e170"
+    },
+    {
+      "op": "createElement",
+      "type": "driver",
+      "name": "Operational Efficiency",
+      "tempId": "b-e171"
+    },
+    {
+      "op": "createElement",
+      "type": "assessment",
+      "name": "Security Risk Assessment",
+      "tempId": "b-e172"
+    },
+    {
+      "op": "createElement",
+      "type": "assessment",
+      "name": "Performance Assessment",
+      "tempId": "b-e173"
+    },
+    {
+      "op": "createElement",
+      "type": "goal",
+      "name": "Increase Revenue 20%",
+      "tempId": "b-e174"
+    },
+    {
+      "op": "createElement",
+      "type": "goal",
+      "name": "99.9% Uptime",
+      "tempId": "b-e175"
+    },
+    {
+      "op": "createElement",
+      "type": "goal",
+      "name": "Customer Satisfaction > 90%",
+      "tempId": "b-e176"
+    },
+    {
+      "op": "createElement",
+      "type": "outcome",
+      "name": "Market Leadership",
+      "tempId": "b-e177"
+    },
+    {
+      "op": "createElement",
+      "type": "outcome",
+      "name": "Customer Trust",
+      "tempId": "b-e178"
+    },
+    {
+      "op": "createElement",
+      "type": "principle",
+      "name": "Security by Design",
+      "tempId": "b-e179"
+    },
+    {
+      "op": "createElement",
+      "type": "principle",
+      "name": "Simplicity First",
+      "tempId": "b-e180"
+    },
+    {
+      "op": "createElement",
+      "type": "requirement",
+      "name": "Response Time < 200ms",
+      "tempId": "b-e181"
+    },
+    {
+      "op": "createElement",
+      "type": "requirement",
+      "name": "High Availability",
+      "tempId": "b-e182"
+    },
+    {
+      "op": "createElement",
+      "type": "requirement",
+      "name": "Data Encryption at Rest",
+      "tempId": "b-e183"
+    },
+    {
+      "op": "createElement",
+      "type": "constraint",
+      "name": "Budget Limit 5M",
+      "tempId": "b-e184"
+    },
+    {
+      "op": "createElement",
+      "type": "constraint",
+      "name": "GDPR Compliance",
+      "tempId": "b-e185"
+    },
+    {
+      "op": "createElement",
+      "type": "work-package",
+      "name": "Phase 1 Foundation",
+      "tempId": "b-e186"
+    },
+    {
+      "op": "createElement",
+      "type": "work-package",
+      "name": "Phase 2 Migration",
+      "tempId": "b-e187"
+    },
+    {
+      "op": "createElement",
+      "type": "work-package",
+      "name": "Phase 3 Optimization",
+      "tempId": "b-e188"
+    },
+    {
+      "op": "createElement",
+      "type": "work-package",
+      "name": "Integration Testing",
+      "tempId": "b-e189"
+    },
+    {
+      "op": "createElement",
+      "type": "deliverable",
+      "name": "Architecture Document",
+      "tempId": "b-e190"
+    },
+    {
+      "op": "createElement",
+      "type": "deliverable",
+      "name": "Cloud Platform",
+      "tempId": "b-e191"
+    },
+    {
+      "op": "createElement",
+      "type": "deliverable",
+      "name": "Operations Runbook",
+      "tempId": "b-e192"
+    },
+    {
+      "op": "createElement",
+      "type": "implementation-event",
+      "name": "Project Kickoff",
+      "tempId": "b-e193"
+    },
+    {
+      "op": "createElement",
+      "type": "implementation-event",
+      "name": "Go-Live",
+      "tempId": "b-e194"
+    },
+    {
+      "op": "createElement",
+      "type": "implementation-event",
+      "name": "Post-Implementation Review",
+      "tempId": "b-e195"
+    },
+    {
+      "op": "createElement",
+      "type": "plateau",
+      "name": "Current State",
+      "tempId": "b-e196"
+    },
+    {
+      "op": "createElement",
+      "type": "plateau",
+      "name": "Interim Architecture",
+      "tempId": "b-e197"
+    },
+    {
+      "op": "createElement",
+      "type": "plateau",
+      "name": "Target Architecture",
+      "tempId": "b-e198"
+    },
+    {
+      "op": "createElement",
+      "type": "gap",
+      "name": "Legacy System Gap",
+      "tempId": "b-e199"
+    },
+    {
+      "op": "createElement",
+      "type": "gap",
+      "name": "Skills Gap",
+      "tempId": "b-e200"
+    }
+  ]
+}

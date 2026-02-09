@@ -160,6 +160,8 @@ This project includes AI agent skills (in `.claude/skills/`) that enable automat
 - `addConnectionToView` needs **visual object IDs** (from `addToView`), not concept IDs
 - Connections are NOT auto-created when adding elements to a view
 - For compound/nested elements, use `parentVisualId` on `addToView` to nest children inside a parent visual object, or use `nestInView` to reparent after placement
+- **Keep batches ≤20 operations** when creating relationships to avoid silent GEF rollback. The server internally chunks large CompoundCommands and verifies persistence, but smaller batches are safer.
+- Use `GET /model/diagnostics` to detect orphan/ghost objects after suspected rollbacks
 
 ### Available Skills (`.claude/skills/`)
 
@@ -225,6 +227,7 @@ archicli batch apply model/index.json --poll       # apply with auto-chunking + 
 3. **Auto-saves `<file>.ids.json`** after `batch apply --poll` — reference in `idFiles` of subsequent BOMs
 4. **Verify first**: `archicli verify <file>` catches authoring errors before touching the model
 5. **Example BOMs**: see `model/` directory for working examples
+6. **Chunk size**: default 20 ops/request (lowered from 100 for safety). The server also internally chunks large GEF CompoundCommands (≈100 sub-commands) and detects silent rollback.
 
 ### CLI Commands Reference
 

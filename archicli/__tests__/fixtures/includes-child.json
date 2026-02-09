@@ -1,0 +1,18 @@
+{
+  "version": "1.0",
+  "description": "Child BOM: elements included by parent",
+  "changes": [
+    {
+      "op": "createElement",
+      "type": "application-component",
+      "name": "Child App Component",
+      "tempId": "inc-app"
+    },
+    {
+      "op": "createElement",
+      "type": "data-object",
+      "name": "Child Data Object",
+      "tempId": "inc-data"
+    }
+  ]
+}

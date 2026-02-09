@@ -1,0 +1,27 @@
+{
+  "version": "1.0",
+  "description": "Fix4 regression (Bug 4): two access-relationships with different accessType between same source/target",
+  "idFiles": [
+    "fix4-elements.ids.json"
+  ],
+  "changes": [
+    {
+      "op": "createRelationship",
+      "type": "access-relationship",
+      "sourceId": "fix4-src",
+      "targetId": "fix4-tgt",
+      "name": "Read Customer Data",
+      "accessType": 1,
+      "tempId": "fix4-rel-read"
+    },
+    {
+      "op": "createRelationship",
+      "type": "access-relationship",
+      "sourceId": "fix4-src",
+      "targetId": "fix4-tgt",
+      "name": "Write Customer Data",
+      "accessType": 3,
+      "tempId": "fix4-rel-readwrite"
+    }
+  ]
+}

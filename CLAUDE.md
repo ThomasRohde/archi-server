@@ -183,7 +183,7 @@ archicli batch apply model/index.json --poll  # apply and wait for completion
 1. **Always use `--poll`** with `batch apply` — mutations are async, without `--poll` you get an opId but no result
 2. **tempIds are resolved automatically**: within a batch, across chunks (with `--poll`), and across files (via `idFiles`)
 3. **`batch apply` auto-saves `<file>.ids.json`** after completion — use in subsequent BOM files' `idFiles` array
-4. **Chunk size**: default 100 ops/request, max 1000; set with `--chunk-size`
+4. **Chunk size**: default 20 ops/request, max 1000; set with `--chunk-size`. The server also internally chunks large CompoundCommands (default 100 sub-commands ≈ 20 relationships) and verifies created objects persist after execution.
 5. **`archicli verify`** validates JSON against schema before sending — run first to catch authoring errors
 
 ### Key Commands

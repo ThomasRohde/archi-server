@@ -90,6 +90,33 @@ paths:
               schema:
                 $ref: '#/components/schemas/ShutdownResponse'
 
+  /model/diagnostics:
+    get:
+      tags:
+        - Health
+      summary: Model diagnostics and orphan detection
+      description: |
+        Runs diagnostics on the loaded model, including detection of orphan/ghost
+        objects. Ghost objects exist in the EMF model resource but are not contained
+        in any folder — typically caused by silent GEF command stack rollbacks.
+
+        Returns the current snapshot summary alongside any orphan elements and
+        relationships found via EMF-level traversal.
+      operationId: getModelDiagnostics
+      responses:
+        '200':
+          description: Diagnostics result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiagnosticsResponse'
+        '400':
+          description: No model loaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /model/query:
     post:
       tags:
@@ -291,8 +318,20 @@ paths:
       description: |
         Queues model changes for asynchronous processing. Returns immediately
         with an operation ID that can be polled via `/ops/status`.
-        
+
         All changes are executed on the SWT Display thread and are fully undoable.
+
+        **Internal chunking**: Large batches are automatically split into smaller
+        GEF CompoundCommands (default: 100 sub-commands per chunk, ~20 relationship
+        creates). This prevents silent rollback by Eclipse's command stack on very
+        large compound commands. Each chunk becomes a separate undo entry.
+
+        **Post-execution verification**: After execution, created objects are verified
+        to still exist in model folders. If a silent rollback is detected, the
+        operation reports an error instead of falsely returning success.
+
+        **Recommended**: Keep batches under 20 operations when creating relationships,
+        or use `archicli batch apply --poll` which handles chunking automatically.
       operationId: postModelApply
       requestBody:
         required: true
@@ -975,6 +1014,68 @@ components:
           type: string
         inFlightOperations:
           type: integer
+
+    DiagnosticsResponse:
+      type: object
+      description: Model diagnostics including orphan/ghost object detection
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        model:
+          type: object
+          properties:
+            name:
+              type: string
+            id:
+              type: string
+        orphans:
+          type: object
+          description: Orphan objects found in EMF resource but missing from folder structure
+          properties:
+            orphanElements:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  type:
+                    type: string
+            orphanRelationships:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  type:
+                    type: string
+                  source:
+                    type: string
+                    nullable: true
+                  target:
+                    type: string
+                    nullable: true
+            totalOrphans:
+              type: integer
+            error:
+              type: string
+              description: Error message if orphan detection failed
+        snapshot:
+          type: object
+          description: Current snapshot summary (folder-based counts)
+          properties:
+            elements:
+              type: integer
+            relationships:
+              type: integer
+            views:
+              type: integer
 
   # --- Model Endpoints will be added below ---
 

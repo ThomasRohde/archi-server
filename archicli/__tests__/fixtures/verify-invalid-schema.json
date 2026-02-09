@@ -1,0 +1,14 @@
+{
+  "description": "Invalid BOM: missing version, bad op type",
+  "changes": [
+    {
+      "op": "invalidOperation",
+      "type": "business-actor",
+      "name": "Should Fail"
+    },
+    {
+      "op": "createElement",
+      "name": "Missing Type"
+    }
+  ]
+}

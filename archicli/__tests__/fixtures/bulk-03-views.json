@@ -1,0 +1,1838 @@
+{
+  "version": "1.0",
+  "description": "Bulk stress test phase 3: 6 views with 125 visual objects and 114 connections",
+  "idFiles": [
+    "bulk-01-elements.ids.json",
+    "bulk-02-relationships.ids.json"
+  ],
+  "changes": [
+    {
+      "op": "createView",
+      "name": "Business Layer Overview",
+      "tempId": "v-business"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-business",
+      "elementId": "b-e16",
+      "tempId": "b-vis1",
+      "x": 30,
+      "y": 30
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-business",
+      "elementId": "b-e17",
+      "tempId": "b-vis2",
+      "x": 230,
+      "y": 30
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-business",
+      "elementId": "b-e18",
+      "tempId": "b-vis3",
+      "x": 430,
+      "y": 30
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-business",
+      "elementId": "b-e19",
+      "tempId": "b-vis4",
+      "x": 630,
+      "y": 30
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-business",
+      "elementId": "b-e22",
+      "tempId": "b-vis5",
+      "x": 830,
+      "y": 30
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-business",
+      "elementId": "b-e23",
+      "tempId": "b-vis6",
+      "x": 30,
+      "y": 130
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-business",
+      "elementId": "b-e24",
+      "tempId": "b-vis7",
+      "x": 230,
+      "y": 130
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-business",
+      "elementId": "b-e34",
+      "tempId": "b-vis8",
+      "x": 430,
+      "y": 130
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-business",
+      "elementId": "b-e35",
+      "tempId": "b-vis9",
+      "x": 630,
+      "y": 130
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-business",
+      "elementId": "b-e36",
+      "tempId": "b-vis10",
+      "x": 830,
+      "y": 130
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-business",
+      "elementId": "b-e37",
+      "tempId": "b-vis11",
+      "x": 30,
+      "y": 230
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-business",
+      "elementId": "b-e38",
+      "tempId": "b-vis12",
+      "x": 230,
+      "y": 230
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-business",
+      "elementId": "b-e54",
+      "tempId": "b-vis13",
+      "x": 430,
+      "y": 230
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-business",
+      "elementId": "b-e55",
+      "tempId": "b-vis14",
+      "x": 630,
+      "y": 230
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-business",
+      "elementId": "b-e56",
+      "tempId": "b-vis15",
+      "x": 830,
+      "y": 230
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-business",
+      "elementId": "b-e57",
+      "tempId": "b-vis16",
+      "x": 30,
+      "y": 330
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-business",
+      "elementId": "b-e61",
+      "tempId": "b-vis17",
+      "x": 230,
+      "y": 330
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-business",
+      "elementId": "b-e62",
+      "tempId": "b-vis18",
+      "x": 430,
+      "y": 330
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-business",
+      "elementId": "b-e63",
+      "tempId": "b-vis19",
+      "x": 630,
+      "y": 330
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-business",
+      "elementId": "b-e50",
+      "tempId": "b-vis20",
+      "x": 830,
+      "y": 330
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-business",
+      "elementId": "b-e51",
+      "tempId": "b-vis21",
+      "x": 30,
+      "y": 430
+    },
+    {
+      "op": "createView",
+      "name": "Application Architecture",
+      "tempId": "v-application"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-application",
+      "elementId": "b-e76",
+      "tempId": "b-vis22",
+      "x": 30,
+      "y": 30
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-application",
+      "elementId": "b-e77",
+      "tempId": "b-vis23",
+      "x": 230,
+      "y": 30
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-application",
+      "elementId": "b-e78",
+      "tempId": "b-vis24",
+      "x": 430,
+      "y": 30
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-application",
+      "elementId": "b-e79",
+      "tempId": "b-vis25",
+      "x": 630,
+      "y": 30
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-application",
+      "elementId": "b-e80",
+      "tempId": "b-vis26",
+      "x": 830,
+      "y": 30
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-application",
+      "elementId": "b-e81",
+      "tempId": "b-vis27",
+      "x": 30,
+      "y": 130
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-application",
+      "elementId": "b-e112",
+      "tempId": "b-vis28",
+      "x": 230,
+      "y": 130
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-application",
+      "elementId": "b-e113",
+      "tempId": "b-vis29",
+      "x": 430,
+      "y": 130
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-application",
+      "elementId": "b-e114",
+      "tempId": "b-vis30",
+      "x": 630,
+      "y": 130
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-application",
+      "elementId": "b-e115",
+      "tempId": "b-vis31",
+      "x": 830,
+      "y": 130
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-application",
+      "elementId": "b-e116",
+      "tempId": "b-vis32",
+      "x": 30,
+      "y": 230
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-application",
+      "elementId": "b-e94",
+      "tempId": "b-vis33",
+      "x": 230,
+      "y": 230
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-application",
+      "elementId": "b-e95",
+      "tempId": "b-vis34",
+      "x": 430,
+      "y": 230
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-application",
+      "elementId": "b-e96",
+      "tempId": "b-vis35",
+      "x": 630,
+      "y": 230
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-application",
+      "elementId": "b-e103",
+      "tempId": "b-vis36",
+      "x": 830,
+      "y": 230
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-application",
+      "elementId": "b-e104",
+      "tempId": "b-vis37",
+      "x": 30,
+      "y": 330
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-application",
+      "elementId": "b-e105",
+      "tempId": "b-vis38",
+      "x": 230,
+      "y": 330
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-application",
+      "elementId": "b-e120",
+      "tempId": "b-vis39",
+      "x": 430,
+      "y": 330
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-application",
+      "elementId": "b-e121",
+      "tempId": "b-vis40",
+      "x": 630,
+      "y": 330
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-application",
+      "elementId": "b-e122",
+      "tempId": "b-vis41",
+      "x": 830,
+      "y": 330
+    },
+    {
+      "op": "createView",
+      "name": "Technology Infrastructure",
+      "tempId": "v-technology"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-technology",
+      "elementId": "b-e126",
+      "tempId": "b-vis42",
+      "x": 30,
+      "y": 30
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-technology",
+      "elementId": "b-e127",
+      "tempId": "b-vis43",
+      "x": 230,
+      "y": 30
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-technology",
+      "elementId": "b-e128",
+      "tempId": "b-vis44",
+      "x": 430,
+      "y": 30
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-technology",
+      "elementId": "b-e129",
+      "tempId": "b-vis45",
+      "x": 630,
+      "y": 30
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-technology",
+      "elementId": "b-e130",
+      "tempId": "b-vis46",
+      "x": 830,
+      "y": 30
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-technology",
+      "elementId": "b-e131",
+      "tempId": "b-vis47",
+      "x": 30,
+      "y": 130
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-technology",
+      "elementId": "b-e132",
+      "tempId": "b-vis48",
+      "x": 230,
+      "y": 130
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-technology",
+      "elementId": "b-e133",
+      "tempId": "b-vis49",
+      "x": 430,
+      "y": 130
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-technology",
+      "elementId": "b-e134",
+      "tempId": "b-vis50",
+      "x": 630,
+      "y": 130
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-technology",
+      "elementId": "b-e135",
+      "tempId": "b-vis51",
+      "x": 830,
+      "y": 130
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-technology",
+      "elementId": "b-e140",
+      "tempId": "b-vis52",
+      "x": 30,
+      "y": 230
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-technology",
+      "elementId": "b-e141",
+      "tempId": "b-vis53",
+      "x": 230,
+      "y": 230
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-technology",
+      "elementId": "b-e142",
+      "tempId": "b-vis54",
+      "x": 430,
+      "y": 230
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-technology",
+      "elementId": "b-e149",
+      "tempId": "b-vis55",
+      "x": 630,
+      "y": 230
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-technology",
+      "elementId": "b-e150",
+      "tempId": "b-vis56",
+      "x": 830,
+      "y": 230
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-technology",
+      "elementId": "b-e151",
+      "tempId": "b-vis57",
+      "x": 30,
+      "y": 330
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-technology",
+      "elementId": "b-e152",
+      "tempId": "b-vis58",
+      "x": 230,
+      "y": 330
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-technology",
+      "elementId": "b-e153",
+      "tempId": "b-vis59",
+      "x": 430,
+      "y": 330
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-technology",
+      "elementId": "b-e158",
+      "tempId": "b-vis60",
+      "x": 630,
+      "y": 330
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-technology",
+      "elementId": "b-e159",
+      "tempId": "b-vis61",
+      "x": 830,
+      "y": 330
+    },
+    {
+      "op": "createView",
+      "name": "Motivation & Goals",
+      "tempId": "v-motivation"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-motivation",
+      "elementId": "b-e166",
+      "tempId": "b-vis62",
+      "x": 30,
+      "y": 30
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-motivation",
+      "elementId": "b-e167",
+      "tempId": "b-vis63",
+      "x": 230,
+      "y": 30
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-motivation",
+      "elementId": "b-e168",
+      "tempId": "b-vis64",
+      "x": 430,
+      "y": 30
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-motivation",
+      "elementId": "b-e169",
+      "tempId": "b-vis65",
+      "x": 630,
+      "y": 30
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-motivation",
+      "elementId": "b-e170",
+      "tempId": "b-vis66",
+      "x": 830,
+      "y": 30
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-motivation",
+      "elementId": "b-e171",
+      "tempId": "b-vis67",
+      "x": 30,
+      "y": 130
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-motivation",
+      "elementId": "b-e174",
+      "tempId": "b-vis68",
+      "x": 230,
+      "y": 130
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-motivation",
+      "elementId": "b-e175",
+      "tempId": "b-vis69",
+      "x": 430,
+      "y": 130
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-motivation",
+      "elementId": "b-e176",
+      "tempId": "b-vis70",
+      "x": 630,
+      "y": 130
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-motivation",
+      "elementId": "b-e177",
+      "tempId": "b-vis71",
+      "x": 830,
+      "y": 130
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-motivation",
+      "elementId": "b-e178",
+      "tempId": "b-vis72",
+      "x": 30,
+      "y": 230
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-motivation",
+      "elementId": "b-e179",
+      "tempId": "b-vis73",
+      "x": 230,
+      "y": 230
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-motivation",
+      "elementId": "b-e180",
+      "tempId": "b-vis74",
+      "x": 430,
+      "y": 230
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-motivation",
+      "elementId": "b-e181",
+      "tempId": "b-vis75",
+      "x": 630,
+      "y": 230
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-motivation",
+      "elementId": "b-e182",
+      "tempId": "b-vis76",
+      "x": 830,
+      "y": 230
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-motivation",
+      "elementId": "b-e184",
+      "tempId": "b-vis77",
+      "x": 30,
+      "y": 330
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-motivation",
+      "elementId": "b-e185",
+      "tempId": "b-vis78",
+      "x": 230,
+      "y": 330
+    },
+    {
+      "op": "createView",
+      "name": "Strategy & Roadmap",
+      "tempId": "v-strategy"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-strategy",
+      "elementId": "b-e1",
+      "tempId": "b-vis79",
+      "x": 30,
+      "y": 30
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-strategy",
+      "elementId": "b-e2",
+      "tempId": "b-vis80",
+      "x": 230,
+      "y": 30
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-strategy",
+      "elementId": "b-e3",
+      "tempId": "b-vis81",
+      "x": 430,
+      "y": 30
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-strategy",
+      "elementId": "b-e4",
+      "tempId": "b-vis82",
+      "x": 630,
+      "y": 30
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-strategy",
+      "elementId": "b-e5",
+      "tempId": "b-vis83",
+      "x": 830,
+      "y": 30
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-strategy",
+      "elementId": "b-e6",
+      "tempId": "b-vis84",
+      "x": 30,
+      "y": 130
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-strategy",
+      "elementId": "b-e7",
+      "tempId": "b-vis85",
+      "x": 230,
+      "y": 130
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-strategy",
+      "elementId": "b-e8",
+      "tempId": "b-vis86",
+      "x": 430,
+      "y": 130
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-strategy",
+      "elementId": "b-e9",
+      "tempId": "b-vis87",
+      "x": 630,
+      "y": 130
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-strategy",
+      "elementId": "b-e10",
+      "tempId": "b-vis88",
+      "x": 830,
+      "y": 130
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-strategy",
+      "elementId": "b-e11",
+      "tempId": "b-vis89",
+      "x": 30,
+      "y": 230
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-strategy",
+      "elementId": "b-e12",
+      "tempId": "b-vis90",
+      "x": 230,
+      "y": 230
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-strategy",
+      "elementId": "b-e13",
+      "tempId": "b-vis91",
+      "x": 430,
+      "y": 230
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-strategy",
+      "elementId": "b-e14",
+      "tempId": "b-vis92",
+      "x": 630,
+      "y": 230
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-strategy",
+      "elementId": "b-e15",
+      "tempId": "b-vis93",
+      "x": 830,
+      "y": 230
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-strategy",
+      "elementId": "b-e186",
+      "tempId": "b-vis94",
+      "x": 30,
+      "y": 330
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-strategy",
+      "elementId": "b-e187",
+      "tempId": "b-vis95",
+      "x": 230,
+      "y": 330
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-strategy",
+      "elementId": "b-e188",
+      "tempId": "b-vis96",
+      "x": 430,
+      "y": 330
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-strategy",
+      "elementId": "b-e189",
+      "tempId": "b-vis97",
+      "x": 630,
+      "y": 330
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-strategy",
+      "elementId": "b-e190",
+      "tempId": "b-vis98",
+      "x": 830,
+      "y": 330
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-strategy",
+      "elementId": "b-e191",
+      "tempId": "b-vis99",
+      "x": 30,
+      "y": 430
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-strategy",
+      "elementId": "b-e192",
+      "tempId": "b-vis100",
+      "x": 230,
+      "y": 430
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-strategy",
+      "elementId": "b-e196",
+      "tempId": "b-vis101",
+      "x": 430,
+      "y": 430
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-strategy",
+      "elementId": "b-e197",
+      "tempId": "b-vis102",
+      "x": 630,
+      "y": 430
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-strategy",
+      "elementId": "b-e198",
+      "tempId": "b-vis103",
+      "x": 830,
+      "y": 430
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-strategy",
+      "elementId": "b-e199",
+      "tempId": "b-vis104",
+      "x": 30,
+      "y": 530
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-strategy",
+      "elementId": "b-e200",
+      "tempId": "b-vis105",
+      "x": 230,
+      "y": 530
+    },
+    {
+      "op": "createView",
+      "name": "Full Architecture Overview",
+      "tempId": "v-overview"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-overview",
+      "elementId": "b-e16",
+      "tempId": "b-vis106",
+      "x": 30,
+      "y": 30
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-overview",
+      "elementId": "b-e17",
+      "tempId": "b-vis107",
+      "x": 230,
+      "y": 30
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-overview",
+      "elementId": "b-e54",
+      "tempId": "b-vis108",
+      "x": 430,
+      "y": 30
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-overview",
+      "elementId": "b-e55",
+      "tempId": "b-vis109",
+      "x": 630,
+      "y": 30
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-overview",
+      "elementId": "b-e56",
+      "tempId": "b-vis110",
+      "x": 830,
+      "y": 30
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-overview",
+      "elementId": "b-e76",
+      "tempId": "b-vis111",
+      "x": 30,
+      "y": 130
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-overview",
+      "elementId": "b-e77",
+      "tempId": "b-vis112",
+      "x": 230,
+      "y": 130
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-overview",
+      "elementId": "b-e78",
+      "tempId": "b-vis113",
+      "x": 430,
+      "y": 130
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-overview",
+      "elementId": "b-e79",
+      "tempId": "b-vis114",
+      "x": 630,
+      "y": 130
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-overview",
+      "elementId": "b-e112",
+      "tempId": "b-vis115",
+      "x": 830,
+      "y": 130
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-overview",
+      "elementId": "b-e113",
+      "tempId": "b-vis116",
+      "x": 30,
+      "y": 230
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-overview",
+      "elementId": "b-e114",
+      "tempId": "b-vis117",
+      "x": 230,
+      "y": 230
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-overview",
+      "elementId": "b-e126",
+      "tempId": "b-vis118",
+      "x": 430,
+      "y": 230
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-overview",
+      "elementId": "b-e127",
+      "tempId": "b-vis119",
+      "x": 630,
+      "y": 230
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-overview",
+      "elementId": "b-e149",
+      "tempId": "b-vis120",
+      "x": 830,
+      "y": 230
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-overview",
+      "elementId": "b-e150",
+      "tempId": "b-vis121",
+      "x": 30,
+      "y": 330
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-overview",
+      "elementId": "b-e174",
+      "tempId": "b-vis122",
+      "x": 230,
+      "y": 330
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-overview",
+      "elementId": "b-e175",
+      "tempId": "b-vis123",
+      "x": 430,
+      "y": 330
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-overview",
+      "elementId": "b-e4",
+      "tempId": "b-vis124",
+      "x": 630,
+      "y": 330
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-overview",
+      "elementId": "b-e5",
+      "tempId": "b-vis125",
+      "x": 830,
+      "y": 330
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-strategy",
+      "relationshipId": "b-r1",
+      "sourceVisualId": "b-vis79",
+      "targetVisualId": "b-vis82"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-strategy",
+      "relationshipId": "b-r2",
+      "sourceVisualId": "b-vis80",
+      "targetVisualId": "b-vis83"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-strategy",
+      "relationshipId": "b-r3",
+      "sourceVisualId": "b-vis81",
+      "targetVisualId": "b-vis84"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-strategy",
+      "relationshipId": "b-r4",
+      "sourceVisualId": "b-vis82",
+      "targetVisualId": "b-vis86"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-strategy",
+      "relationshipId": "b-r5",
+      "sourceVisualId": "b-vis83",
+      "targetVisualId": "b-vis87"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-strategy",
+      "relationshipId": "b-r6",
+      "sourceVisualId": "b-vis84",
+      "targetVisualId": "b-vis88"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-strategy",
+      "relationshipId": "b-r7",
+      "sourceVisualId": "b-vis85",
+      "targetVisualId": "b-vis89"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-strategy",
+      "relationshipId": "b-r8",
+      "sourceVisualId": "b-vis90",
+      "targetVisualId": "b-vis82"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-strategy",
+      "relationshipId": "b-r9",
+      "sourceVisualId": "b-vis91",
+      "targetVisualId": "b-vis83"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-strategy",
+      "relationshipId": "b-r10",
+      "sourceVisualId": "b-vis92",
+      "targetVisualId": "b-vis84"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-strategy",
+      "relationshipId": "b-r11",
+      "sourceVisualId": "b-vis93",
+      "targetVisualId": "b-vis85"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-business",
+      "relationshipId": "b-r12",
+      "sourceVisualId": "b-vis1",
+      "targetVisualId": "b-vis5"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-business",
+      "relationshipId": "b-r13",
+      "sourceVisualId": "b-vis1",
+      "targetVisualId": "b-vis6"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-business",
+      "relationshipId": "b-r14",
+      "sourceVisualId": "b-vis2",
+      "targetVisualId": "b-vis6"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-business",
+      "relationshipId": "b-r15",
+      "sourceVisualId": "b-vis2",
+      "targetVisualId": "b-vis7"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-business",
+      "relationshipId": "b-r16",
+      "sourceVisualId": "b-vis3",
+      "targetVisualId": "b-vis7"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-business",
+      "relationshipId": "b-r22",
+      "sourceVisualId": "b-vis8",
+      "targetVisualId": "b-vis13"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-business",
+      "relationshipId": "b-r23",
+      "sourceVisualId": "b-vis9",
+      "targetVisualId": "b-vis14"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-business",
+      "relationshipId": "b-r24",
+      "sourceVisualId": "b-vis10",
+      "targetVisualId": "b-vis15"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-business",
+      "relationshipId": "b-r25",
+      "sourceVisualId": "b-vis11",
+      "targetVisualId": "b-vis16"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-business",
+      "relationshipId": "b-r30",
+      "sourceVisualId": "b-vis13",
+      "targetVisualId": "b-vis1"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-business",
+      "relationshipId": "b-r31",
+      "sourceVisualId": "b-vis14",
+      "targetVisualId": "b-vis2"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-business",
+      "relationshipId": "b-r32",
+      "sourceVisualId": "b-vis15",
+      "targetVisualId": "b-vis3"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-business",
+      "relationshipId": "b-r33",
+      "sourceVisualId": "b-vis16",
+      "targetVisualId": "b-vis4"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-business",
+      "relationshipId": "b-r37",
+      "sourceVisualId": "b-vis8",
+      "targetVisualId": "b-vis9"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-business",
+      "relationshipId": "b-r38",
+      "sourceVisualId": "b-vis9",
+      "targetVisualId": "b-vis10"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-business",
+      "relationshipId": "b-r39",
+      "sourceVisualId": "b-vis10",
+      "targetVisualId": "b-vis11"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-business",
+      "relationshipId": "b-r40",
+      "sourceVisualId": "b-vis11",
+      "targetVisualId": "b-vis12"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-business",
+      "relationshipId": "b-r44",
+      "sourceVisualId": "b-vis8",
+      "targetVisualId": "b-vis17"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-business",
+      "relationshipId": "b-r45",
+      "sourceVisualId": "b-vis9",
+      "targetVisualId": "b-vis18"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-business",
+      "relationshipId": "b-r46",
+      "sourceVisualId": "b-vis10",
+      "targetVisualId": "b-vis19"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-business",
+      "relationshipId": "b-r52",
+      "sourceVisualId": "b-vis20",
+      "targetVisualId": "b-vis8"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-business",
+      "relationshipId": "b-r53",
+      "sourceVisualId": "b-vis21",
+      "targetVisualId": "b-vis9"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-business",
+      "relationshipId": "b-r61",
+      "sourceVisualId": "b-vis5",
+      "targetVisualId": "b-vis8"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-business",
+      "relationshipId": "b-r62",
+      "sourceVisualId": "b-vis6",
+      "targetVisualId": "b-vis9"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-business",
+      "relationshipId": "b-r63",
+      "sourceVisualId": "b-vis7",
+      "targetVisualId": "b-vis10"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-application",
+      "relationshipId": "b-r83",
+      "sourceVisualId": "b-vis22",
+      "targetVisualId": "b-vis28"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-application",
+      "relationshipId": "b-r84",
+      "sourceVisualId": "b-vis23",
+      "targetVisualId": "b-vis29"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-application",
+      "relationshipId": "b-r85",
+      "sourceVisualId": "b-vis24",
+      "targetVisualId": "b-vis30"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-application",
+      "relationshipId": "b-r86",
+      "sourceVisualId": "b-vis25",
+      "targetVisualId": "b-vis31"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-application",
+      "relationshipId": "b-r87",
+      "sourceVisualId": "b-vis26",
+      "targetVisualId": "b-vis32"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-application",
+      "relationshipId": "b-r93",
+      "sourceVisualId": "b-vis33",
+      "targetVisualId": "b-vis28"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-application",
+      "relationshipId": "b-r94",
+      "sourceVisualId": "b-vis34",
+      "targetVisualId": "b-vis29"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-application",
+      "relationshipId": "b-r95",
+      "sourceVisualId": "b-vis35",
+      "targetVisualId": "b-vis30"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-application",
+      "relationshipId": "b-r99",
+      "sourceVisualId": "b-vis36",
+      "targetVisualId": "b-vis37"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-application",
+      "relationshipId": "b-r100",
+      "sourceVisualId": "b-vis37",
+      "targetVisualId": "b-vis38"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-application",
+      "relationshipId": "b-r104",
+      "sourceVisualId": "b-vis36",
+      "targetVisualId": "b-vis39"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-application",
+      "relationshipId": "b-r105",
+      "sourceVisualId": "b-vis37",
+      "targetVisualId": "b-vis40"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-application",
+      "relationshipId": "b-r106",
+      "sourceVisualId": "b-vis38",
+      "targetVisualId": "b-vis41"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-application",
+      "relationshipId": "b-r110",
+      "sourceVisualId": "b-vis22",
+      "targetVisualId": "b-vis23"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-application",
+      "relationshipId": "b-r111",
+      "sourceVisualId": "b-vis23",
+      "targetVisualId": "b-vis24"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-application",
+      "relationshipId": "b-r112",
+      "sourceVisualId": "b-vis24",
+      "targetVisualId": "b-vis25"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-application",
+      "relationshipId": "b-r113",
+      "sourceVisualId": "b-vis25",
+      "targetVisualId": "b-vis26"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-application",
+      "relationshipId": "b-r114",
+      "sourceVisualId": "b-vis26",
+      "targetVisualId": "b-vis27"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-application",
+      "relationshipId": "b-r127",
+      "sourceVisualId": "b-vis22",
+      "targetVisualId": "b-vis33"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-application",
+      "relationshipId": "b-r128",
+      "sourceVisualId": "b-vis23",
+      "targetVisualId": "b-vis34"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-application",
+      "relationshipId": "b-r129",
+      "sourceVisualId": "b-vis24",
+      "targetVisualId": "b-vis35"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-application",
+      "relationshipId": "b-r143",
+      "sourceVisualId": "b-vis22",
+      "targetVisualId": "b-vis39"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-application",
+      "relationshipId": "b-r144",
+      "sourceVisualId": "b-vis23",
+      "targetVisualId": "b-vis40"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-application",
+      "relationshipId": "b-r145",
+      "sourceVisualId": "b-vis24",
+      "targetVisualId": "b-vis41"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-technology",
+      "relationshipId": "b-r153",
+      "sourceVisualId": "b-vis42",
+      "targetVisualId": "b-vis49"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-technology",
+      "relationshipId": "b-r154",
+      "sourceVisualId": "b-vis43",
+      "targetVisualId": "b-vis50"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-technology",
+      "relationshipId": "b-r155",
+      "sourceVisualId": "b-vis44",
+      "targetVisualId": "b-vis51"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-technology",
+      "relationshipId": "b-r157",
+      "sourceVisualId": "b-vis42",
+      "targetVisualId": "b-vis46"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-technology",
+      "relationshipId": "b-r158",
+      "sourceVisualId": "b-vis43",
+      "targetVisualId": "b-vis47"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-technology",
+      "relationshipId": "b-r159",
+      "sourceVisualId": "b-vis44",
+      "targetVisualId": "b-vis48"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-technology",
+      "relationshipId": "b-r160",
+      "sourceVisualId": "b-vis49",
+      "targetVisualId": "b-vis58"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-technology",
+      "relationshipId": "b-r161",
+      "sourceVisualId": "b-vis50",
+      "targetVisualId": "b-vis59"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-technology",
+      "relationshipId": "b-r172",
+      "sourceVisualId": "b-vis42",
+      "targetVisualId": "b-vis52"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-technology",
+      "relationshipId": "b-r173",
+      "sourceVisualId": "b-vis43",
+      "targetVisualId": "b-vis53"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-technology",
+      "relationshipId": "b-r174",
+      "sourceVisualId": "b-vis44",
+      "targetVisualId": "b-vis54"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-technology",
+      "relationshipId": "b-r175",
+      "sourceVisualId": "b-vis45",
+      "targetVisualId": "b-vis52"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-technology",
+      "relationshipId": "b-r178",
+      "sourceVisualId": "b-vis60",
+      "targetVisualId": "b-vis42"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-technology",
+      "relationshipId": "b-r179",
+      "sourceVisualId": "b-vis61",
+      "targetVisualId": "b-vis43"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-motivation",
+      "relationshipId": "b-r186",
+      "sourceVisualId": "b-vis62",
+      "targetVisualId": "b-vis65"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-motivation",
+      "relationshipId": "b-r187",
+      "sourceVisualId": "b-vis63",
+      "targetVisualId": "b-vis66"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-motivation",
+      "relationshipId": "b-r188",
+      "sourceVisualId": "b-vis64",
+      "targetVisualId": "b-vis67"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-motivation",
+      "relationshipId": "b-r194",
+      "sourceVisualId": "b-vis68",
+      "targetVisualId": "b-vis71"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-motivation",
+      "relationshipId": "b-r195",
+      "sourceVisualId": "b-vis69",
+      "targetVisualId": "b-vis72"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-motivation",
+      "relationshipId": "b-r196",
+      "sourceVisualId": "b-vis70",
+      "targetVisualId": "b-vis71"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-motivation",
+      "relationshipId": "b-r197",
+      "sourceVisualId": "b-vis73",
+      "targetVisualId": "b-vis75"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-motivation",
+      "relationshipId": "b-r198",
+      "sourceVisualId": "b-vis74",
+      "targetVisualId": "b-vis76"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-motivation",
+      "relationshipId": "b-r199",
+      "sourceVisualId": "b-vis68",
+      "targetVisualId": "b-vis73"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-motivation",
+      "relationshipId": "b-r200",
+      "sourceVisualId": "b-vis69",
+      "targetVisualId": "b-vis74"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-motivation",
+      "relationshipId": "b-r201",
+      "sourceVisualId": "b-vis70",
+      "targetVisualId": "b-vis73"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-motivation",
+      "relationshipId": "b-r202",
+      "sourceVisualId": "b-vis75",
+      "targetVisualId": "b-vis77"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-motivation",
+      "relationshipId": "b-r203",
+      "sourceVisualId": "b-vis76",
+      "targetVisualId": "b-vis78"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-strategy",
+      "relationshipId": "b-r204",
+      "sourceVisualId": "b-vis94",
+      "targetVisualId": "b-vis98"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-strategy",
+      "relationshipId": "b-r205",
+      "sourceVisualId": "b-vis95",
+      "targetVisualId": "b-vis99"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-strategy",
+      "relationshipId": "b-r206",
+      "sourceVisualId": "b-vis96",
+      "targetVisualId": "b-vis100"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-strategy",
+      "relationshipId": "b-r207",
+      "sourceVisualId": "b-vis97",
+      "targetVisualId": "b-vis98"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-strategy",
+      "relationshipId": "b-r211",
+      "sourceVisualId": "b-vis101",
+      "targetVisualId": "b-vis104"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-strategy",
+      "relationshipId": "b-r212",
+      "sourceVisualId": "b-vis102",
+      "targetVisualId": "b-vis105"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-strategy",
+      "relationshipId": "b-r213",
+      "sourceVisualId": "b-vis94",
+      "targetVisualId": "b-vis95"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-strategy",
+      "relationshipId": "b-r214",
+      "sourceVisualId": "b-vis95",
+      "targetVisualId": "b-vis96"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-strategy",
+      "relationshipId": "b-r215",
+      "sourceVisualId": "b-vis96",
+      "targetVisualId": "b-vis97"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-overview",
+      "relationshipId": "b-r231",
+      "sourceVisualId": "b-vis111",
+      "targetVisualId": "b-vis108"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-overview",
+      "relationshipId": "b-r232",
+      "sourceVisualId": "b-vis112",
+      "targetVisualId": "b-vis109"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-overview",
+      "relationshipId": "b-r233",
+      "sourceVisualId": "b-vis113",
+      "targetVisualId": "b-vis110"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-overview",
+      "relationshipId": "b-r252",
+      "sourceVisualId": "b-vis115",
+      "targetVisualId": "b-vis106"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-overview",
+      "relationshipId": "b-r253",
+      "sourceVisualId": "b-vis116",
+      "targetVisualId": "b-vis107"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-overview",
+      "relationshipId": "b-r283",
+      "sourceVisualId": "b-vis120",
+      "targetVisualId": "b-vis115"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-overview",
+      "relationshipId": "b-r284",
+      "sourceVisualId": "b-vis121",
+      "targetVisualId": "b-vis116"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-overview",
+      "relationshipId": "b-r290",
+      "sourceVisualId": "b-vis118",
+      "targetVisualId": "b-vis111"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-overview",
+      "relationshipId": "b-r291",
+      "sourceVisualId": "b-vis119",
+      "targetVisualId": "b-vis112"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-overview",
+      "relationshipId": "b-r300",
+      "sourceVisualId": "b-vis108",
+      "targetVisualId": "b-vis122"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-overview",
+      "relationshipId": "b-r301",
+      "sourceVisualId": "b-vis109",
+      "targetVisualId": "b-vis123"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-motivation",
+      "relationshipId": "b-r308",
+      "sourceVisualId": "b-vis62",
+      "targetVisualId": "b-vis68"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-motivation",
+      "relationshipId": "b-r309",
+      "sourceVisualId": "b-vis63",
+      "targetVisualId": "b-vis69"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-motivation",
+      "relationshipId": "b-r310",
+      "sourceVisualId": "b-vis64",
+      "targetVisualId": "b-vis70"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-motivation",
+      "relationshipId": "b-r316",
+      "sourceVisualId": "b-vis71",
+      "targetVisualId": "b-vis62"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-motivation",
+      "relationshipId": "b-r317",
+      "sourceVisualId": "b-vis72",
+      "targetVisualId": "b-vis63"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-strategy",
+      "relationshipId": "b-r334",
+      "sourceVisualId": "b-vis104",
+      "targetVisualId": "b-vis102"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-strategy",
+      "relationshipId": "b-r335",
+      "sourceVisualId": "b-vis105",
+      "targetVisualId": "b-vis103"
+    }
+  ]
+}

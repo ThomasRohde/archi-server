@@ -393,6 +393,9 @@ function routeModelEndpoint(req, res, state, apiEndpoints) {
                 .addHandler("/test", "GET", function(req, res) {
                     apiEndpoints.handleTest(req, res, state);
                 })
+                .addHandler("/model/diagnostics", "GET", function(req, res) {
+                    apiEndpoints.handleDiagnostics(req, res, state);
+                })
                 // Model endpoints - use router for parametric paths
                 .addHandler("/model", "*", function(req, res) {
                     routeModelEndpoint(req, res, state, apiEndpoints);

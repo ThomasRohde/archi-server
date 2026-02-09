@@ -35,7 +35,7 @@
          */
         rateLimit: {
             enabled: true,
-            maxRequests: 200,           // Max requests per window (increased for integration testing)
+            maxRequests: 600,           // Max requests per window (increased for integration testing)
             windowMs: 60000,            // Window size in milliseconds (1 minute)
             blockDurationMs: 60000      // How long to block after limit exceeded (1 minute)
         },
@@ -57,7 +57,10 @@
             processorInterval: 50,      // Processor cycle interval in milliseconds
             maxOpsPerCycle: 10,         // Maximum operations to process per cycle
             cleanupInterval: 100,       // Cleanup every N cycles (~5 seconds)
-            maxOperationAge: 3600000    // Max age for completed operations (1 hour)
+            maxOperationAge: 3600000,   // Max age for completed operations (1 hour)
+            maxSubCommandsPerBatch: 100, // Max GEF sub-commands per CompoundCommand (~20 relationships)
+            postExecuteVerify: true,    // Verify created objects exist after command execution
+            snapshotRefreshDelayMs: 100 // Delay before snapshot refresh to allow async rollback to settle
         },
 
         /**

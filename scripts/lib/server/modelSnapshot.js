@@ -20,6 +20,8 @@
     // Java imports
     var IArchimateElement = Java.type("com.archimatetool.model.IArchimateElement");
     var IArchimateRelationship = Java.type("com.archimatetool.model.IArchimateRelationship");
+    var IAccessRelationship = Java.type("com.archimatetool.model.IAccessRelationship");
+    var IInfluenceRelationship = Java.type("com.archimatetool.model.IInfluenceRelationship");
 
     /**
      * Model snapshot management
@@ -52,13 +54,24 @@
             });
 
             $("relationship").each(function(rel) {
-                relationshipsList.push({
+                var relData = {
                     id: rel.id,
                     name: rel.name,
                     type: rel.type,
                     source: rel.source ? rel.source.id : null,
                     target: rel.target ? rel.target.id : null
-                });
+                };
+                // Include accessType for access-relationships
+                if (rel.type === "access-relationship" && rel.concept &&
+                    typeof rel.concept.getAccessType === 'function') {
+                    relData.accessType = rel.concept.getAccessType();
+                }
+                // Include strength for influence-relationships
+                if (rel.type === "influence-relationship" && rel.concept &&
+                    typeof rel.concept.getStrength === 'function') {
+                    relData.strength = rel.concept.getStrength();
+                }
+                relationshipsList.push(relData);
             });
 
             $("view").each(function(view) {
@@ -109,13 +122,22 @@
                             documentation: el.getDocumentation() || ""
                         });
                     } else if (el instanceof IArchimateRelationship) {
-                        relationshipsList.push({
+                        var relData = {
                             id: el.getId(),
                             name: el.getName(),
                             type: self._getTypeName(el),
                             source: el.getSource() ? el.getSource().getId() : null,
                             target: el.getTarget() ? el.getTarget().getId() : null
-                        });
+                        };
+                        // Include accessType for access-relationships
+                        if (el instanceof IAccessRelationship) {
+                            relData.accessType = el.getAccessType();
+                        }
+                        // Include strength for influence-relationships
+                        if (el instanceof IInfluenceRelationship) {
+                            relData.strength = el.getStrength();
+                        }
+                        relationshipsList.push(relData);
                     }
                 }
 
@@ -219,13 +241,22 @@
          * @returns {Object} JSON representation
          */
         relationshipToJSON: function(rel) {
-            return {
+            var data = {
                 id: rel.getId(),
                 name: rel.getName(),
                 type: this._getTypeName(rel),
                 source: rel.getSource() ? rel.getSource().getId() : null,
                 target: rel.getTarget() ? rel.getTarget().getId() : null
             };
+            // Include accessType for access-relationships
+            if (rel instanceof IAccessRelationship) {
+                data.accessType = rel.getAccessType();
+            }
+            // Include strength for influence-relationships
+            if (rel instanceof IInfluenceRelationship) {
+                data.strength = rel.getStrength();
+            }
+            return data;
         },
 
         /**
@@ -252,6 +283,81 @@
             return className.replace(/([A-Z])/g, function(match, p1, offset) {
                 return (offset > 0 ? '-' : '') + p1.toLowerCase();
             });
+        },
+
+        /**
+         * Detect orphan/ghost objects in the model.
+         *
+         * Ghost objects exist in the EMF model resource but are NOT contained in
+         * any folder. This happens when a CompoundCommand is silently rolled back
+         * — the folder-add sub-command is undone but the EMF object persists.
+         *
+         * Uses model.eResource().getAllContents() for EMF-level traversal and
+         * compares against the folder-based snapshot.
+         *
+         * @param {com.archimatetool.model.IArchimateModel} modelRef - EMF model reference
+         * @returns {Object} { orphanElements: [...], orphanRelationships: [...], totalOrphans: number }
+         */
+        detectOrphans: function(modelRef) {
+            // First, refresh snapshot to get current folder-based state
+            this.refreshSnapshot(modelRef);
+            var folderElementIds = {};
+            var folderRelationshipIds = {};
+
+            for (var ei = 0; ei < this.snapshot.elements.length; ei++) {
+                folderElementIds[this.snapshot.elements[ei].id] = true;
+            }
+            for (var ri = 0; ri < this.snapshot.relationships.length; ri++) {
+                folderRelationshipIds[this.snapshot.relationships[ri].id] = true;
+            }
+
+            // EMF-level traversal
+            var orphanElements = [];
+            var orphanRelationships = [];
+
+            try {
+                var resource = modelRef.eResource();
+                if (resource) {
+                    var allContents = resource.getAllContents();
+                    while (allContents.hasNext()) {
+                        var obj = allContents.next();
+                        if (obj instanceof IArchimateElement) {
+                            if (!folderElementIds[obj.getId()]) {
+                                orphanElements.push({
+                                    id: obj.getId(),
+                                    name: obj.getName ? obj.getName() : "",
+                                    type: this._getTypeName(obj)
+                                });
+                            }
+                        } else if (obj instanceof IArchimateRelationship) {
+                            if (!folderRelationshipIds[obj.getId()]) {
+                                var relData = {
+                                    id: obj.getId(),
+                                    name: obj.getName ? obj.getName() : "",
+                                    type: this._getTypeName(obj),
+                                    source: obj.getSource() ? obj.getSource().getId() : null,
+                                    target: obj.getTarget() ? obj.getTarget().getId() : null
+                                };
+                                orphanRelationships.push(relData);
+                            }
+                        }
+                    }
+                }
+            } catch (e) {
+                // EMF resource traversal may not be available in all contexts
+                return {
+                    orphanElements: [],
+                    orphanRelationships: [],
+                    totalOrphans: 0,
+                    error: "EMF resource traversal failed: " + String(e)
+                };
+            }
+
+            return {
+                orphanElements: orphanElements,
+                orphanRelationships: orphanRelationships,
+                totalOrphans: orphanElements.length + orphanRelationships.length
+            };
         }
     };
 

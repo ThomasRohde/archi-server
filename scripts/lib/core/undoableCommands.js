@@ -279,7 +279,7 @@
             // Implementation & Migration Layer
             case "work-package": return factory.createWorkPackage();
             case "deliverable": return factory.createDeliverable();
-            case "implementation-event": return factory.createImplementationMigrationEvent();
+            case "implementation-event": return factory.createImplementationEvent();
             case "plateau": return factory.createPlateau();
             case "gap": return factory.createGap();
 
@@ -1018,11 +1018,42 @@
     }
 
     // =========================================================================
-    function executeBatch(model, label, operations) {
+    function executeBatch(model, label, operations, batchConfig) {
+        // Merge config: caller overrides > serverConfig > defaults
+        var config = {
+            maxSubCommandsPerBatch: 100,
+            postExecuteVerify: true
+        };
+        if (typeof serverConfig !== "undefined" && serverConfig.operations) {
+            if (serverConfig.operations.maxSubCommandsPerBatch !== undefined) {
+                config.maxSubCommandsPerBatch = serverConfig.operations.maxSubCommandsPerBatch;
+            }
+            if (serverConfig.operations.postExecuteVerify !== undefined) {
+                config.postExecuteVerify = serverConfig.operations.postExecuteVerify;
+            }
+        }
+        if (batchConfig) {
+            if (batchConfig.maxSubCommandsPerBatch !== undefined) {
+                config.maxSubCommandsPerBatch = batchConfig.maxSubCommandsPerBatch;
+            }
+            if (batchConfig.postExecuteVerify !== undefined) {
+                config.postExecuteVerify = batchConfig.postExecuteVerify;
+            }
+        }
+
         var compound = new CompoundCommand(label);
         var results = [];
         var idMap = {}; // Map tempId -> created object
         var relEndpoints = {}; // rel.getId() -> { src, tgt } for same-batch source/target lookup
+
+        // Track created object IDs for post-execution verification
+        var createdElementIds = [];
+        var createdRelationshipIds = [];
+
+        // Track sub-command count for chunking
+        var chunkCompounds = [];   // Array of { compound, startIndex }
+        var currentChunkStart = 0;
+        var subCommandCount = 0;
 
         // First pass: create all elements
         for (var i = 0; i < operations.length; i++) {
@@ -1073,6 +1104,9 @@
                     type: op.type,
                     element: element
                 });
+
+                // Track for post-execution verification
+                createdElementIds.push(element.getId());
             }
         }
 
@@ -1184,6 +1218,9 @@
                     target: target.getId(),
                     relationship: rel
                 });
+
+                // Track for post-execution verification
+                createdRelationshipIds.push(rel.getId());
             }
             else if (operation.op === "setProperty") {
                 var elem = idMap[operation.id] || findElementById(model, operation.id);
@@ -2916,10 +2953,114 @@
             }
         }
 
-        // Execute the entire batch as one undoable operation
-        executeCommand(model, compound);
+        // --- Chunked Execution ---
+        // If the compound command exceeds the max sub-command threshold, split into
+        // multiple CompoundCommands to avoid GEF/Eclipse silent rollback on large batches.
+        var maxSubCmds = config.maxSubCommandsPerBatch;
+        var totalSubCmds = compound.size();
+
+        if (totalSubCmds <= maxSubCmds || maxSubCmds <= 0) {
+            // Small enough — execute as single compound command (original behavior)
+            executeCommand(model, compound);
+        } else {
+            // Split into chunks. We extract the sub-command list from the compound
+            // and rebuild smaller CompoundCommands.
+            var commandList = compound.getCommands(); // returns java.util.List
+            var chunkIndex = 0;
+            var cmdIndex = 0;
+            var listSize = commandList.size();
+
+            while (cmdIndex < listSize) {
+                chunkIndex++;
+                var chunkLabel = label + " [chunk " + chunkIndex + "]";
+                var chunk = new CompoundCommand(chunkLabel);
+                var chunkEnd = Math.min(cmdIndex + maxSubCmds, listSize);
+
+                for (var ci = cmdIndex; ci < chunkEnd; ci++) {
+                    chunk.add(commandList.get(ci));
+                }
+
+                executeCommand(model, chunk);
+
+                // Verify chunk wasn't silently rolled back
+                if (config.postExecuteVerify && createdElementIds.length + createdRelationshipIds.length > 0) {
+                    // Brief pause to allow any async rollback to settle
+                    try {
+                        var Thread = Java.type("java.lang.Thread");
+                        Thread.sleep(20);
+                    } catch (sleepErr) { /* ignore */ }
+
+                    var rollbackDetected = _verifyCreatedObjects(model, createdElementIds, createdRelationshipIds);
+                    if (rollbackDetected) {
+                        throw new Error(
+                            "Silent batch rollback detected after chunk " + chunkIndex +
+                            ": " + rollbackDetected.missing + " of " + rollbackDetected.total +
+                            " created objects not found in model folders after execution. " +
+                            "The GEF command stack likely rejected the CompoundCommand. " +
+                            "Chunk had " + chunk.size() + " sub-commands."
+                        );
+                    }
+                }
+
+                cmdIndex = chunkEnd;
+            }
+        }
+
+        // --- Post-Execution Verification ---
+        // Even for single (non-chunked) commands, verify created objects persist.
+        if (config.postExecuteVerify && (createdElementIds.length > 0 || createdRelationshipIds.length > 0)) {
+            // Brief pause to allow any async rollback to settle
+            try {
+                var Thread2 = Java.type("java.lang.Thread");
+                Thread2.sleep(50);
+            } catch (sleepErr2) { /* ignore */ }
+
+            var rollback = _verifyCreatedObjects(model, createdElementIds, createdRelationshipIds);
+            if (rollback) {
+                throw new Error(
+                    "Silent batch rollback detected: " + rollback.missing + " of " + rollback.total +
+                    " created objects not found in model folders after execution. " +
+                    "The GEF command stack likely rejected the CompoundCommand (" +
+                    totalSubCmds + " sub-commands). " +
+                    "Missing IDs: " + rollback.missingIds.slice(0, 5).join(", ") +
+                    (rollback.missingIds.length > 5 ? " (+" + (rollback.missingIds.length - 5) + " more)" : "")
+                );
+            }
+        }
 
         return results;
+    }
+
+    /**
+     * Verify that created objects actually exist in model folders after command execution.
+     * Detects silent rollback by the GEF command stack.
+     *
+     * @param {Object} model - IArchimateModel
+     * @param {Array<string>} elementIds - IDs of created elements to verify
+     * @param {Array<string>} relationshipIds - IDs of created relationships to verify
+     * @returns {Object|null} null if all OK, or { missing, total, missingIds } if rollback detected
+     * @private
+     */
+    function _verifyCreatedObjects(model, elementIds, relationshipIds) {
+        var allIds = elementIds.concat(relationshipIds);
+        if (allIds.length === 0) return null;
+
+        var missingIds = [];
+        for (var v = 0; v < allIds.length; v++) {
+            var found = findElementById(model, allIds[v]);
+            if (!found) {
+                missingIds.push(allIds[v]);
+            }
+        }
+
+        if (missingIds.length > 0) {
+            return {
+                missing: missingIds.length,
+                total: allIds.length,
+                missingIds: missingIds
+            };
+        }
+        return null;
     }
 
     /**
@@ -3136,7 +3277,47 @@
         executeBatch: executeBatch,
         findElementById: findElementById,
         findViewById: findViewById,
-        getCommandStack: getCommandStack
+        getCommandStack: getCommandStack,
+
+        /**
+         * Register a listener on the model's command stack to detect external changes
+         * (e.g., user pressing Ctrl+Z, or command stack rejecting a command).
+         *
+         * The callback fires on any command stack event NOT initiated by executeBatch().
+         * Typical use: trigger modelSnapshot.refreshSnapshot() on external undo/redo.
+         *
+         * @param {Object} model - IArchimateModel
+         * @param {Function} callback - Called with (eventType) on command stack changes.
+         *   eventType is a string: "execute", "undo", "redo", or "flush"
+         * @returns {Object} listener handle with .remove() method to unregister
+         */
+        registerCommandStackListener: function(model, callback) {
+            var CommandStackListener = Java.type("org.eclipse.gef.commands.CommandStackListener");
+            var commandStack = getCommandStack(model);
+
+            var listener = new (Java.extend(CommandStackListener, {
+                commandStackChanged: function(event) {
+                    try {
+                        callback("changed");
+                    } catch (e) {
+                        // Swallow errors in callback to avoid crashing the command stack
+                        if (typeof console !== "undefined" && console.error) {
+                            console.error("CommandStackListener callback error: " + e);
+                        }
+                    }
+                }
+            }))();
+
+            commandStack.addCommandStackListener(listener);
+
+            return {
+                remove: function() {
+                    try {
+                        commandStack.removeCommandStackListener(listener);
+                    } catch (e) { /* ignore */ }
+                }
+            };
+        }
     };
 
     // Export globally for JArchi

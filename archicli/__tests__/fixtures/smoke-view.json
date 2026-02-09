@@ -1,0 +1,53 @@
+{
+  "version": "1.0",
+  "description": "Smoke test: create view, add elements, add connections",
+  "idFiles": [
+    "smoke-elements.ids.json",
+    "smoke-relationships.ids.json"
+  ],
+  "changes": [
+    {
+      "op": "createView",
+      "name": "Smoke Test View",
+      "tempId": "s-view"
+    },
+    {
+      "op": "addToView",
+      "viewId": "s-view",
+      "elementId": "s-actor",
+      "tempId": "s-vis-actor",
+      "x": 50,
+      "y": 50
+    },
+    {
+      "op": "addToView",
+      "viewId": "s-view",
+      "elementId": "s-app",
+      "tempId": "s-vis-app",
+      "x": 300,
+      "y": 50
+    },
+    {
+      "op": "addToView",
+      "viewId": "s-view",
+      "elementId": "s-node",
+      "tempId": "s-vis-node",
+      "x": 550,
+      "y": 50
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "s-view",
+      "relationshipId": "s-rel-serving",
+      "sourceVisualId": "s-vis-app",
+      "targetVisualId": "s-vis-actor"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "s-view",
+      "relationshipId": "s-rel-assoc",
+      "sourceVisualId": "s-vis-node",
+      "targetVisualId": "s-vis-app"
+    }
+  ]
+}

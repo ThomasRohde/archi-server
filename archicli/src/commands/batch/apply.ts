@@ -172,8 +172,9 @@ export function batchApplyCommand(): Command {
   return new Command('apply')
     .description(
       'Apply a BOM file to the ArchiMate model.\n\n' +
-        'Large change sets are auto-split into chunks (default 100 ops each) and\n' +
-        'submitted sequentially as async operations.\n\n' +
+        'Large change sets are auto-split into chunks (default 20 ops each) and\n' +
+        'submitted sequentially as async operations. The server also internally\n' +
+        'chunks large GEF CompoundCommands and verifies created objects persist.\n\n' +
         'ALWAYS USE --poll when:\n' +
         '  - You need real IDs of created elements (required for view population)\n' +
         '  - Your BOM spans multiple chunks (tempIds resolved across chunks via --poll)\n' +
@@ -196,7 +197,7 @@ export function batchApplyCommand(): Command {
         '  # recovers their real IDs, and continues with remaining ops'
     )
     .argument('<file>', 'path to BOM JSON file')
-    .option('-c, --chunk-size <n>', 'operations per API request (max 1000)', '100')
+    .option('-c, --chunk-size <n>', 'operations per API request (max 1000, default 20 for safety)', '20')
     .option('--dry-run', 'validate BOM and show what would be submitted, without applying')
     .option('--poll', 'poll /ops/status until each chunk completes')
     .option('--poll-timeout <ms>', 'polling timeout in ms per chunk', '60000')

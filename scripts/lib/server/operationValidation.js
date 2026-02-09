@@ -134,15 +134,18 @@
         },
 
         /**
-         * Find duplicate relationship in model snapshot
+         * Find duplicate relationship in model snapshot.
+         * For access-relationships, also compares accessType.
+         * For influence-relationships, also compares strength.
          * @param {Object} modelSnapshot - Model snapshot with relationships array
          * @param {string} sourceId - Source element ID
          * @param {string} targetId - Target element ID
          * @param {string} type - Relationship type
+         * @param {Object} [extraProps] - Additional properties to match (accessType, strength)
          * @returns {Object|null} Existing relationship or null
          * @private
          */
-        _findDuplicateRelationship: function(modelSnapshot, sourceId, targetId, type) {
+        _findDuplicateRelationship: function(modelSnapshot, sourceId, targetId, type, extraProps) {
             if (!modelSnapshot || !modelSnapshot.relationships) {
                 return null;
             }
@@ -150,6 +153,18 @@
             for (var i = 0; i < modelSnapshot.relationships.length; i++) {
                 var rel = modelSnapshot.relationships[i];
                 if (rel.source === sourceId && rel.target === targetId && rel.type === type) {
+                    // For access-relationships, differentiate by accessType
+                    if (type === "access-relationship" && extraProps && extraProps.accessType !== undefined) {
+                        if (rel.accessType !== undefined && rel.accessType !== extraProps.accessType) {
+                            continue; // Different accessType — not a duplicate
+                        }
+                    }
+                    // For influence-relationships, differentiate by strength
+                    if (type === "influence-relationship" && extraProps && extraProps.strength !== undefined) {
+                        if (rel.strength !== undefined && rel.strength !== extraProps.strength) {
+                            continue; // Different strength — not a duplicate
+                        }
+                    }
                     return rel;
                 }
             }
@@ -407,11 +422,15 @@
 
             // Check for duplicate in existing model
             if (modelSnapshot) {
+                var extraProps = {};
+                if (change.accessType !== undefined) extraProps.accessType = change.accessType;
+                if (change.strength !== undefined) extraProps.strength = change.strength;
                 var existing = this._findDuplicateRelationship(
                     modelSnapshot,
                     resolvedSourceId,
                     resolvedTargetId,
-                    change.type
+                    change.type,
+                    extraProps
                 );
                 if (existing) {
                     throw this.createValidationError(
@@ -428,6 +447,18 @@
                     if (created.sourceId === resolvedSourceId &&
                         created.targetId === resolvedTargetId &&
                         created.type === change.type) {
+                        // For access-relationships, differentiate by accessType
+                        if (change.type === "access-relationship" &&
+                            change.accessType !== undefined && created.accessType !== undefined &&
+                            change.accessType !== created.accessType) {
+                            continue; // Different accessType — not a duplicate
+                        }
+                        // For influence-relationships, differentiate by strength
+                        if (change.type === "influence-relationship" &&
+                            change.strength !== undefined && created.strength !== undefined &&
+                            change.strength !== created.strength) {
+                            continue; // Different strength — not a duplicate
+                        }
                         throw this.createValidationError(
                             "Change " + index + " (createRelationship): relationship of type '" + change.type +
                             "' from '" + resolvedSourceId + "' to '" + resolvedTargetId +
@@ -435,12 +466,14 @@
                         );
                     }
                 }
-                // Track this relationship creation
+                // Track this relationship creation (include accessType/strength for intra-batch checks)
                 batchContext.createdRelationships.push({
                     sourceId: resolvedSourceId,
                     targetId: resolvedTargetId,
                     type: change.type,
-                    tempId: change.tempId || null
+                    tempId: change.tempId || null,
+                    accessType: change.accessType,
+                    strength: change.strength
                 });
             }
         },

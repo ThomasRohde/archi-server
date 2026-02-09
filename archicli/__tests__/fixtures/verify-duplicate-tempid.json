@@ -1,0 +1,18 @@
+{
+  "version": "1.0",
+  "description": "Invalid BOM: two elements share the same tempId",
+  "changes": [
+    {
+      "op": "createElement",
+      "type": "business-actor",
+      "name": "First Actor",
+      "tempId": "dup-id"
+    },
+    {
+      "op": "createElement",
+      "type": "business-role",
+      "name": "Second Role",
+      "tempId": "dup-id"
+    }
+  ]
+}

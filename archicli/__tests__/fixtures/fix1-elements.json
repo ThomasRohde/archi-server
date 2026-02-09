@@ -1,0 +1,66 @@
+{
+  "version": "1.0",
+  "description": "Fix1 prerequisite: 10 business-layer elements for relationship stress test",
+  "changes": [
+    {
+      "op": "createElement",
+      "type": "business-process",
+      "name": "Fix1 Element 1",
+      "tempId": "fix1-e1"
+    },
+    {
+      "op": "createElement",
+      "type": "business-service",
+      "name": "Fix1 Element 2",
+      "tempId": "fix1-e2"
+    },
+    {
+      "op": "createElement",
+      "type": "business-actor",
+      "name": "Fix1 Element 3",
+      "tempId": "fix1-e3"
+    },
+    {
+      "op": "createElement",
+      "type": "business-role",
+      "name": "Fix1 Element 4",
+      "tempId": "fix1-e4"
+    },
+    {
+      "op": "createElement",
+      "type": "business-object",
+      "name": "Fix1 Element 5",
+      "tempId": "fix1-e5"
+    },
+    {
+      "op": "createElement",
+      "type": "business-process",
+      "name": "Fix1 Element 6",
+      "tempId": "fix1-e6"
+    },
+    {
+      "op": "createElement",
+      "type": "business-service",
+      "name": "Fix1 Element 7",
+      "tempId": "fix1-e7"
+    },
+    {
+      "op": "createElement",
+      "type": "business-actor",
+      "name": "Fix1 Element 8",
+      "tempId": "fix1-e8"
+    },
+    {
+      "op": "createElement",
+      "type": "business-role",
+      "name": "Fix1 Element 9",
+      "tempId": "fix1-e9"
+    },
+    {
+      "op": "createElement",
+      "type": "business-object",
+      "name": "Fix1 Element 10",
+      "tempId": "fix1-e10"
+    }
+  ]
+}

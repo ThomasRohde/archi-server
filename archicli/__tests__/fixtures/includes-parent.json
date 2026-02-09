@@ -1,0 +1,22 @@
+{
+  "version": "1.0",
+  "description": "Parent BOM: includes child BOM and adds relationships",
+  "includes": [
+    "includes-child.json"
+  ],
+  "changes": [
+    {
+      "op": "createElement",
+      "type": "business-actor",
+      "name": "Parent Actor",
+      "tempId": "inc-actor"
+    },
+    {
+      "op": "createRelationship",
+      "type": "serving-relationship",
+      "sourceId": "inc-app",
+      "targetId": "inc-actor",
+      "tempId": "inc-rel"
+    }
+  ]
+}

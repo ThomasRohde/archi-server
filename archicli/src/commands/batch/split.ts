@@ -49,7 +49,7 @@ export function batchSplitCommand(): Command {
           return;
         }
 
-        const sizeRaw = options.chunkSize ?? options.size ?? '100';
+        const sizeRaw = options.chunkSize ?? options.size ?? '20';
         if (options.size !== undefined && options.chunkSize === undefined) {
           process.stderr.write(
             'warning: --size is deprecated and will be removed in a future release; use --chunk-size instead\n'
