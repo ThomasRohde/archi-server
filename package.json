@@ -4,6 +4,9 @@
   "description": "Test suite for ArchiMate Model API Server",
   "type": "module",
   "private": true,
+  "workspaces": [
+    "archicli"
+  ],
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
