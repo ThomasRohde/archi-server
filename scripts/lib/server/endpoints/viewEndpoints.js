@@ -41,6 +41,38 @@
         return id;
     }
 
+    function safeViewpointId(viewpointObj) {
+        if (!viewpointObj) return null;
+        try {
+            var id = viewpointObj.getId ? viewpointObj.getId() : null;
+            return normalizeViewpointId(id);
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function safeViewpointName(viewpointObj) {
+        if (!viewpointObj) return null;
+        try {
+            var name = viewpointObj.getName ? viewpointObj.getName() : null;
+            if (name === null || name === undefined) return null;
+            var str = String(name).trim();
+            return str.length > 0 ? str : null;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function safeViewpointString(viewpointObj) {
+        if (!viewpointObj) return null;
+        try {
+            var str = String(viewpointObj).trim();
+            return str.length > 0 ? str : null;
+        } catch (e) {
+            return null;
+        }
+    }
+
     function getViewpointById(viewpointId) {
         var normalizedId = normalizeViewpointId(viewpointId);
         if (!normalizedId) return null;
@@ -51,7 +83,7 @@
             var allVPs = ViewpointManagerClass.INSTANCE.getAllViewpoints();
             for (var i = 0; i < allVPs.size(); i++) {
                 var candidate = allVPs.get(i);
-                var candidateId = normalizeViewpointId(candidate.getId ? candidate.getId() : null);
+                var candidateId = safeViewpointId(candidate);
                 if (candidateId === normalizedId) return candidate;
             }
         } catch (e) {
@@ -79,18 +111,26 @@
             if (!vp) return null;
             if (typeof vp === "string") return normalizeViewpointId(vp);
 
-            var id = vp.getId ? vp.getId() : null;
-            var normalizedId = normalizeViewpointId(id);
+            var normalizedId = safeViewpointId(vp);
             if (normalizedId) return normalizedId;
+
+            var vpName = safeViewpointName(vp);
+            var vpString = safeViewpointString(vp);
 
             // Fallback: scan all viewpoints for identity match
             var allVPs = ViewpointManagerClass.INSTANCE.getAllViewpoints();
             for (var i = 0; i < allVPs.size(); i++) {
                 var candidate = allVPs.get(i);
-                var candidateId = normalizeViewpointId(candidate.getId ? candidate.getId() : null);
+                var candidateId = safeViewpointId(candidate);
                 if (!candidateId) continue;
                 if (candidate === vp) return candidateId;
                 if (candidate.equals && candidate.equals(vp)) return candidateId;
+
+                var candidateName = safeViewpointName(candidate);
+                if (vpName && candidateName && candidateName === vpName) return candidateId;
+
+                var candidateString = safeViewpointString(candidate);
+                if (vpString && candidateString && candidateString === vpString) return candidateId;
             }
         } catch (e) {
             // ignore

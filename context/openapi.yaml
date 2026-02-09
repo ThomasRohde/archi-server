@@ -328,6 +328,45 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /ops/list:
+    get:
+      tags:
+        - Operations
+      summary: List recent operations
+      description: |
+        Returns recent async operations queued via `/model/apply`, sorted by newest first.
+      operationId: getOpsList
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          description: Maximum number of operations to return (1-200, default 20)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 20
+        - name: status
+          in: query
+          required: false
+          description: Optional status filter
+          schema:
+            type: string
+            enum: [queued, processing, complete, error]
+      responses:
+        '200':
+          description: Operation list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OperationListResponse'
+        '400':
+          description: Invalid query parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /scripts/run:
     post:
       tags:
@@ -938,7 +977,7 @@ components:
               type: integer
             views:
               type: integer
-        sample:
+        elements:
           type: array
           items:
             $ref: '#/components/schemas/ElementSummary'
@@ -1505,6 +1544,37 @@ components:
           type: string
           nullable: true
           description: Error message (when status is error)
+        errorDetails:
+          type: object
+          nullable: true
+          description: Structured context for failed operations (when status is error)
+          properties:
+            message:
+              type: string
+            opIndex:
+              type: integer
+              description: Zero-based index in /changes array
+            opNumber:
+              type: integer
+              description: One-based operation number for human-readable output
+            path:
+              type: string
+              description: JSON pointer-like location (e.g. /changes/2)
+            op:
+              type: string
+              description: Operation type (e.g. addToView)
+            field:
+              type: string
+              description: Field involved in the failure context
+            reference:
+              type: string
+              description: Unresolved id/tempId value when detected
+            hint:
+              type: string
+              description: Short remediation hint
+            change:
+              type: object
+              description: Original change payload for the failing operation (best effort)
         message:
           type: string
           nullable: true
@@ -1523,6 +1593,50 @@ components:
           type: integer
           nullable: true
           description: Duration in milliseconds (included for both complete and error status)
+
+    OperationSummary:
+      type: object
+      properties:
+        operationId:
+          type: string
+        status:
+          type: string
+          enum: [queued, processing, complete, error]
+        createdAt:
+          type: string
+          format: date-time
+          nullable: true
+        startedAt:
+          type: string
+          format: date-time
+          nullable: true
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+        durationMs:
+          type: integer
+          nullable: true
+        changeCount:
+          type: integer
+        error:
+          type: string
+          nullable: true
+
+    OperationListResponse:
+      type: object
+      properties:
+        operations:
+          type: array
+          items:
+            $ref: '#/components/schemas/OperationSummary'
+        total:
+          type: integer
+        limit:
+          type: integer
+        status:
+          type: string
+          nullable: true
 
     ErrorResponse:
       type: object
@@ -1553,6 +1667,10 @@ components:
         propertyValue:
           type: string
           description: Property value to match (used with propertyKey)
+        includeRelationships:
+          type: boolean
+          default: true
+          description: Include relationships in result set (default true)
         limit:
           type: integer
           default: 100
@@ -1568,9 +1686,25 @@ components:
         total:
           type: integer
           description: Total number of matching items
-        limit:
-          type: integer
-          description: Limit applied to results
+        criteria:
+          type: object
+          properties:
+            type:
+              type: string
+              nullable: true
+            namePattern:
+              type: string
+              nullable: true
+            propertyKey:
+              type: string
+              nullable: true
+            propertyValue:
+              type: string
+              nullable: true
+            includeRelationships:
+              type: boolean
+            limit:
+              type: integer
 
     SearchResult:
       type: object
@@ -1583,6 +1717,20 @@ components:
           type: string
         documentation:
           type: string
+        sourceId:
+          type: string
+          nullable: true
+        targetId:
+          type: string
+          nullable: true
+        matchedPropertyKey:
+          type: string
+          nullable: true
+          description: Property key that matched the search filter
+        matchedPropertyValue:
+          type: string
+          nullable: true
+          description: Property value that matched the search filter
         kind:
           type: string
           enum: [element, relationship]
@@ -1987,10 +2135,10 @@ components:
           type: string
           nullable: true
           description: ArchiMate viewpoint (e.g., "application_cooperation")
-        elementCount:
+        objectCount:
           type: integer
           nullable: true
-          description: Number of visual elements in view
+          description: Number of visual objects in view
         connectionCount:
           type: integer
           nullable: true
@@ -2031,6 +2179,14 @@ components:
         viewType:
           type: string
           description: Type of the created view
+        viewpoint:
+          type: string
+          nullable: true
+          description: Viewpoint ID if specified
+        documentation:
+          type: string
+          nullable: true
+          description: Documentation if specified
         durationMs:
           type: integer
           description: Creation duration in milliseconds
@@ -2130,7 +2286,8 @@ components:
           type: string
           nullable: true
           description: |
-            Absolute file path for output. If omitted, a temporary file is created.
+            Absolute or relative file path for output. Relative paths resolve from server process working directory.
+            If omitted, a temporary file is created.
             Parent directories are created automatically.
         scale:
           type: number

@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import { isAbsolute } from 'path';
+import { resolve } from 'path';
 import { post } from '../../utils/api';
 import { ArgumentValidationError, parseBoundedFloat, parseNonNegativeInt } from '../../utils/args';
 import { isCommanderError } from '../../utils/commander';
@@ -14,7 +14,7 @@ export function viewExportCommand(): Command {
     )
     .argument('<id>', 'view ID to export')
     .option('-f, --format <format>', 'image format: PNG, JPEG, or JPG', 'PNG')
-    .option('-o, --file <path>', 'absolute output file path (temp file if omitted)')
+    .option('-o, --file <path>', 'output file path (relative paths resolved from current directory)')
     .option('-s, --scale <n>', 'image scale factor (0.5 to 4)')
     .option('-m, --margin <n>', 'margin in pixels')
     .action(async (id: string, options: { format: string; file?: string; scale?: string; margin?: string }, cmd: Command) => {
@@ -26,11 +26,6 @@ export function viewExportCommand(): Command {
           cmd.error('', { exitCode: 1 });
           return;
         }
-        if (options.file && !isAbsolute(options.file)) {
-          print(failure('INVALID_PATH', `Output path must be absolute (got: "${options.file}"). Example: C:\\path\\to\\image.png`));
-          cmd.error('', { exitCode: 1 });
-          return;
-        }
         const scale = options.scale !== undefined
           ? parseBoundedFloat(options.scale, '--scale', 0.5, 4.0)
           : undefined;
@@ -39,7 +34,7 @@ export function viewExportCommand(): Command {
           : undefined;
 
         const body: Record<string, unknown> = { format: fmt };
-        if (options.file) body['outputPath'] = options.file;
+        if (options.file) body['outputPath'] = resolve(process.cwd(), options.file);
         if (scale !== undefined) body['scale'] = scale;
         if (margin !== undefined) body['margin'] = margin;
 

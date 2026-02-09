@@ -8,7 +8,7 @@
  * Endpoint modules:
  *   - healthEndpoints: /health, /test, /shutdown
  *   - modelEndpoints: /model/query, /model/plan, /model/apply
- *   - operationEndpoints: /ops/status
+ *   - operationEndpoints: /ops/status, /ops/list
  *   - scriptEndpoints: /scripts/run
  *
  * @module server/apiEndpoints
@@ -73,6 +73,9 @@
         // Operation status endpoints
         handleOpStatus: function(request, response, serverState) {
             return operationEndpoints.handleOpStatus(request, response, serverState);
+        },
+        handleOpList: function(request, response, serverState) {
+            return operationEndpoints.handleOpList(request, response, serverState);
         },
 
         // Script execution endpoint

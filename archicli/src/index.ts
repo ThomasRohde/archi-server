@@ -6,6 +6,7 @@ import { batchCommand } from './commands/batch/index';
 import { modelCommand } from './commands/model/index';
 import { viewCommand } from './commands/view/index';
 import { opsCommand } from './commands/ops/index';
+import { completionCommand } from './commands/completion';
 
 export function createProgram(): Command {
   const program = new Command();
@@ -28,6 +29,7 @@ export function createProgram(): Command {
         'KEY CONCEPTS:\n' +
         '  ASYNC MUTATIONS: /model/apply is async — returns operationId immediately.\n' +
         '    Always use --poll or "ops status <id>" to confirm success before proceeding.\n' +
+        '    If operation IDs are lost, use "ops list" to recover recent ones.\n' +
         '  TEMPIDS: Assign friendly names (e.g. "my-server") to new elements in BOM files.\n' +
         '    The server maps these to real Archi IDs. Later operations in the same batch\n' +
         '    can reference earlier tempIds directly (e.g. in sourceId/targetId).\n' +
@@ -69,7 +71,8 @@ export function createProgram(): Command {
     .addCommand(batchCommand())
     .addCommand(modelCommand())
     .addCommand(viewCommand())
-    .addCommand(opsCommand());
+    .addCommand(opsCommand())
+    .addCommand(completionCommand());
 
   return program;
 }

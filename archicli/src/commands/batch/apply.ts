@@ -6,6 +6,7 @@ import { post } from '../../utils/api';
 import { ArgumentValidationError, parsePositiveInt } from '../../utils/args';
 import { findDuplicateTempIds, loadBom, loadIdFilesWithDiagnostics } from '../../utils/bom';
 import { isCommanderError } from '../../utils/commander';
+import { getConfig } from '../../utils/config';
 import { print, success, failure } from '../../utils/output';
 import { pollUntilDone, type OperationErrorDetails } from '../../utils/poll';
 import { collectTempIdRefs, resolveTempIdsByName, substituteIds } from '../../utils/tempIds';
@@ -14,6 +15,14 @@ interface ApplyResponse {
   operationId: string;
   status: string;
   message?: string;
+}
+
+export function resolveIdsOutputPath(file: string, saveIdsOption?: string | boolean): string {
+  const sourceFile = resolve(file);
+  if (typeof saveIdsOption === 'string') {
+    return resolve(saveIdsOption);
+  }
+  return resolve(dirname(sourceFile), basename(sourceFile, extname(sourceFile)) + '.ids.json');
 }
 
 function buildChunkFailureMessage(results: Array<Record<string, unknown>>): string {
@@ -59,6 +68,61 @@ function buildChunkFailureMessage(results: Array<Record<string, unknown>>): stri
       return `Chunk ${chunkNo}/${chunkOf}: ${context}${message}${ref}${hintText}`;
     })
     .join(' | ');
+}
+
+function summarizeBatchOutputForText(
+  output: Record<string, unknown>,
+  results: Array<Record<string, unknown>>
+): Record<string, unknown> {
+  const complete = results.filter((r) => r.status === 'complete').length;
+  const failed = results.filter((r) => r.status === 'error').length;
+  const inFlight = results.length - complete - failed;
+  const idFiles = (output['idFiles'] ?? null) as
+    | {
+        loaded?: number;
+        missing?: unknown[];
+        malformed?: unknown[];
+      }
+    | null;
+
+  const summarizedResults = results.map((result) => {
+    const details = (result.errorDetails ?? null) as OperationErrorDetails | null;
+    const summary: Record<string, unknown> = {
+      chunk: result.chunk,
+      of: result.of,
+      operationId: result.operationId,
+      status: result.status,
+    };
+    if (typeof result.durationMs === 'number') summary['durationMs'] = result.durationMs;
+    if (typeof result.error === 'string') summary['error'] = result.error;
+    if (details && typeof details === 'object') {
+      if (details.path) summary['path'] = details.path;
+      if (details.hint) summary['hint'] = details.hint;
+    }
+    return summary;
+  });
+
+  const summary: Record<string, unknown> = {
+    totalChanges: output['totalChanges'],
+    chunks: output['chunks'],
+    chunkStatus: {
+      complete,
+      error: failed,
+      inFlight,
+    },
+    idFiles: {
+      loaded: idFiles?.loaded ?? 0,
+      missing: Array.isArray(idFiles?.missing) ? idFiles?.missing.length : 0,
+      malformed: Array.isArray(idFiles?.malformed) ? idFiles?.malformed.length : 0,
+    },
+    results: summarizedResults,
+  };
+
+  if (typeof output['warning'] === 'string') {
+    summary['warning'] = output['warning'];
+  }
+
+  return summary;
 }
 
 export function batchApplyCommand(): Command {
@@ -249,10 +313,7 @@ export function batchApplyCommand(): Command {
 
           const shouldSave = options.saveIds !== false;
           if (shouldSave && options.poll && Object.keys(tempIdMap).length > 0) {
-            const idsPath =
-              typeof options.saveIds === 'string'
-                ? resolve(options.saveIds)
-                : resolve(dirname(resolve(file)), basename(file, extname(file)) + '.ids.json');
+            const idsPath = resolveIdsOutputPath(file, options.saveIds);
             writeFileSync(idsPath, JSON.stringify(tempIdMap, null, 2));
           }
 
@@ -267,14 +328,18 @@ export function batchApplyCommand(): Command {
           }
 
           if (hadOperationErrors) {
+            const failureDetails =
+              getConfig().output === 'text' ? summarizeBatchOutputForText(output, results) : output;
             print(
-              failure('BATCH_APPLY_PARTIAL_FAILURE', buildChunkFailureMessage(results), output)
+              failure('BATCH_APPLY_PARTIAL_FAILURE', buildChunkFailureMessage(results), failureDetails)
             );
             cmd.error('', { exitCode: 1 });
             return;
           }
 
-          print(success(output));
+          const successData =
+            getConfig().output === 'text' ? summarizeBatchOutputForText(output, results) : output;
+          print(success(successData));
         } catch (err) {
           if (isCommanderError(err)) throw err;
           if (err instanceof ArgumentValidationError) {

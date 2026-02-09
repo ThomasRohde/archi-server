@@ -261,6 +261,129 @@ describe('Model Apply Endpoint', () => {
     });
   });
 
+  describe('GET /ops/list', () => {
+    it('lists recent operations', async () => {
+      const response = await httpClient.get('/ops/list');
+
+      expectSuccessResponse(response);
+      expect(response.body).toHaveProperty('operations');
+      expect(response.body).toHaveProperty('total');
+      expect(response.body).toHaveProperty('limit');
+      expect(Array.isArray(response.body.operations)).toBe(true);
+    });
+
+    it('supports filtering by status', async () => {
+      const name = generateUniqueName('OpsListActor');
+      const createResponse = await httpClient.post('/model/apply', createApplyRequest([
+        createElementPayload('business-actor', name, { tempId: 'temp-op-list' })
+      ]));
+      const opId = createResponse.body.operationId;
+      const createResult = await waitForOperation(opId);
+      const idMap = buildIdMap(createResult.result);
+      createdElementIds.push(idMap['temp-op-list']);
+
+      const response = await httpClient.get('/ops/list?status=complete&limit=50');
+
+      expectSuccessResponse(response);
+      expect(Array.isArray(response.body.operations)).toBe(true);
+      expect(response.body.operations.some(op => op.operationId === opId)).toBe(true);
+    });
+
+    it('rejects invalid status filter', async () => {
+      const response = await httpClient.get('/ops/list?status=invalid-status');
+
+      expectErrorResponse(response, 400);
+      expect(response.body.error.message).toContain('status');
+    });
+  });
+
+  describe('Search and element/view linkage', () => {
+    it('reports views containing an element after addToView', async () => {
+      const elementName = generateUniqueName('ElementWithView');
+      const createElementResponse = await httpClient.post('/model/apply', createApplyRequest([
+        createElementPayload('application-component', elementName, { tempId: 'temp-el-view' })
+      ]));
+      const createElementResult = await waitForOperation(createElementResponse.body.operationId);
+      const elementIdMap = buildIdMap(createElementResult.result);
+      const elementId = elementIdMap['temp-el-view'];
+      createdElementIds.push(elementId);
+
+      const createViewResponse = await httpClient.post('/views', {
+        name: generateUniqueName('ElementView')
+      });
+      expectSuccessResponse(createViewResponse);
+      const viewId = createViewResponse.body.viewId;
+
+      try {
+        const addToViewResponse = await httpClient.post('/model/apply', createApplyRequest([
+          {
+            op: 'addToView',
+            viewId,
+            elementId,
+            x: 100,
+            y: 100
+          }
+        ]));
+        const addToViewResult = await waitForOperation(addToViewResponse.body.operationId);
+        expect(addToViewResult.status).toBe('complete');
+
+        const elementResponse = await httpClient.get(`/model/element/${elementId}`);
+        expectSuccessResponse(elementResponse);
+        expect(Array.isArray(elementResponse.body.views)).toBe(true);
+        expect(elementResponse.body.views.some(view => view.id === viewId)).toBe(true);
+      } finally {
+        await httpClient.del(`/views/${viewId}`);
+      }
+    });
+
+    it('supports includeRelationships=false and returns matched property details', async () => {
+      const sourceName = generateUniqueName('SearchSource');
+      const targetName = generateUniqueName('SearchTarget');
+      const payload = createApplyRequest([
+        createElementPayload('business-actor', sourceName, { tempId: 'temp-search-source' }),
+        createElementPayload('application-component', targetName, { tempId: 'temp-search-target' }),
+        createRelationshipPayload('serving-relationship', 'temp-search-source', 'temp-search-target', {
+          tempId: 'temp-search-rel'
+        }),
+        {
+          op: 'setProperty',
+          id: 'temp-search-target',
+          key: 'status',
+          value: 'active'
+        }
+      ]);
+
+      const applyResponse = await httpClient.post('/model/apply', payload);
+      const applyResult = await waitForOperation(applyResponse.body.operationId);
+      const idMap = buildIdMap(applyResult.result);
+      createdElementIds.push(idMap['temp-search-source'], idMap['temp-search-target']);
+
+      const noRelationshipResponse = await httpClient.post('/model/search', {
+        namePattern: '^Search',
+        includeRelationships: false,
+        limit: 200
+      });
+      expectSuccessResponse(noRelationshipResponse);
+      expect(Array.isArray(noRelationshipResponse.body.results)).toBe(true);
+      expect(
+        noRelationshipResponse.body.results.every(result => !String(result.type || '').includes('relationship'))
+      ).toBe(true);
+
+      const propertySearchResponse = await httpClient.post('/model/search', {
+        propertyKey: 'status',
+        propertyValue: 'active',
+        namePattern: `^${targetName}$`,
+        limit: 10
+      });
+      expectSuccessResponse(propertySearchResponse);
+      expect(Array.isArray(propertySearchResponse.body.results)).toBe(true);
+      expect(propertySearchResponse.body.results.length).toBeGreaterThan(0);
+      const first = propertySearchResponse.body.results[0];
+      expect(first.matchedPropertyKey).toBe('status');
+      expect(first.matchedPropertyValue).toBe('active');
+    });
+  });
+
   describe('Duplicate Detection', () => {
     describe('Element Duplicates', () => {
       it('rejects duplicate element with same name and type', async () => {

@@ -38,8 +38,8 @@ describe('Model Query Endpoint', () => {
       const response = await httpClient.post('/model/query', {});
 
       expectSuccessResponse(response);
-      expect(response.body).toHaveProperty('sample');
-      expect(Array.isArray(response.body.sample)).toBe(true);
+      expect(response.body).toHaveProperty('elements');
+      expect(Array.isArray(response.body.elements)).toBe(true);
     });
 
     it('respects limit parameter', async () => {
@@ -47,11 +47,11 @@ describe('Model Query Endpoint', () => {
       const response = await httpClient.post('/model/query', { limit });
 
       expectSuccessResponse(response);
-      expect(response.body).toHaveProperty('sample');
-      expect(Array.isArray(response.body.sample)).toBe(true);
+      expect(response.body).toHaveProperty('elements');
+      expect(Array.isArray(response.body.elements)).toBe(true);
 
-      if (response.body.sample.length > 0) {
-        expect(response.body.sample.length).toBeLessThanOrEqual(limit);
+      if (response.body.elements.length > 0) {
+        expect(response.body.elements.length).toBeLessThanOrEqual(limit);
       }
     });
 
@@ -60,8 +60,8 @@ describe('Model Query Endpoint', () => {
 
       expectSuccessResponse(response);
 
-      if (response.body.sample && response.body.sample.length > 0) {
-        const element = response.body.sample[0];
+      if (response.body.elements && response.body.elements.length > 0) {
+        const element = response.body.elements[0];
 
         expect(element).toHaveProperty('id');
         expect(element).toHaveProperty('type');
@@ -81,7 +81,7 @@ describe('Model Query Endpoint', () => {
     it('handles query with very large limit', async () => {
       const response = await httpClient.post('/model/query', { limit: 10000 });
       expectSuccessResponse(response);
-      expect(Array.isArray(response.body.sample)).toBe(true);
+      expect(Array.isArray(response.body.elements)).toBe(true);
     });
   });
 });

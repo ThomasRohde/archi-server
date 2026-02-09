@@ -158,7 +158,12 @@
               "op": { "type": "string" },
               "name": { "type": "string", "minLength": 1 },
               "tempId": { "type": "string", "description": "Temporary ID for cross-referencing within the same batch" },
-              "documentation": { "type": "string" }
+              "documentation": { "type": "string" },
+              "viewpoint": {
+                "type": "string",
+                "pattern": "^[a-z0-9_]+$",
+                "description": "ArchiMate viewpoint ID (e.g., application_cooperation)"
+              }
             },
             "additionalProperties": false
           },

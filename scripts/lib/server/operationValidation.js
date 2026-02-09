@@ -782,6 +782,20 @@
                     "Change " + index + " (createView): missing 'name' field"
                 );
             }
+            if (change.viewpoint !== undefined) {
+                if (typeof change.viewpoint !== "string" || String(change.viewpoint).trim().length === 0) {
+                    throw this.createValidationError(
+                        "Change " + index + " (createView): 'viewpoint' must be a non-empty string when provided"
+                    );
+                }
+                var viewpointValue = String(change.viewpoint).trim();
+                if (viewpointValue.indexOf("@") !== -1 || !/^[a-z0-9_]+$/.test(viewpointValue)) {
+                    throw this.createValidationError(
+                        "Change " + index + " (createView): invalid viewpoint format '" + change.viewpoint + "'"
+                    );
+                }
+                change.viewpoint = viewpointValue;
+            }
         },
 
         /**

@@ -64,10 +64,8 @@ describe('View Endpoints', () => {
       const response = await httpClient.post('/views', { name });
 
       expectSuccessResponse(response);
-      expect(response.body).toHaveProperty('success');
       expect(response.body).toHaveProperty('viewId');
       expect(response.body).toHaveProperty('viewName');
-      expect(response.body.success).toBe(true);
       expect(response.body.viewName).toBe(name);
 
       createdViewIds.push(response.body.viewId);
@@ -80,9 +78,30 @@ describe('View Endpoints', () => {
       const response = await httpClient.post('/views', { name, documentation });
 
       expectSuccessResponse(response);
-      expect(response.body.success).toBe(true);
 
       createdViewIds.push(response.body.viewId);
+    });
+
+    it('round-trips viewpoint on create/get/list', async () => {
+      const name = generateUniqueName('ViewpointView');
+      const viewpoint = 'application_cooperation';
+
+      const createResponse = await httpClient.post('/views', { name, viewpoint });
+      expectSuccessResponse(createResponse);
+      expect(createResponse.body.viewpoint).toBe(viewpoint);
+
+      const viewId = createResponse.body.viewId;
+      createdViewIds.push(viewId);
+
+      const getResponse = await httpClient.get(`/views/${viewId}`);
+      expectSuccessResponse(getResponse);
+      expect(getResponse.body.viewpoint).toBe(viewpoint);
+
+      const listResponse = await httpClient.get('/views');
+      expectSuccessResponse(listResponse);
+      const listed = listResponse.body.views.find(view => view.id === viewId);
+      expect(listed).toBeDefined();
+      expect(listed.viewpoint).toBe(viewpoint);
     });
 
     it('rejects missing name field', async () => {
@@ -227,11 +246,9 @@ describe('View Endpoints', () => {
       });
 
       expectSuccessResponse(response);
-      expect(response.body).toHaveProperty('success');
       expect(response.body).toHaveProperty('filePath');
       expect(response.body).toHaveProperty('format');
       expect(response.body).toHaveProperty('fileSizeBytes');
-      expect(response.body.success).toBe(true);
       expect(response.body.format).toBe('PNG');
       expect(response.body.fileSizeBytes).toBeGreaterThan(0);
     });

@@ -128,6 +128,7 @@
                 }
                 
                 // Property filter
+                var matchedPropertyValue = null;
                 if (propertyKey) {
                     var props = element.getProperties();
                     var found = false;
@@ -136,6 +137,7 @@
                         if (prop.getKey() === propertyKey) {
                             if (propertyValue === null || prop.getValue() === propertyValue) {
                                 found = true;
+                                matchedPropertyValue = prop.getValue();
                                 break;
                             }
                         }
@@ -155,6 +157,11 @@
                 if (element instanceof IArchimateRelationship) {
                     result.sourceId = element.getSource() ? element.getSource().getId() : null;
                     result.targetId = element.getTarget() ? element.getTarget().getId() : null;
+                }
+
+                if (propertyKey) {
+                    result.matchedPropertyKey = propertyKey;
+                    result.matchedPropertyValue = matchedPropertyValue;
                 }
                 
                 results.push(result);
@@ -232,6 +239,30 @@
         }
     }
 
+    function extractConceptIdFromVisualObject(visual) {
+        if (!visual) return null;
+
+        try {
+            if (typeof visual.getArchimateElement === "function") {
+                var concept = visual.getArchimateElement();
+                if (concept && concept.getId) return concept.getId();
+            }
+        } catch (e1) {
+            // ignore
+        }
+
+        try {
+            if (typeof visual.getArchimateConcept === "function") {
+                var concept2 = visual.getArchimateConcept();
+                if (concept2 && concept2.getId) return concept2.getId();
+            }
+        } catch (e2) {
+            // ignore
+        }
+
+        return null;
+    }
+
     /**
      * Get views containing an element
      * @param {Object} model - IArchimateModel
@@ -245,7 +276,7 @@
             var elements = folder.getElements();
             for (var i = 0; i < elements.size(); i++) {
                 var item = elements.get(i);
-                if (item instanceof IArchimateDiagramModel) {
+                if (item && typeof item.getChildren === "function") {
                     if (viewContainsElement(item, elementId)) {
                         views.push({
                             id: item.getId(),
@@ -269,18 +300,14 @@
     }
 
     function viewContainsElement(view, elementId) {
-        var IDiagramModelArchimateObject = Java.type("com.archimatetool.model.IDiagramModelArchimateObject");
-        
         function searchChildren(container) {
+            if (!container || typeof container.getChildren !== "function") return false;
             var children = container.getChildren();
             for (var i = 0; i < children.size(); i++) {
                 var child = children.get(i);
-                if (child instanceof IDiagramModelArchimateObject) {
-                    var concept = child.getArchimateElement();
-                    if (concept && concept.getId() === elementId) {
-                        return true;
-                    }
-                }
+                var conceptId = extractConceptIdFromVisualObject(child);
+                if (conceptId && conceptId === elementId) return true;
+
                 if (typeof child.getChildren === 'function') {
                     if (searchChildren(child)) return true;
                 }

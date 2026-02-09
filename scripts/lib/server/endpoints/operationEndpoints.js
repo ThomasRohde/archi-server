@@ -1,7 +1,7 @@
 /**
  * operationEndpoints.js - Async operation status tracking endpoints
  *
- * Handles polling for status of queued asynchronous operations.
+ * Handles polling and listing for queued asynchronous operations.
  *
  * @module server/endpoints/operationEndpoints
  * @requires server/operationQueue
@@ -85,6 +85,70 @@
                     startedAt: operation.startedAt
                 };
             }
+        },
+
+        /**
+         * Handle GET /ops/list - List recent operations
+         * @param {Object} request - HTTP request object with optional query.limit and query.status
+         * @param {Object} response - HTTP response object
+         * @param {Object} serverState - Server state object (unused)
+         */
+        handleOpList: function(request, response, serverState) {
+            var query = request.query || {};
+            var limitRaw = query.limit;
+            var statusRaw = query.status;
+
+            var limit = 20;
+            if (limitRaw !== undefined && limitRaw !== null && String(limitRaw).trim() !== "") {
+                limit = parseInt(String(limitRaw), 10);
+                if (!isFinite(limit) || limit < 1) {
+                    response.statusCode = 400;
+                    response.body = {
+                        error: {
+                            code: "BadRequest",
+                            message: "Invalid 'limit' query parameter. Must be an integer >= 1"
+                        }
+                    };
+                    return;
+                }
+                if (limit > 200) {
+                    response.statusCode = 400;
+                    response.body = {
+                        error: {
+                            code: "BadRequest",
+                            message: "Invalid 'limit' query parameter. Must be <= 200"
+                        }
+                    };
+                    return;
+                }
+            }
+
+            var status = null;
+            if (statusRaw !== undefined && statusRaw !== null && String(statusRaw).trim() !== "") {
+                status = String(statusRaw).trim().toLowerCase();
+                if (status !== "queued" && status !== "processing" && status !== "complete" && status !== "error") {
+                    response.statusCode = 400;
+                    response.body = {
+                        error: {
+                            code: "BadRequest",
+                            message: "Invalid 'status' query parameter. Valid values: queued, processing, complete, error"
+                        }
+                    };
+                    return;
+                }
+            }
+
+            var listResult = operationQueue.listOperations({
+                limit: limit,
+                status: status || undefined
+            });
+
+            response.body = {
+                operations: listResult.operations,
+                total: listResult.total,
+                limit: listResult.limit,
+                status: listResult.status
+            };
         }
     };
 

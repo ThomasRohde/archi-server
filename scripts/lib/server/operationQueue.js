@@ -390,6 +390,64 @@
         },
 
         /**
+         * List recent operations with optional filtering.
+         * @param {Object} options - Listing options
+         * @param {number} [options.limit=20] - Maximum number of operations to return
+         * @param {string} [options.status] - Optional status filter
+         * @returns {Object} { operations, total, limit, status }
+         */
+        listOperations: function(options) {
+            options = options || {};
+            var limit = typeof options.limit === "number" ? options.limit : 20;
+            if (!isFinite(limit) || limit <= 0) limit = 20;
+            if (limit > 200) limit = 200;
+
+            var statusFilter = typeof options.status === "string" ? options.status : null;
+            var operations = [];
+
+            for (var opId in this.pendingOperations) {
+                if (!this.pendingOperations.hasOwnProperty(opId)) continue;
+                var op = this.pendingOperations[opId];
+                if (!op) continue;
+                if (statusFilter && op.status !== statusFilter) continue;
+
+                var durationMs = null;
+                if (op.completedAt && op.startedAt) {
+                    durationMs = new Date(op.completedAt).getTime() - new Date(op.startedAt).getTime();
+                }
+
+                operations.push({
+                    operationId: op.id,
+                    status: op.status,
+                    createdAt: op.createdAt || null,
+                    startedAt: op.startedAt || null,
+                    completedAt: op.completedAt || null,
+                    durationMs: durationMs,
+                    changeCount: op.changes && op.changes.length ? op.changes.length : 0,
+                    error: op.error || null
+                });
+            }
+
+            operations.sort(function(a, b) {
+                var ta = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+                var tb = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+                return tb - ta;
+            });
+
+            var total = operations.length;
+            if (operations.length > limit) {
+                operations = operations.slice(0, limit);
+            }
+
+            return {
+                operations: operations,
+                total: total,
+                limit: limit,
+                status: statusFilter || null
+            };
+        },
+
+        /**
          * Get count of queued operations
          * @returns {number} Number of operations in queue
          */

@@ -60,8 +60,11 @@ export function validate(schema: KnownSchema, data: unknown): ValidationResult {
 export function detectSchema(data: unknown): KnownSchema | undefined {
   if (typeof data !== 'object' || data === null) return undefined;
   const obj = data as Record<string, unknown>;
-  // BOM has 'version' field = "1.0" and either 'changes' or 'includes'
-  if (obj['version'] === '1.0' && (Array.isArray(obj['changes']) || Array.isArray(obj['includes']))) {
+  // BOM has 'version' field = "1.0" and at least one of 'changes', 'includes', or 'idFiles'
+  if (
+    obj['version'] === '1.0' &&
+    (Array.isArray(obj['changes']) || Array.isArray(obj['includes']) || Array.isArray(obj['idFiles']))
+  ) {
     return 'bom';
   }
   return undefined;

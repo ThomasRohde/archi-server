@@ -35,6 +35,7 @@
  *   POST /model/save              - Save model to disk
  *   GET  /model/element/{id}      - Get element details
  *   GET  /ops/status?opId=...     - Poll operation status
+ *   GET  /ops/list                - List recent operations
  *   GET  /folders                 - List model folders
  *   GET  /views                   - List views
  *   POST /views                   - Create view (async)
@@ -398,6 +399,9 @@ function routeModelEndpoint(req, res, state, apiEndpoints) {
                 })
                 .addHandler("/ops/status", "GET", function(req, res) {
                     apiEndpoints.handleOpStatus(req, res, state);
+                })
+                .addHandler("/ops/list", "GET", function(req, res) {
+                    apiEndpoints.handleOpList(req, res, state);
                 })
                 .addHandler("/scripts/run", "POST", function(req, res) {
                     apiEndpoints.handleScriptRun(req, res, state, __DIR__);

@@ -782,6 +782,60 @@
     }
 
     /**
+     * Normalize viewpoint identifier.
+     * @param {string} value - Raw viewpoint ID
+     * @returns {string|null} Normalized viewpoint ID or null
+     */
+    function normalizeViewpointId(value) {
+        if (value === null || value === undefined) return null;
+        var id = String(value).trim();
+        if (!id) return null;
+        if (id.indexOf("@") !== -1) return null;
+        if (!/^[a-z0-9_]+$/.test(id)) return null;
+        return id;
+    }
+
+    /**
+     * Resolve viewpoint object by ID.
+     * @param {string} viewpointId - Viewpoint ID
+     * @returns {{id: string|null, viewpoint: Object|null}} Resolved viewpoint and canonical ID
+     */
+    function resolveViewpointById(viewpointId) {
+        var normalizedId = normalizeViewpointId(viewpointId);
+        if (!normalizedId) {
+            return { id: null, viewpoint: null };
+        }
+
+        try {
+            var ViewpointManager = Java.type("com.archimatetool.model.viewpoints.ViewpointManager");
+            var manager = ViewpointManager.INSTANCE;
+
+            var direct = manager.getViewpoint(normalizedId);
+            if (direct) {
+                return { id: normalizedId, viewpoint: direct };
+            }
+
+            var allVPs = manager.getAllViewpoints();
+            for (var i = 0; i < allVPs.size(); i++) {
+                var candidate = allVPs.get(i);
+                var candidateId = null;
+                try {
+                    candidateId = normalizeViewpointId(candidate.getId ? candidate.getId() : null);
+                } catch (ignoreIdErr) {
+                    candidateId = null;
+                }
+                if (candidateId === normalizedId) {
+                    return { id: candidateId, viewpoint: candidate };
+                }
+            }
+        } catch (e) {
+            return { id: normalizedId, viewpoint: null };
+        }
+
+        return { id: normalizedId, viewpoint: null };
+    }
+
+    /**
      * Execute batch operations (single undo/redo)
      * @param {Object} model - IArchimateModel
      * @param {string} label - Label for undo menu (e.g., "Create Team Structure")
@@ -2268,15 +2322,23 @@
                 if (operation.documentation) {
                     newView.setDocumentation(operation.documentation);
                 }
-                if (operation.viewpoint) {
+                var viewpointId = null;
+                if (operation.viewpoint !== undefined && operation.viewpoint !== null && String(operation.viewpoint).trim() !== "") {
+                    viewpointId = normalizeViewpointId(operation.viewpoint);
+                    if (!viewpointId) {
+                        throw new Error("createView: invalid viewpoint format: " + operation.viewpoint);
+                    }
+
+                    var viewpointResolution = resolveViewpointById(viewpointId);
+                    if (!viewpointResolution || !viewpointResolution.viewpoint) {
+                        throw new Error("createView: unknown viewpoint: " + viewpointId);
+                    }
+                    viewpointId = viewpointResolution.id || viewpointId;
+
                     try {
-                        var ViewpointManager = Java.type("com.archimatetool.model.viewpoints.ViewpointManager");
-                        var vp = ViewpointManager.INSTANCE.getViewpoint(operation.viewpoint);
-                        if (vp) {
-                            newView.setViewpoint(vp);
-                        }
-                    } catch (vpErr) {
-                        // Ignore viewpoint errors — unsupported viewpoint ID is a no-op
+                        newView.setViewpoint(viewpointId);
+                    } catch (setVpErr) {
+                        throw new Error("createView: failed to set viewpoint '" + viewpointId + "': " + setVpErr);
                     }
                 }
 
@@ -2322,7 +2384,7 @@
                     tempId: operation.tempId || null,
                     viewId: newView.getId(),
                     viewName: newView.getName(),
-                    viewpoint: operation.viewpoint || null,
+                    viewpoint: viewpointId,
                     documentation: newView.getDocumentation ? newView.getDocumentation() : null
                 });
             }

@@ -51,14 +51,27 @@ export function modelSearchCommand(): Command {
         'EXAMPLES:\n' +
         '  archicli model search --type application-component\n' +
         '  archicli model search --name ".*Server.*"\n' +
-        '  archicli model search --property-key status --property-value active'
+        '  archicli model search --property-key status --property-value active\n' +
+        '  archicli model search --name ".*Service.*" --no-relationships'
     )
     .option('-t, --type <type>', 'filter by ArchiMate element or relationship type')
     .option('-n, --name <pattern>', 'regex pattern to match element names (e.g. ".*API.*")')
     .option('-k, --property-key <key>', 'filter by property key')
     .option('-V, --property-value <value>', 'filter by property value (used with --property-key)')
+    .option('--no-relationships', 'exclude relationship concepts from results')
     .option('-l, --limit <n>', 'max results to return', '100')
-    .action(async (options: { type?: string; name?: string; propertyKey?: string; propertyValue?: string; limit: string }, cmd: Command) => {
+    .action(
+      async (
+        options: {
+          type?: string;
+          name?: string;
+          propertyKey?: string;
+          propertyValue?: string;
+          relationships?: boolean;
+          limit: string;
+        },
+        cmd: Command
+      ) => {
       try {
         const limit = parsePositiveInt(options.limit, '--limit');
         const body: Record<string, unknown> = {
@@ -79,6 +92,7 @@ export function modelSearchCommand(): Command {
         }
         if (options.propertyKey) body['propertyKey'] = options.propertyKey;
         if (options.propertyValue && options.propertyKey) body['propertyValue'] = options.propertyValue;
+        if (options.relationships === false) body['includeRelationships'] = false;
 
         const data = await post('/model/search', body);
         print(success(warning ? { ...data as object, warning } : data));

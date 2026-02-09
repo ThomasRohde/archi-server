@@ -77,9 +77,11 @@ npm link          # makes `archicli` available globally
 archicli health                                  # verify server is running
 archicli model query                             # inspect the model
 archicli model search --type application-component
+archicli model search --name ".*Service.*" --no-relationships
 archicli verify changes.json                     # validate a BOM file
 archicli batch apply changes.json --poll         # apply and wait for results
 archicli view create "Application Overview" --viewpoint application_cooperation
+archicli ops list                                # list recent operation IDs
 ```
 
 ### Bill of Materials (BOM) files
@@ -104,12 +106,18 @@ Example:
   "changes": [
     { "op": "createElement", "type": "application-component", "name": "My Server", "tempId": "my-server" },
     { "op": "setProperty", "id": "my-server", "key": "status", "value": "active" },
-    { "op": "createRelationship", "type": "serving-relationship", "sourceId": "my-server", "targetId": "other-element" }
+    { "op": "createRelationship", "type": "serving-relationship", "sourceId": "my-server", "targetId": "other-element" },
+    { "op": "createView", "name": "Application Overview", "tempId": "app-view", "viewpoint": "application_cooperation" }
   ]
 }
 ```
 
 After `--poll` completes, `changes.ids.json` is written containing all tempId→realId mappings for use in subsequent BOM files.
+You can choose a custom output path with `--save-ids <path>`, for example:
+
+```bash
+archicli batch apply changes.json --poll --save-ids out/my-mappings.ids.json
+```
 
 If you run `batch apply` without `--poll`, requests are still submitted, but completion is not tracked and ID mappings are not saved. The CLI prints a warning in that mode.
 
@@ -137,10 +145,28 @@ archicli view list                   List all views
 archicli view get <id>               View detail with visual object IDs
 archicli view create <name> [options] Create view (invalid --viewpoint values are rejected)
 archicli view export <id>            Export view as PNG/JPEG
+archicli ops list                    List recent async operations
 archicli ops status <opId> --poll    Poll async operation to completion
+archicli completion <shell>          Generate completion script (bash|zsh|fish|pwsh)
 ```
 
 Use `archicli view create --help` for the full valid viewpoint list and examples.
+
+### Shell completions
+
+```bash
+# Bash
+archicli --output text completion bash > ~/.local/share/bash-completion/completions/archicli
+
+# Zsh
+archicli --output text completion zsh > ~/.zfunc/_archicli
+
+# Fish
+archicli --output text completion fish > ~/.config/fish/completions/archicli.fish
+
+# PowerShell
+archicli --output text completion pwsh > archicli-completion.ps1
+```
 
 In `--output json` mode, command/usage errors (unknown command/flag, missing args, invalid global options) are emitted as JSON envelopes.
 
@@ -248,7 +274,7 @@ The server exposes a comprehensive REST API:
 - `GET /health` - Server health and diagnostics
 - `POST /model/query` - Query model elements/relationships
 - `POST /model/apply` - Modify model (create, update, delete)
-- `POST /model/search` - Search by name, type, or properties
+- `POST /model/search` - Search by name, type, or properties (`includeRelationships` supported)
 
 ### View Management
 - `GET /views` - List all views
@@ -256,13 +282,14 @@ The server exposes a comprehensive REST API:
 - `GET /views/{id}` - Get view details with all elements
 - `DELETE /views/{id}` - Delete view
 - `POST /views/{id}/layout` - Apply Dagre layout
-- `POST /views/{id}/export` - Export as PNG/SVG
+- `POST /views/{id}/export` - Export as PNG/JPEG
 
 ### Script Execution
 - `POST /scripts/run` - Execute custom JArchi code
 
 ### Administration
 - `GET /ops/status?opId=...` - Check operation status
+- `GET /ops/list` - List recent operations
 - `POST /model/save` - Save model to disk
 - `POST /shutdown` - Gracefully stop server
 
