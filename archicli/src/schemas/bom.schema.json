@@ -177,6 +177,7 @@
               "properties": {
                 "op": { "type": "string" },
                 "name": { "type": "string", "minLength": 1 },
+                "tempId": { "type": "string", "description": "Temporary ID for cross-referencing within the same batch" },
                 "parentId": { "type": "string", "description": "ID of the parent folder" },
                 "parentType": { "type": "string", "description": "Type of the parent folder (e.g. application, business)" }
               },

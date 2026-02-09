@@ -210,8 +210,10 @@ export function toYamlString(value: unknown): string {
 function formatTable(rows: Record<string, unknown>[], indent = ''): string {
   if (rows.length === 0) return `${indent}(empty)`;
   const keys = Object.keys(rows[0]);
+  const wideMode = getConfig().wide;
 
   const columnLimitFor = (key: string): number => {
+    if (wideMode) return 120;
     const lower = key.toLowerCase();
     const numericColumn = rows.every((row) =>
       row[key] === null || row[key] === undefined || typeof row[key] === 'number'

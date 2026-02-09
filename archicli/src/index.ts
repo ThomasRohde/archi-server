@@ -48,12 +48,14 @@ export function createProgram(): Command {
     .option('--output <format>', 'output format: json, text, or yaml', 'json')
     .option('-q, --quiet', 'suppress non-essential success output')
     .option('-v, --verbose', 'enable verbose HTTP logging')
+    .option('-w, --wide', 'disable column truncation in text output tables')
     .hook('preAction', (_thisCommand, actionCommand) => {
       const opts = actionCommand.optsWithGlobals<{
         baseUrl: string;
         output: string;
         quiet?: boolean;
         verbose?: boolean;
+        wide?: boolean;
       }>();
       if (!['json', 'text', 'yaml'].includes(opts.output)) {
         actionCommand.error(`Unknown output format '${opts.output}'. Valid formats: json, text, yaml`);
@@ -63,6 +65,7 @@ export function createProgram(): Command {
         output: opts.output as 'json' | 'text' | 'yaml',
         quiet: opts.quiet ?? false,
         verbose: opts.verbose ?? false,
+        wide: opts.wide ?? false,
       });
     });
 

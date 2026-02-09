@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import { post } from '../../utils/api';
+import { get, post } from '../../utils/api';
 import { ArgumentValidationError, parsePositiveInt } from '../../utils/args';
 import { isCommanderError } from '../../utils/commander';
 import { print, success, failure } from '../../utils/output';
@@ -11,14 +11,16 @@ export function modelQueryCommand(): Command {
         'Use this as your first command to understand what is in the model.\n' +
         'For targeted lookup use "model search" (by type/name) or "model element <id>".\n\n' +
         'Use --show-relationships to include a relationship sample.\n' +
-        'Use --relationship-limit to control the relationship sample size.'
+        'Use --relationship-limit to control the relationship sample size.\n' +
+        'Use --show-views to include a list of views.'
     )
     .option('-l, --limit <n>', 'number of elements to return', '10')
     .option('--show-relationships', 'include a sample of relationships in the response')
     .option('--relationship-limit <n>', 'number of relationships to return when --show-relationships is set')
+    .option('--show-views', 'include a list of views in the response')
     .action(
       async (
-        options: { limit: string; showRelationships?: boolean; relationshipLimit?: string },
+        options: { limit: string; showRelationships?: boolean; relationshipLimit?: string; showViews?: boolean },
         cmd: Command
       ) => {
       try {
@@ -30,7 +32,11 @@ export function modelQueryCommand(): Command {
             : limit;
           body['relationshipLimit'] = relationshipLimit;
         }
-        const data = await post('/model/query', body);
+        const data = await post('/model/query', body) as Record<string, unknown>;
+        if (options.showViews) {
+          const views = await get('/views');
+          data['views'] = views;
+        }
         print(success(data));
       } catch (err) {
         if (isCommanderError(err)) throw err;

@@ -54,6 +54,12 @@ export function parseDuplicateExistingChangeIndex(message: string): number | nul
   return value;
 }
 
+export function parseExistingIdFromError(message: string): string | null {
+  if (!/already exists/i.test(message)) return null;
+  const match = message.match(/\(id:\s*(\S+)\)\s*$/);
+  return match ? match[1] : null;
+}
+
 function buildChunkFailureMessage(results: Array<Record<string, unknown>>): string {
   const failed = results.filter((r) => r.status === 'error');
   if (failed.length === 0) return 'One or more chunks failed';
@@ -201,6 +207,10 @@ export function batchApplyCommand(): Command {
       '--skip-existing',
       'on duplicate create validation errors, skip only the duplicate change and continue'
     )
+    .option(
+      '--allow-empty',
+      'allow empty BOMs to succeed (exit 0) instead of failing'
+    )
     .action(
       async (
         file: string,
@@ -213,6 +223,7 @@ export function batchApplyCommand(): Command {
           resolveNames?: boolean;
           allowIncompleteIdfiles?: boolean;
           skipExisting?: boolean;
+          allowEmpty?: boolean;
         },
         cmd: Command
       ) => {
@@ -367,6 +378,14 @@ export function batchApplyCommand(): Command {
                     if (!op.startsWith('create')) {
                       throw err;
                     }
+                    // Propagate existing real ID into tempId map so downstream ops can reference it
+                    const skippedTempId = (skipped.change as { tempId?: string }).tempId;
+                    if (skippedTempId) {
+                      const existingRealId = parseExistingIdFromError(err.message);
+                      if (existingRealId) {
+                        tempIdMap[skippedTempId] = existingRealId;
+                      }
+                    }
                     pendingOps.splice(duplicateIndex, 1);
                     skippedOperations.push({
                       chunk: i + 1,
@@ -450,8 +469,13 @@ export function batchApplyCommand(): Command {
             results,
           };
           if (allChanges.length === 0) {
-            output['warning'] = 'Empty BOM — no changes were applied';
-          }
+            output['warning'] = 'Empty BOM — no changes were applied';            if (!options.allowEmpty) {
+              print(
+                failure('EMPTY_BOM', 'Empty BOM \u2014 no changes to apply. Use --allow-empty to permit this.')
+              );
+              cmd.error('', { exitCode: 1 });
+              return;
+            }          }
 
           if (hadOperationErrors) {
             const failureDetails =

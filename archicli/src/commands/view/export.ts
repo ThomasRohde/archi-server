@@ -3,6 +3,7 @@ import { resolve } from 'path';
 import { post } from '../../utils/api';
 import { ArgumentValidationError, parseBoundedFloat, parseNonNegativeInt } from '../../utils/args';
 import { isCommanderError } from '../../utils/commander';
+import { getConfig } from '../../utils/config';
 import { print, success, failure } from '../../utils/output';
 
 export function viewExportCommand(): Command {
@@ -55,6 +56,13 @@ export function viewExportCommand(): Command {
         if (margin !== undefined) body['margin'] = margin;
 
         const data = await post(`/views/${encodeURIComponent(id)}/export`, body);
+        if (getConfig().output === 'text') {
+          const result = data as Record<string, unknown>;
+          if (typeof result.filePath === 'string') {
+            console.log(result.filePath);
+            return;
+          }
+        }
         print(success(data));
       } catch (err) {
         if (isCommanderError(err)) throw err;

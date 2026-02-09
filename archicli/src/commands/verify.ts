@@ -10,6 +10,7 @@ import {
   type IdFileDiagnostics,
 } from '../utils/bom';
 import { isCommanderError } from '../utils/commander';
+import { getConfig } from '../utils/config';
 import { print, success, failure } from '../utils/output';
 import { REFERENCE_ID_FIELDS, resolveTempIdsByName } from '../utils/tempIds';
 
@@ -262,10 +263,12 @@ export function verifyCommand(): Command {
             return;
           }
 
+          let bomOpCount = 0;
           if (schema === 'bom') {
             let loaded;
             try {
               loaded = loadBom(resolvedFile);
+              bomOpCount = loaded.changes.length;
             } catch (err) {
               print(failure('INVALID_BOM', String(err)));
               cmd.error('', { exitCode: 1 });
@@ -327,6 +330,10 @@ export function verifyCommand(): Command {
                 return;
               }
 
+              if (getConfig().output === 'text') {
+                console.log(`\u2713 ${file} is valid (${schema} schema, semantic, ${semanticResult.checkedOperations} ops checked, ${semanticResult.idFilesLoaded} idFiles loaded)`);
+                return;
+              }
               print(
                 success({
                   file,
@@ -343,6 +350,11 @@ export function verifyCommand(): Command {
             }
           }
 
+          if (getConfig().output === 'text') {
+            const opCount = bomOpCount > 0 ? `, ${bomOpCount} operations` : '';
+            console.log(`\u2713 ${file} is valid (${schema} schema${opCount})`);
+            return;
+          }
           print(success({ file, schema, valid: true }));
         } catch (err) {
           if (isCommanderError(err)) throw err;

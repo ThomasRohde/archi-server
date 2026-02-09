@@ -5,6 +5,7 @@ export interface Config {
   verbose: boolean;
   output: 'json' | 'text' | 'yaml';
   quiet: boolean;
+  wide: boolean;
 }
 
 let _config: Config = {
@@ -12,6 +13,7 @@ let _config: Config = {
   verbose: false,
   output: 'json',
   quiet: false,
+  wide: false,
 };
 
 export function setConfig(overrides: Partial<Config>): void {

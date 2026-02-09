@@ -15,7 +15,7 @@ export function batchSplitCommand(): Command {
         '--chunk-size is the preferred flag name. --size remains as a deprecated alias.'
     )
     .argument('<file>', 'path to source BOM JSON file')
-    .option('-c, --chunk-size <n>', 'operations per chunk file', '100')
+    .option('-c, --chunk-size <n>', 'operations per chunk file')
     .option('-s, --size <n>', 'deprecated alias for --chunk-size')
     .option('-o, --output-dir <dir>', 'directory for chunk files (default: <basename>-parts/)')
     .action(
