@@ -49,12 +49,23 @@ export function print(response: CLIResponse): void {
 function formatTable(rows: Record<string, unknown>[], indent = ''): string {
   if (rows.length === 0) return `${indent}(empty)`;
   const keys = Object.keys(rows[0]);
+
+  // Helper to convert cell values to strings, handling objects/arrays
+  const cellToString = (val: unknown): string => {
+    if (val === null || val === undefined) return '';
+    if (Array.isArray(val)) return `<array[${val.length}]>`;
+    if (typeof val === 'object') return '<object>';
+    return String(val);
+  };
+
   const widths = keys.map((k) =>
-    Math.max(k.length, ...rows.map((r) => String(r[k] ?? '').length))
+    Math.max(k.length, ...rows.map((r) => cellToString(r[k]).length))
   );
   const header = keys.map((k, i) => k.toUpperCase().padEnd(widths[i])).join('  ');
   const sep = widths.map((w) => '-'.repeat(w)).join('  ');
-  const body = rows.map((r) => keys.map((k, i) => String(r[k] ?? '').padEnd(widths[i])).join('  '));
+  const body = rows.map((r) =>
+    keys.map((k, i) => cellToString(r[k]).padEnd(widths[i])).join('  ')
+  );
   return [indent + header, indent + sep, ...body.map((b) => indent + b)].join('\n');
 }
 

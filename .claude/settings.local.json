@@ -15,7 +15,10 @@
       "Bash(node archicli/dist/cli.js batch apply:*)",
       "Bash(node archicli/dist/cli.js health:*)",
       "Bash(archicli view:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(node dist/index.js batch apply:*)"
     ]
   }
 }

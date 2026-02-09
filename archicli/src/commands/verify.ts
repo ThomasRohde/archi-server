@@ -125,8 +125,17 @@ function validateBomSemantics(file: string): SemanticResult {
       const refValue = operation[field];
       if (typeof refValue !== 'string' || isRealId(refValue)) continue;
 
-      // Only validate values that are known tempIds (declared in BOM or preloaded via idFiles).
-      if (!declaredTempIds.has(refValue) && idFileMap[refValue] === undefined) continue;
+      // Check if this is an unknown reference (not declared, not in idFiles, not a real ID).
+      if (!declaredTempIds.has(refValue) && idFileMap[refValue] === undefined) {
+        errors.push({
+          path: `/changes/${opIndex}/${field}`,
+          message: `Change ${opIndex} (${opName}): '${field}' references unknown tempId '${refValue}'`,
+          hint: `This tempId is not declared in the BOM, not in idFiles, and not a valid real ID (format: id-...).`,
+        });
+        continue;
+      }
+
+      // Check if the tempId is declared but not yet available (forward reference).
       if (availableTempIds.has(refValue)) continue;
 
       const declared = declaredTempIds.get(refValue);

@@ -38,7 +38,11 @@ export function loadBom(filePath: string): LoadedBom {
   // Resolve includes recursively
   if (Array.isArray(bom.includes)) {
     for (const inc of bom.includes) {
-      const child = loadBom(resolve(dir, inc));
+      const includePath = resolve(dir, inc);
+      if (!existsSync(includePath)) {
+        throw new Error(`Include file not found: ${inc} (resolved to: ${includePath})`);
+      }
+      const child = loadBom(includePath);
       changes.push(...child.changes);
       idFilePaths.push(...child.idFilePaths);
     }
@@ -242,7 +246,18 @@ export function batchApplyCommand(): Command {
 
           // Load and flatten all changes (resolving includes), collect idFiles
           const { changes: allChanges, idFilePaths } = loadBom(file);
-          const chunkSize = Math.min(1000, Math.max(1, parseInt(options.chunkSize, 10) || 100));
+
+          // Validate chunk-size option
+          const chunkSizeNum = parseInt(options.chunkSize, 10);
+          if (isNaN(chunkSizeNum) || chunkSizeNum < 1) {
+            print(failure('INVALID_ARGUMENT', `--chunk-size must be a positive integer, got '${options.chunkSize}'`));
+            cmd.error('', { exitCode: 1 });
+            return;
+          }
+          const chunkSize = Math.min(1000, chunkSizeNum);
+          if (chunkSizeNum > 1000) {
+            console.warn(`Warning: --chunk-size capped at maximum of 1000 (requested ${chunkSizeNum})`);
+          }
           const chunks: unknown[][] = [];
           for (let i = 0; i < allChanges.length; i += chunkSize) {
             chunks.push(allChanges.slice(i, i + chunkSize));

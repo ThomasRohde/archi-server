@@ -25,6 +25,16 @@ export function viewExportCommand(): Command {
           cmd.error('', { exitCode: 1 });
           return;
         }
+        // Validate scale option
+        if (options.scale) {
+          const scale = parseFloat(options.scale);
+          if (isNaN(scale) || scale < 0.5 || scale > 4.0) {
+            print(failure('INVALID_ARGUMENT', `--scale must be between 0.5 and 4.0, got '${options.scale}'`));
+            cmd.error('', { exitCode: 1 });
+            return;
+          }
+        }
+
         const body: Record<string, unknown> = { format: fmt };
         if (options.file) body['outputPath'] = options.file;
         if (options.scale) body['scale'] = parseFloat(options.scale);
