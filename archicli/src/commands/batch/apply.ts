@@ -197,7 +197,7 @@ export function batchApplyCommand(): Command {
         '  # recovers their real IDs, and continues with remaining ops'
     )
     .argument('<file>', 'path to BOM JSON file')
-    .option('-c, --chunk-size <n>', 'operations per API request (max 1000, default 20 for safety)', '20')
+    .option('-c, --chunk-size <n>', 'operations per API request (max 1000, default 10 for safety)', '10')
     .option('--dry-run', 'validate BOM and show what would be submitted, without applying')
     .option('--poll', 'poll /ops/status until each chunk completes')
     .option('--poll-timeout <ms>', 'polling timeout in ms per chunk', '60000')
@@ -229,6 +229,10 @@ export function batchApplyCommand(): Command {
       '--continue-on-error',
       'continue processing independent chunks when a chunk fails'
     )
+    .option(
+      '--safe',
+      'safe mode: chunk-size 1 with verification for maximum reliability'
+    )
     .action(
       async (
         file: string,
@@ -245,6 +249,7 @@ export function batchApplyCommand(): Command {
           layout?: boolean;
           rankdir: string;
           continueOnError?: boolean;
+          safe?: boolean;
         },
         cmd: Command
       ) => {
@@ -284,6 +289,16 @@ export function batchApplyCommand(): Command {
             );
             cmd.error('', { exitCode: 1 });
             return;
+          }
+
+          // --safe mode: override chunk-size to 1 for maximum reliability
+          if (options.safe) {
+            options.chunkSize = '1';
+            if (!options.poll) {
+              options.poll = true;
+              process.stderr.write('Safe mode: enabling --poll for verification\n');
+            }
+            process.stderr.write('Safe mode: using chunk-size 1\n');
           }
 
           const chunkSizeInput = parsePositiveInt(options.chunkSize, '--chunk-size');

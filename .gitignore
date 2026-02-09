@@ -55,3 +55,6 @@ build/
 coverage/
 .nyc_output/
 archimate-plugin/
+
+# Test output artifacts (auto-generated ID mappings)
+**/__tests__/fixtures/*.ids.json

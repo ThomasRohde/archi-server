@@ -58,7 +58,7 @@
             maxOpsPerCycle: 10,         // Maximum operations to process per cycle
             cleanupInterval: 100,       // Cleanup every N cycles (~5 seconds)
             maxOperationAge: 3600000,   // Max age for completed operations (1 hour)
-            maxSubCommandsPerBatch: 100, // Max GEF sub-commands per CompoundCommand (~20 relationships)
+            maxSubCommandsPerBatch: 50, // Max GEF sub-commands per CompoundCommand (lowered from 100 per R8)
             postExecuteVerify: true,    // Verify created objects exist after command execution
             snapshotRefreshDelayMs: 100 // Delay before snapshot refresh to allow async rollback to settle
         },

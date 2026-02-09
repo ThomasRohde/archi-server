@@ -1021,8 +1021,9 @@
     function executeBatch(model, label, operations, batchConfig) {
         // Merge config: caller overrides > serverConfig > defaults
         var config = {
-            maxSubCommandsPerBatch: 100,
-            postExecuteVerify: true
+            maxSubCommandsPerBatch: 50,
+            postExecuteVerify: true,
+            granularity: null // R2: "per-operation" to execute each op as its own CompoundCommand
         };
         if (typeof serverConfig !== "undefined" && serverConfig.operations) {
             if (serverConfig.operations.maxSubCommandsPerBatch !== undefined) {
@@ -1039,6 +1040,9 @@
             if (batchConfig.postExecuteVerify !== undefined) {
                 config.postExecuteVerify = batchConfig.postExecuteVerify;
             }
+            if (batchConfig.granularity !== undefined) {
+                config.granularity = batchConfig.granularity;
+            }
         }
 
         var compound = new CompoundCommand(label);
@@ -1050,16 +1054,16 @@
         var createdElementIds = [];
         var createdRelationshipIds = [];
 
-        // Track sub-command count for chunking
-        var chunkCompounds = [];   // Array of { compound, startIndex }
-        var currentChunkStart = 0;
-        var subCommandCount = 0;
+        // R1: Track operation boundaries for operation-aligned chunking
+        // Each entry is the sub-command index where a logical operation starts
+        var opBoundaries = [];
 
         // First pass: create all elements
         for (var i = 0; i < operations.length; i++) {
             var op = operations[i];
 
             if (op.op === "createElement") {
+                opBoundaries.push(compound.size()); // R1: mark operation boundary
                 var element = createElementByType(op.type);
 
                 // Set name
@@ -1120,6 +1124,8 @@
                 continue;
             }
 
+            var _opStartP2 = compound.size(); // R1: track operation boundary
+
             if (operation.op === "createRelationship") {
                 // Resolve source and target
                 var source = idMap[operation.sourceId] || findElementById(model, operation.sourceId);
@@ -1171,16 +1177,20 @@
                     compound.add(relDocCreateCmd);
                 }
 
-                // Set accessType for access relationships
+                // R4: Set accessType for access relationships using direct setter
+                // (avoids potential EMF enum mapping issues with EObjectFeatureCommand)
                 if (operation.accessType !== undefined && typeof rel.setAccessType === 'function') {
-                    var accessPkgCreate = pkg.getAccessRelationship_AccessType();
-                    var accessCmdCreate = new EObjectFeatureCommand(
-                        "Set Access Type",
-                        rel,
-                        accessPkgCreate,
-                        operation.accessType
-                    );
-                    compound.add(accessCmdCreate);
+                    (function(capturedRel, capturedAccessType) {
+                        var oldAccessType = capturedRel.getAccessType();
+                        var SetAccessCmd = Java.extend(GEFCommand, {
+                            execute: function() { capturedRel.setAccessType(capturedAccessType); },
+                            undo: function() { capturedRel.setAccessType(oldAccessType); },
+                            canExecute: function() { return true; },
+                            canUndo: function() { return true; },
+                            getLabel: function() { return "Set Access Type"; }
+                        });
+                        compound.add(new SetAccessCmd());
+                    })(rel, operation.accessType);
                 }
 
                 // Set strength for influence relationships
@@ -1215,7 +1225,9 @@
                     realId: rel.getId(),
                     type: operation.type,
                     source: source.getId(),
+                    sourceName: source.getName ? source.getName() : '',
                     target: target.getId(),
+                    targetName: target.getName ? target.getName() : '',
                     relationship: rel
                 });
 
@@ -1662,14 +1674,22 @@
                     if (sourceElemId !== relSourceId || targetElemId !== relTargetId) {
                         // Check if it's a swap (visual is reversed)
                         if (sourceElemId === relTargetId && targetElemId === relSourceId) {
-                            throw new Error(
-                                "Direction mismatch: visual source/target are swapped vs relationship. " +
-                                "Relationship: '" + (relSource.getName ? relSource.getName() : relSourceId) + "' → '" + 
-                                (relTarget.getName ? relTarget.getName() : relTargetId) + "'. " +
-                                "Visual: '" + (sourceElem.getName ? sourceElem.getName() : sourceElemId) + "' → '" + 
-                                (targetElem.getName ? targetElem.getName() : targetElemId) + "'. " +
-                                "Swap sourceVisualId and targetVisualId to match relationship direction."
-                            );
+                            // R6: Auto-swap direction if requested
+                            if (operation.autoSwapDirection) {
+                                var tmpVisual = sourceVisual;
+                                sourceVisual = targetVisual;
+                                targetVisual = tmpVisual;
+                            } else {
+                                throw new Error(
+                                    "Direction mismatch: visual source/target are swapped vs relationship. " +
+                                    "Relationship: '" + (relSource.getName ? relSource.getName() : relSourceId) + "' → '" + 
+                                    (relTarget.getName ? relTarget.getName() : relTargetId) + "'. " +
+                                    "Visual: '" + (sourceElem.getName ? sourceElem.getName() : sourceElemId) + "' → '" + 
+                                    (targetElem.getName ? targetElem.getName() : targetElemId) + "'. " +
+                                    "Swap sourceVisualId and targetVisualId to match relationship direction, " +
+                                    "or set autoSwapDirection: true."
+                                );
+                            }
                         } else {
                             throw new Error(
                                 "Direction mismatch: visual elements do not match relationship source/target. " +
@@ -2042,17 +2062,19 @@
                     relUpdated.documentation = true;
                 }
 
-                // Update accessType for access relationships
+                // R4: Update accessType for access relationships using direct setter
                 if (operation.accessType !== undefined && typeof relToUpdate.setAccessType === 'function') {
-                    var IAccessRelationship = Java.type("com.archimatetool.model.IAccessRelationship");
-                    var accessPkg = pkg.getAccessRelationship_AccessType();
-                    var accessCmd = new EObjectFeatureCommand(
-                        "Set Access Type",
-                        relToUpdate,
-                        accessPkg,
-                        operation.accessType
-                    );
-                    compound.add(accessCmd);
+                    (function(capturedRel, capturedAccessType) {
+                        var oldAccessType = capturedRel.getAccessType();
+                        var SetAccessCmd = Java.extend(GEFCommand, {
+                            execute: function() { capturedRel.setAccessType(capturedAccessType); },
+                            undo: function() { capturedRel.setAccessType(oldAccessType); },
+                            canExecute: function() { return true; },
+                            canUndo: function() { return true; },
+                            getLabel: function() { return "Set Access Type"; }
+                        });
+                        compound.add(new SetAccessCmd());
+                    })(relToUpdate, operation.accessType);
                     relUpdated.accessType = true;
                 }
 
@@ -2728,6 +2750,11 @@
                     edgesRouted: edgesRouted
                 });
             }
+
+            // R1: record boundary if this operation added sub-commands
+            if (compound.size() > _opStartP2) {
+                opBoundaries.push(_opStartP2);
+            }
         }
 
         // Third pass: delete operations — run after all creates and mutations are queued
@@ -2735,6 +2762,7 @@
         // the time the delete executes in the compound command).
         for (var p3 = 0; p3 < operations.length; p3++) {
             var op3 = operations[p3];
+            var _opStartP3 = compound.size(); // R1: track operation boundary
             if (op3.op === "deleteConnectionFromView") {
                 var viewForConnDel3 = idMap[op3.viewId] || findElementById(model, op3.viewId);
                 if (!viewForConnDel3) {
@@ -2951,32 +2979,91 @@
                 })(viewToDelete3);
                 results.push({ op: "deleteView", viewId: delViewId3, viewName: delViewName3 });
             }
+
+            // R1: record boundary if this delete added sub-commands
+            if (compound.size() > _opStartP3) {
+                opBoundaries.push(_opStartP3);
+            }
         }
 
         // --- Chunked Execution ---
+        // R1: Add sentinel boundary for operation-aligned chunking
+        opBoundaries.push(compound.size());
+
         // If the compound command exceeds the max sub-command threshold, split into
         // multiple CompoundCommands to avoid GEF/Eclipse silent rollback on large batches.
+        // R1: Splits only at operation boundaries — never mid-operation.
         var maxSubCmds = config.maxSubCommandsPerBatch;
         var totalSubCmds = compound.size();
 
         if (totalSubCmds <= maxSubCmds || maxSubCmds <= 0) {
             // Small enough — execute as single compound command (original behavior)
             executeCommand(model, compound);
-        } else {
-            // Split into chunks. We extract the sub-command list from the compound
-            // and rebuild smaller CompoundCommands.
-            var commandList = compound.getCommands(); // returns java.util.List
-            var chunkIndex = 0;
-            var cmdIndex = 0;
-            var listSize = commandList.size();
+        } else if (config.granularity === "per-operation" && opBoundaries.length > 1) {
+            // R2: Execute each operation as its own CompoundCommand for maximum isolation
+            var commandList = compound.getCommands();
+            for (var opI = 0; opI < opBoundaries.length - 1; opI++) {
+                var opStart = opBoundaries[opI];
+                var opEnd = opBoundaries[opI + 1];
+                var opChunk = new CompoundCommand(label + " [op " + (opI + 1) + "/" + (opBoundaries.length - 1) + "]");
+                for (var ci = opStart; ci < opEnd; ci++) {
+                    opChunk.add(commandList.get(ci));
+                }
 
-            while (cmdIndex < listSize) {
+                executeCommand(model, opChunk);
+
+                // Verify each operation wasn't silently rolled back
+                if (config.postExecuteVerify && createdElementIds.length + createdRelationshipIds.length > 0) {
+                    try {
+                        var Thread = Java.type("java.lang.Thread");
+                        Thread.sleep(20);
+                    } catch (sleepErr) { /* ignore */ }
+
+                    var rollbackDetected = _verifyCreatedObjects(model, createdElementIds, createdRelationshipIds);
+                    if (rollbackDetected) {
+                        throw new Error(
+                            "Silent batch rollback detected after op " + (opI + 1) +
+                            ": " + rollbackDetected.missing + " of " + rollbackDetected.total +
+                            " created objects not found. " +
+                            "Op had " + opChunk.size() + " sub-commands."
+                        );
+                    }
+                }
+            }
+        } else {
+            // R1: Operation-aligned chunking — never split mid-operation
+            var commandList = compound.getCommands();
+            var chunkIndex = 0;
+            var opIdx = 0;
+
+            while (opIdx < opBoundaries.length - 1) {
                 chunkIndex++;
                 var chunkLabel = label + " [chunk " + chunkIndex + "]";
                 var chunk = new CompoundCommand(chunkLabel);
-                var chunkEnd = Math.min(cmdIndex + maxSubCmds, listSize);
+                var chunkStartCmd = opBoundaries[opIdx];
+                var chunkEndCmd = chunkStartCmd;
+                var opsInChunk = 0;
 
-                for (var ci = cmdIndex; ci < chunkEnd; ci++) {
+                // Greedily add whole operations until adding the next would exceed threshold
+                while (opIdx < opBoundaries.length - 1) {
+                    var opEndCmd = opBoundaries[opIdx + 1];
+                    var chunkSizeIfAdded = opEndCmd - chunkStartCmd;
+
+                    if (opsInChunk > 0 && chunkSizeIfAdded > maxSubCmds) {
+                        break; // adding this op would exceed limit
+                    }
+
+                    chunkEndCmd = opEndCmd;
+                    opIdx++;
+                    opsInChunk++;
+
+                    // If a single operation exceeds the limit, still take it (forced)
+                    if (chunkSizeIfAdded > maxSubCmds) {
+                        break;
+                    }
+                }
+
+                for (var ci = chunkStartCmd; ci < chunkEndCmd; ci++) {
                     chunk.add(commandList.get(ci));
                 }
 
@@ -2997,12 +3084,10 @@
                             ": " + rollbackDetected.missing + " of " + rollbackDetected.total +
                             " created objects not found in model folders after execution. " +
                             "The GEF command stack likely rejected the CompoundCommand. " +
-                            "Chunk had " + chunk.size() + " sub-commands."
+                            "Chunk had " + chunk.size() + " sub-commands (" + opsInChunk + " operations)."
                         );
                     }
                 }
-
-                cmdIndex = chunkEnd;
             }
         }
 
@@ -3025,6 +3110,26 @@
                     "Missing IDs: " + rollback.missingIds.slice(0, 5).join(", ") +
                     (rollback.missingIds.length > 5 ? " (+" + (rollback.missingIds.length - 5) + " more)" : "")
                 );
+            }
+        }
+
+        // R3: Post-execution result refresh — re-read IDs from committed EMF objects
+        // This ensures results reflect the actual committed state, not pre-execution state.
+        // Prevents stale tempId→realId mappings if server-side chunking altered execution.
+        for (var ri = 0; ri < results.length; ri++) {
+            var r = results[ri];
+            if (r.element && typeof r.element.getId === 'function') {
+                r.realId = r.element.getId();
+                delete r.element;
+            }
+            if (r.relationship && typeof r.relationship.getId === 'function') {
+                r.realId = r.relationship.getId();
+                // Refresh source/target IDs from committed state
+                var relSrc = r.relationship.getSource ? r.relationship.getSource() : null;
+                var relTgt = r.relationship.getTarget ? r.relationship.getTarget() : null;
+                if (relSrc) r.source = relSrc.getId();
+                if (relTgt) r.target = relTgt.getId();
+                delete r.relationship;
             }
         }
 
