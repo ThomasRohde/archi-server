@@ -1,5 +1,7 @@
 import { Command } from 'commander';
 import { post } from '../../utils/api';
+import { ArgumentValidationError, parsePositiveInt } from '../../utils/args';
+import { isCommanderError } from '../../utils/commander';
 import { print, success, failure } from '../../utils/output';
 
 const VALID_TYPES = new Set([
@@ -58,11 +60,7 @@ export function modelSearchCommand(): Command {
     .option('-l, --limit <n>', 'max results to return', '100')
     .action(async (options: { type?: string; name?: string; propertyKey?: string; propertyValue?: string; limit: string }, cmd: Command) => {
       try {
-        const limit = parseInt(options.limit, 10);
-        if (isNaN(limit) || limit < 1) {
-          print(failure('INVALID_ARGUMENT', `--limit must be a positive integer, got '${options.limit}'`));
-          cmd.error('', { exitCode: 1 });
-        }
+        const limit = parsePositiveInt(options.limit, '--limit');
         const body: Record<string, unknown> = {
           limit,
         };
@@ -85,6 +83,12 @@ export function modelSearchCommand(): Command {
         const data = await post('/model/search', body);
         print(success(warning ? { ...data as object, warning } : data));
       } catch (err) {
+        if (isCommanderError(err)) throw err;
+        if (err instanceof ArgumentValidationError) {
+          print(failure(err.code, err.message));
+          cmd.error('', { exitCode: 1 });
+          return;
+        }
         print(failure('SEARCH_FAILED', String(err)));
         cmd.error('', { exitCode: 1 });
       }

@@ -2,8 +2,10 @@ import { Command } from 'commander';
 import { readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { resolve, dirname, basename, extname, join } from 'path';
 import { print, success, failure } from '../../utils/output';
+import { ArgumentValidationError, parsePositiveInt } from '../../utils/args';
+import { findDuplicateTempIds, loadBom } from '../../utils/bom';
+import { isCommanderError } from '../../utils/commander';
 import { validate } from '../../schemas/registry';
-import { loadBom } from './apply';
 
 export function batchSplitCommand(): Command {
   return new Command('split')
@@ -28,7 +30,18 @@ export function batchSplitCommand(): Command {
 
         // Flatten all changes
         const { changes: allChanges } = loadBom(file);
-        const size = Math.max(1, parseInt(options.size, 10) || 100);
+        const duplicateTempIdErrors = findDuplicateTempIds(allChanges);
+        if (duplicateTempIdErrors.length > 0) {
+          print(
+            failure('INVALID_BOM', 'Duplicate tempIds found in flattened BOM', {
+              errors: duplicateTempIdErrors,
+            })
+          );
+          cmd.error('', { exitCode: 1 });
+          return;
+        }
+
+        const size = parsePositiveInt(options.size, '--size');
 
         // Determine output directory
         const sourceAbs = resolve(file);
@@ -76,6 +89,12 @@ export function batchSplitCommand(): Command {
           })
         );
       } catch (err) {
+        if (isCommanderError(err)) throw err;
+        if (err instanceof ArgumentValidationError) {
+          print(failure(err.code, err.message));
+          cmd.error('', { exitCode: 1 });
+          return;
+        }
         print(failure('BATCH_SPLIT_FAILED', String(err)));
         cmd.error('', { exitCode: 1 });
       }

@@ -1,5 +1,6 @@
 import { Command } from 'commander';
 import { get } from '../utils/api';
+import { isCommanderError } from '../utils/commander';
 import { print, success, failure } from '../utils/output';
 
 export function healthCommand(): Command {
@@ -16,6 +17,7 @@ export function healthCommand(): Command {
         const data = await get('/health');
         print(success(data));
       } catch (err) {
+        if (isCommanderError(err)) throw err;
         print(failure('HEALTH_FAILED', String(err)));
         cmd.error('', { exitCode: 1 });
       }

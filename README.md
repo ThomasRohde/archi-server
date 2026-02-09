@@ -88,6 +88,11 @@ Changes are described in JSON BOM files. The `batch apply` command handles valid
 
 Validation is strict: unknown top-level and operation fields are rejected. For `archicli verify` auto-detection, BOM files should include `version: "1.0"` and either a `changes` array or an `includes` array.
 
+Numeric CLI options are also strict: invalid integers/floats are rejected (no silent coercion).
+Examples: `--limit 1.5`, `--chunk-size -1`, `--margin abc`.
+
+Use `archicli verify --semantic` for tempId preflight checks, and add `--resolve-names` to mirror `batch apply --resolve-names` behavior against a running server.
+
 Example:
 
 ```json
@@ -130,12 +135,14 @@ archicli batch apply <file> --poll   Apply BOM with auto-chunking + polling
 archicli batch split <file>          Split large BOM into linked chunk files
 archicli view list                   List all views
 archicli view get <id>               View detail with visual object IDs
-archicli view create <name> [options] Create view (supports --viewpoint, --folder, --documentation)
+archicli view create <name> [options] Create view (invalid --viewpoint values are rejected)
 archicli view export <id>            Export view as PNG/JPEG
 archicli ops status <opId> --poll    Poll async operation to completion
 ```
 
 Use `archicli view create --help` for the full valid viewpoint list and examples.
+
+In `--output json` mode, command/usage errors (unknown command/flag, missing args, invalid global options) are emitted as JSON envelopes.
 
 ## Project Structure
 

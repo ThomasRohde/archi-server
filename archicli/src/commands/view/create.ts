@@ -1,5 +1,6 @@
 import { Command } from 'commander';
 import { post } from '../../utils/api';
+import { isCommanderError } from '../../utils/commander';
 import { print, success, failure } from '../../utils/output';
 
 // Valid ArchiMate viewpoints (from ArchiMate 3.2 specification)
@@ -32,6 +33,7 @@ export function viewCreateCommand(): Command {
   return new Command('create')
     .description(
       'Create a new ArchiMate view in the model\n\n' +
+      'Invalid viewpoint values are rejected. Use only keys from the list below.\n\n' +
       'VALID VIEWPOINTS:\n' +
       '  Strategy:      strategy, capability, value_stream, outcome_realization\n' +
       '  Business:      organization, business_process_cooperation, product\n' +
@@ -51,11 +53,16 @@ export function viewCreateCommand(): Command {
     .action(async (name: string, options: { viewpoint?: string; folder?: string; documentation?: string }, cmd: Command) => {
       try {
         const body: Record<string, unknown> = { name };
-        let warning: string | undefined;
         if (options.viewpoint) {
           if (!VALID_VIEWPOINTS.has(options.viewpoint)) {
-            warning = `Unknown viewpoint '${options.viewpoint}'. Valid viewpoints: ${Array.from(VALID_VIEWPOINTS).sort().join(', ')}`;
-            process.stderr.write(`warning: ${warning}\n`);
+            print(
+              failure(
+                'INVALID_ARGUMENT',
+                `Unknown viewpoint '${options.viewpoint}'. Valid viewpoints: ${Array.from(VALID_VIEWPOINTS).sort().join(', ')}`
+              )
+            );
+            cmd.error('', { exitCode: 1 });
+            return;
           }
           body['viewpoint'] = options.viewpoint;
         }
@@ -63,8 +70,9 @@ export function viewCreateCommand(): Command {
         if (options.documentation) body['documentation'] = options.documentation;
 
         const data = await post('/views', body);
-        print(success(warning ? { ...data as object, warning } : data));
+        print(success(data));
       } catch (err) {
+        if (isCommanderError(err)) throw err;
         print(failure('VIEW_CREATE_FAILED', String(err)));
         cmd.error('', { exitCode: 1 });
       }

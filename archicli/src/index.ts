@@ -35,7 +35,8 @@ export function createProgram(): Command {
         '    a visual subset. Use addToView then addConnectionToView to populate views.\n' +
         '  VISUAL IDs vs CONCEPT IDs: addToView returns a visualId (diagram object ID)\n' +
         '    distinct from the element conceptId. addConnectionToView requires visual IDs.\n\n' +
-        'OUTPUT: All commands produce { success, data, metadata } JSON. Exit code 1 on error.\n' +
+        'OUTPUT: In --output json mode, all command and usage failures are JSON envelopes.\n' +
+        '  In --output text mode, usage failures are plain text. Exit code 1 on error.\n' +
         'ENV: Set ARCHI_BASE_URL to override the default server URL.'
     )
     .version('0.1.0')

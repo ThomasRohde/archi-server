@@ -32,6 +32,34 @@
     // Viewpoint manager for resolving viewpoint IDs
     var ViewpointManagerClass = Java.type("com.archimatetool.model.viewpoints.ViewpointManager");
 
+    function normalizeViewpointId(value) {
+        if (value === null || value === undefined) return null;
+        var id = String(value).trim();
+        if (!id) return null;
+        if (id.indexOf("@") !== -1) return null;
+        if (!/^[a-z0-9_]+$/.test(id)) return null;
+        return id;
+    }
+
+    function getViewpointById(viewpointId) {
+        var normalizedId = normalizeViewpointId(viewpointId);
+        if (!normalizedId) return null;
+        try {
+            var direct = ViewpointManagerClass.INSTANCE.getViewpoint(normalizedId);
+            if (direct) return direct;
+
+            var allVPs = ViewpointManagerClass.INSTANCE.getAllViewpoints();
+            for (var i = 0; i < allVPs.size(); i++) {
+                var candidate = allVPs.get(i);
+                var candidateId = normalizeViewpointId(candidate.getId ? candidate.getId() : null);
+                if (candidateId === normalizedId) return candidate;
+            }
+        } catch (e) {
+            // ignore and return null
+        }
+        return null;
+    }
+
     // EMF types for view detection
     var IArchimateDiagramModel = Java.type("com.archimatetool.model.IArchimateDiagramModel");
     var ISketchModel = Java.type("com.archimatetool.model.ISketchModel");
@@ -49,13 +77,20 @@
         try {
             var vp = view.getViewpoint();
             if (!vp) return null;
-            if (typeof vp === 'string') return vp;
+            if (typeof vp === "string") return normalizeViewpointId(vp);
+
             var id = vp.getId ? vp.getId() : null;
-            if (id && String(id).indexOf('@') === -1) return String(id);
+            var normalizedId = normalizeViewpointId(id);
+            if (normalizedId) return normalizedId;
+
             // Fallback: scan all viewpoints for identity match
             var allVPs = ViewpointManagerClass.INSTANCE.getAllViewpoints();
             for (var i = 0; i < allVPs.size(); i++) {
-                if (allVPs.get(i) === vp) return String(allVPs.get(i).getId());
+                var candidate = allVPs.get(i);
+                var candidateId = normalizeViewpointId(candidate.getId ? candidate.getId() : null);
+                if (!candidateId) continue;
+                if (candidate === vp) return candidateId;
+                if (candidate.equals && candidate.equals(vp)) return candidateId;
             }
         } catch (e) {
             // ignore
@@ -489,6 +524,31 @@
                 return;
             }
 
+            var viewpointId = null;
+            if (body.viewpoint !== undefined && body.viewpoint !== null && String(body.viewpoint).trim() !== "") {
+                viewpointId = normalizeViewpointId(body.viewpoint);
+                if (!viewpointId) {
+                    response.statusCode = 400;
+                    response.body = {
+                        error: {
+                            code: "ValidationError",
+                            message: "Invalid viewpoint format: " + body.viewpoint
+                        }
+                    };
+                    return;
+                }
+                if (!getViewpointById(viewpointId)) {
+                    response.statusCode = 400;
+                    response.body = {
+                        error: {
+                            code: "ValidationError",
+                            message: "Unknown viewpoint: " + viewpointId
+                        }
+                    };
+                    return;
+                }
+            }
+
             if (typeof loggingQueue !== "undefined" && loggingQueue) {
                 loggingQueue.log("[" + request.requestId + "] Create view: " + body.name);
             }
@@ -511,7 +571,7 @@
                     name: viewName,
                     documentation: documentation || undefined,
                     folderId: body.folderId || undefined,
-                    viewpoint: body.viewpoint || undefined
+                    viewpoint: viewpointId || undefined
                 }];
                 var results = undoableCommands.executeBatch(modelRef, "Create View: " + viewName, ops);
                 var result = results[0];
@@ -526,7 +586,7 @@
                     viewId: result.viewId,
                     viewName: result.viewName,
                     viewType: "archimate-diagram-model",
-                    viewpoint: result.viewpoint || null,
+                    viewpoint: normalizeViewpointId(result.viewpoint) || null,
                     documentation: result.documentation || null,
                     durationMs: durationMs
                 };
@@ -588,6 +648,32 @@
                 return;
             }
 
+            if (body.scale !== undefined) {
+                if (typeof body.scale !== "number" || !isFinite(body.scale) || body.scale < 0.5 || body.scale > 4.0) {
+                    response.statusCode = 400;
+                    response.body = {
+                        error: {
+                            code: "ValidationError",
+                            message: "Invalid scale: must be a number between 0.5 and 4.0"
+                        }
+                    };
+                    return;
+                }
+            }
+
+            if (body.margin !== undefined) {
+                if (typeof body.margin !== "number" || !isFinite(body.margin) || body.margin < 0 || Math.floor(body.margin) !== body.margin) {
+                    response.statusCode = 400;
+                    response.body = {
+                        error: {
+                            code: "ValidationError",
+                            message: "Invalid margin: must be a non-negative integer"
+                        }
+                    };
+                    return;
+                }
+            }
+
             if (typeof loggingQueue !== "undefined" && loggingQueue) {
                 loggingQueue.log("[" + request.requestId + "] Export view " + viewId + " as " + format);
             }
@@ -635,7 +721,7 @@
 
                 // Export using EMF-based DiagramUtils
                 var startTime = Date.now();
-                var scale = body.scale || 1.0;
+                var scale = body.scale !== undefined ? body.scale : 1.0;
                 var margin = body.margin !== undefined ? body.margin : 10;
 
                 // Use DiagramUtils to create image from diagram model

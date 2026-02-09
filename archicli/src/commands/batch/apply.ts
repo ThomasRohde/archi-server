@@ -1,150 +1,19 @@
 import { Command } from 'commander';
-import { readFileSync, writeFileSync, existsSync } from 'fs';
-import { resolve, dirname, basename, extname } from 'path';
+import { readFileSync, writeFileSync } from 'fs';
+import { basename, dirname, extname, resolve } from 'path';
+import { validate } from '../../schemas/registry';
 import { post } from '../../utils/api';
+import { ArgumentValidationError, parsePositiveInt } from '../../utils/args';
+import { findDuplicateTempIds, loadBom, loadIdFilesWithDiagnostics } from '../../utils/bom';
+import { isCommanderError } from '../../utils/commander';
 import { print, success, failure } from '../../utils/output';
 import { pollUntilDone, type OperationErrorDetails } from '../../utils/poll';
-import { validate } from '../../schemas/registry';
-
-interface BomFile {
-  version: string;
-  description?: string;
-  changes?: unknown[];
-  includes?: string[];
-  idFiles?: string[];
-}
-
-interface LoadedBom {
-  changes: unknown[];
-  idFilePaths: string[];
-}
-
-export function loadBom(filePath: string): LoadedBom {
-  const abs = resolve(filePath);
-  const content = readFileSync(abs, 'utf-8');
-  const bom = JSON.parse(content) as BomFile;
-  const dir = dirname(abs);
-
-  const changes: unknown[] = [];
-  const idFilePaths: string[] = [];
-
-  // Collect idFiles declared in this file (resolved to absolute paths)
-  if (Array.isArray(bom.idFiles)) {
-    for (const p of bom.idFiles) {
-      idFilePaths.push(resolve(dir, p));
-    }
-  }
-
-  // Resolve includes recursively
-  if (Array.isArray(bom.includes)) {
-    for (const inc of bom.includes) {
-      const includePath = resolve(dir, inc);
-      if (!existsSync(includePath)) {
-        throw new Error(`Include file not found: ${inc} (resolved to: ${includePath})`);
-      }
-      const child = loadBom(includePath);
-      changes.push(...child.changes);
-      idFilePaths.push(...child.idFilePaths);
-    }
-  }
-
-  // Append inline changes
-  if (Array.isArray(bom.changes)) {
-    changes.push(...bom.changes);
-  }
-
-  return { changes, idFilePaths };
-}
-
-/**
- * Load tempId→realId mappings from .ids.json files.
- * Missing files are silently skipped.
- */
-function loadIdFiles(paths: string[]): Record<string, string> {
-  const map: Record<string, string> = {};
-  for (const p of paths) {
-    if (existsSync(p)) {
-      try {
-        const data = JSON.parse(readFileSync(p, 'utf-8')) as Record<string, string>;
-        Object.assign(map, data);
-      } catch {
-        // ignore malformed id files
-      }
-    }
-  }
-  return map;
-}
-
-/**
- * Replace tempId references in a chunk with real IDs from the map.
- * Rewrites `id`, `sourceId`, `targetId` fields.
- */
-function substituteIds(chunk: unknown[], map: Record<string, string>): unknown[] {
-  if (Object.keys(map).length === 0) return chunk;
-  return chunk.map((op) => {
-    const o = op as Record<string, unknown>;
-    const patched: Record<string, unknown> = { ...o };
-    for (const field of [
-      'id', 'sourceId', 'targetId', 'elementId', 'viewId',
-      'relationshipId', 'sourceVisualId', 'targetVisualId',
-      'parentId', 'folderId', 'viewObjectId', 'connectionId',
-    ]) {
-      const v = o[field];
-      if (typeof v === 'string' && map[v]) patched[field] = map[v];
-    }
-    return patched;
-  });
-}
+import { collectTempIdRefs, resolveTempIdsByName, substituteIds } from '../../utils/tempIds';
 
 interface ApplyResponse {
   operationId: string;
   status: string;
   message?: string;
-}
-
-interface SearchResponse {
-  results: Array<{ id: string; name: string; type: string }>;
-}
-
-/**
- * Query the model for any tempIds not yet resolved, matching by name.
- * Populates map in-place.
- */
-async function resolveByName(
-  tempIds: string[],
-  map: Record<string, string>
-): Promise<void> {
-  for (const tempId of tempIds) {
-    if (map[tempId]) continue;
-    try {
-      const resp = await post<SearchResponse>('/model/search', { namePattern: `^${tempId}$` });
-      if (resp.results && resp.results.length > 0) {
-        map[tempId] = resp.results[0].id;
-      }
-    } catch {
-      // skip unresolvable
-    }
-  }
-}
-
-/**
- * Collect all tempId references used in a set of operations.
- */
-function collectTempIdRefs(changes: unknown[]): string[] {
-  const refs = new Set<string>();
-  for (const op of changes) {
-    const o = op as Record<string, unknown>;
-    for (const field of [
-      'id', 'sourceId', 'targetId', 'elementId', 'viewId',
-      'relationshipId', 'sourceVisualId', 'targetVisualId',
-      'parentId', 'folderId', 'viewObjectId', 'connectionId',
-    ]) {
-      const v = o[field];
-      if (typeof v === 'string') refs.add(v);
-    }
-  }
-  // Only those that look like tempIds (not real IDs starting with "id-")
-  return [...refs].filter((r) => !r.startsWith('id-'));
 }
 
 function buildChunkFailureMessage(results: Array<Record<string, unknown>>): string {
@@ -234,7 +103,6 @@ export function batchApplyCommand(): Command {
         cmd: Command
       ) => {
         try {
-          // Validate the BOM file first
           const content = readFileSync(resolve(file), 'utf-8');
           const bom = JSON.parse(content);
           const validation = validate('bom', bom);
@@ -244,24 +112,53 @@ export function batchApplyCommand(): Command {
             return;
           }
 
-          // Load and flatten all changes (resolving includes), collect idFiles
-          const { changes: allChanges, idFilePaths } = loadBom(file);
+          const { changes: allChanges, idFilePaths, includedFiles } = loadBom(file);
 
-          // Validate chunk-size option
-          const chunkSizeNum = parseInt(options.chunkSize, 10);
-          if (isNaN(chunkSizeNum) || chunkSizeNum < 1) {
-            print(failure('INVALID_ARGUMENT', `--chunk-size must be a positive integer, got '${options.chunkSize}'`));
+          const flattenedValidation = validate('bom', {
+            version: '1.0',
+            changes: allChanges,
+          });
+          if (!flattenedValidation.valid) {
+            print(
+              failure('INVALID_BOM', 'Flattened BOM validation failed', {
+                files: includedFiles,
+                errors: flattenedValidation.errors,
+              })
+            );
             cmd.error('', { exitCode: 1 });
             return;
           }
-          const chunkSize = Math.min(1000, chunkSizeNum);
-          if (chunkSizeNum > 1000) {
-            console.warn(`Warning: --chunk-size capped at maximum of 1000 (requested ${chunkSizeNum})`);
+
+          const duplicateTempIdErrors = findDuplicateTempIds(allChanges);
+          if (duplicateTempIdErrors.length > 0) {
+            print(
+              failure('INVALID_BOM', 'Duplicate tempIds found in flattened BOM', {
+                errors: duplicateTempIdErrors,
+              })
+            );
+            cmd.error('', { exitCode: 1 });
+            return;
           }
+
+          const chunkSizeInput = parsePositiveInt(options.chunkSize, '--chunk-size');
+          const chunkSize = Math.min(1000, chunkSizeInput);
+          if (chunkSizeInput > 1000) {
+            process.stderr.write(
+              `warning: --chunk-size capped at maximum of 1000 (requested ${chunkSizeInput})\n`
+            );
+          }
+
+          const pollTimeoutMs = options.poll
+            ? parsePositiveInt(options.pollTimeout, '--poll-timeout')
+            : undefined;
+
           const chunks: unknown[][] = [];
           for (let i = 0; i < allChanges.length; i += chunkSize) {
             chunks.push(allChanges.slice(i, i + chunkSize));
           }
+
+          const { map: tempIdMap, diagnostics: idFileDiagnostics } =
+            loadIdFilesWithDiagnostics(idFilePaths);
 
           if (options.dryRun) {
             print(
@@ -270,43 +167,35 @@ export function batchApplyCommand(): Command {
                 totalChanges: allChanges.length,
                 chunks: chunks.length,
                 chunkSize,
-                idFilePaths,
-                chunksPreview: chunks.map((c, i) => ({
-                  chunk: i + 1,
-                  operations: c.length,
+                idFiles: idFileDiagnostics,
+                chunksPreview: chunks.map((chunk, index) => ({
+                  chunk: index + 1,
+                  operations: chunk.length,
                 })),
               })
             );
             return;
           }
 
-          // Pre-populate tempIdMap from declared idFiles + auto-discovered sibling .ids.json
-          const tempIdMap: Record<string, string> = loadIdFiles(idFilePaths);
-
-          // If --resolve-names, query model for any still-unresolved tempId references
           if (options.resolveNames) {
-            const unresolved = collectTempIdRefs(allChanges).filter((t) => !tempIdMap[t]);
+            const unresolved = collectTempIdRefs(allChanges).filter((tempId) => !tempIdMap[tempId]);
             if (unresolved.length > 0) {
-              await resolveByName(unresolved, tempIdMap);
+              await resolveTempIdsByName(unresolved, tempIdMap);
             }
           }
 
-          // Progress stream: use stdout in TTY mode (ensures ordering), suppress when piped
           const progressStream = process.stdout.isTTY ? process.stdout : null;
 
-          // Warn if running without --poll (almost always a mistake)
           if (!options.poll) {
             process.stderr.write(
               'Warning: Running without --poll. Operation results will not be tracked.\n' +
-              '         Use --poll to wait for completion and save ID mappings.\n\n'
+                '         Use --poll to wait for completion and save ID mappings.\n\n'
             );
           }
 
-          // Submit each chunk, carrying tempId→realId map across chunks
           const results: Array<Record<string, unknown>> = [];
           let hadOperationErrors = false;
           for (let i = 0; i < chunks.length; i++) {
-            // Substitute any tempIds resolved from previous chunks or idFiles
             const chunk = substituteIds(chunks[i], tempIdMap);
             const resp = await post<ApplyResponse>('/model/apply', { changes: chunk });
 
@@ -319,29 +208,45 @@ export function batchApplyCommand(): Command {
 
             if (options.poll) {
               const pollResult = await pollUntilDone(resp.operationId, {
-                timeoutMs: parseInt(options.pollTimeout, 10) || 60_000,
+                timeoutMs: pollTimeoutMs,
                 onProgress: (status, attempt) => {
                   progressStream?.write(`\r  Chunk ${i + 1}/${chunks.length}: ${status} (${attempt})  `);
                 },
               });
               progressStream?.write('\n');
               chunkResult = { ...chunkResult, ...pollResult };
+
               if ((pollResult as { status?: string }).status === 'error') {
                 hadOperationErrors = true;
               }
-              // Collect tempId→realId/visualId/noteId/groupId/viewId mappings from completed chunk results.
-              // Prefer note/group IDs over viewId to avoid mapping note/group tempIds to the parent view.
-              const opResults = (pollResult as { result?: Array<{ tempId?: string; realId?: string; visualId?: string; viewId?: string; noteId?: string; groupId?: string }> }).result ?? [];
-              for (const r of opResults) {
-                const id = r.realId ?? r.visualId ?? r.noteId ?? r.groupId ?? r.viewId;
-                if (r.tempId && id) tempIdMap[r.tempId] = id;
+
+              const opResults = (pollResult as {
+                result?: Array<{
+                  tempId?: string;
+                  realId?: string;
+                  visualId?: string;
+                  viewId?: string;
+                  noteId?: string;
+                  groupId?: string;
+                }>;
+              }).result ?? [];
+
+              for (const result of opResults) {
+                const id =
+                  result.realId ??
+                  result.visualId ??
+                  result.noteId ??
+                  result.groupId ??
+                  result.viewId;
+                if (result.tempId && id) {
+                  tempIdMap[result.tempId] = id;
+                }
               }
             }
 
             results.push(chunkResult);
           }
 
-          // Save ID map unless --no-save-ids
           const shouldSave = options.saveIds !== false;
           if (shouldSave && options.poll && Object.keys(tempIdMap).length > 0) {
             const idsPath =
@@ -354,24 +259,39 @@ export function batchApplyCommand(): Command {
           const output: Record<string, unknown> = {
             totalChanges: allChanges.length,
             chunks: chunks.length,
+            idFiles: idFileDiagnostics,
             results,
           };
           if (allChanges.length === 0) {
             output['warning'] = 'Empty BOM — no changes were applied';
           }
+
           if (hadOperationErrors) {
             print(
-              failure(
-                'BATCH_APPLY_PARTIAL_FAILURE',
-                buildChunkFailureMessage(results),
-                output
-              )
+              failure('BATCH_APPLY_PARTIAL_FAILURE', buildChunkFailureMessage(results), output)
             );
             cmd.error('', { exitCode: 1 });
-          } else {
-            print(success(output));
+            return;
           }
+
+          print(success(output));
         } catch (err) {
+          if (isCommanderError(err)) throw err;
+          if (err instanceof ArgumentValidationError) {
+            print(failure(err.code, err.message));
+            cmd.error('', { exitCode: 1 });
+            return;
+          }
+          const message = String(err);
+          if (
+            message.includes('Include cycle detected') ||
+            message.includes('BOM file not found') ||
+            message.includes('Invalid JSON in BOM file')
+          ) {
+            print(failure('INVALID_BOM', message.replace(/^Error:\s*/, '')));
+            cmd.error('', { exitCode: 1 });
+            return;
+          }
           print(failure('BATCH_APPLY_FAILED', String(err)));
           cmd.error('', { exitCode: 1 });
         }

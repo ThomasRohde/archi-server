@@ -1,5 +1,7 @@
 import { Command } from 'commander';
 import { post } from '../../utils/api';
+import { ArgumentValidationError, parsePositiveInt } from '../../utils/args';
+import { isCommanderError } from '../../utils/commander';
 import { print, success, failure } from '../../utils/output';
 
 export function modelQueryCommand(): Command {
@@ -12,14 +14,16 @@ export function modelQueryCommand(): Command {
     .option('-l, --limit <n>', 'number of elements to return', '10')
     .action(async (options: { limit: string }, cmd: Command) => {
       try {
-        const limit = parseInt(options.limit, 10);
-        if (isNaN(limit) || limit < 1) {
-          print(failure('INVALID_ARGUMENT', `--limit must be a positive integer, got '${options.limit}'`));
-          cmd.error('', { exitCode: 1 });
-        }
+        const limit = parsePositiveInt(options.limit, '--limit');
         const data = await post('/model/query', { limit });
         print(success(data));
       } catch (err) {
+        if (isCommanderError(err)) throw err;
+        if (err instanceof ArgumentValidationError) {
+          print(failure(err.code, err.message));
+          cmd.error('', { exitCode: 1 });
+          return;
+        }
         print(failure('QUERY_FAILED', String(err)));
         cmd.error('', { exitCode: 1 });
       }
