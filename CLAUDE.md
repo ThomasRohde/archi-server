@@ -83,7 +83,7 @@ const { SWT, GridDataFactory } = swtImports;
 
 Each endpoint module handles specific API routes:
 - **healthEndpoints.js** - `/health`, `/test`, `/shutdown`
-- **modelEndpoints.js** - `/model/query`, `/model/plan`, `/model/apply`, `/model/search`, `/model/save`, `/model/element/{id}`
+- **modelEndpoints.js** - `/model/query`, `/model/plan`, `/model/apply`, `/model/search`, `/model/save`, `/model/stats`, `/model/element/{id}`
 - **viewEndpoints.js** - `/views/*` endpoints (list, get, create, delete, export, layout, etc.)
 - **operationEndpoints.js** - `/ops/status` for async operation polling
 - **scriptEndpoints.js** - `/scripts/run` for executing jArchi code via API
@@ -199,6 +199,7 @@ archicli batch apply model/index.json --fast # fast mode: chunk-size 20, no vali
 | `archicli batch split <bom>` | Split large BOM into linked files |
 | `archicli model search` | Search elements by type/name |
 | `archicli model query` | Model summary |
+| `archicli model stats` | Element/relationship/view type breakdowns |
 | `archicli ops status <id> --poll` | Poll async operation |
 
 ## API Specification

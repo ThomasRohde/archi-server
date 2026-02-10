@@ -594,6 +594,45 @@
                 }
             }
 
+            // Check for duplicate view name (unless allowDuplicate is true)
+            var allowDuplicate = body.allowDuplicate === true;
+
+            if (!allowDuplicate) {
+                var modelRef = serverState.modelRef;
+                if (!modelRef) {
+                    response.statusCode = 500;
+                    response.body = {
+                        error: {
+                            code: "NoModel",
+                            message: "No model reference available"
+                        }
+                    };
+                    return;
+                }
+
+                // Check for existing view with same name
+                var existingViews = modelRef.getDiagramModels();
+                for (var vi = 0; vi < existingViews.size(); vi++) {
+                    var existingView = existingViews.get(vi);
+                    if (existingView.getName() === body.name) {
+                        response.statusCode = 409;
+                        response.body = {
+                            error: {
+                                code: "ViewNameExists",
+                                message: "A view with name '" + body.name + "' already exists. " +
+                                        "Use allowDuplicate: true to create anyway, or choose a different name.",
+                                existingViewId: existingView.getId()
+                            }
+                        };
+                        if (typeof loggingQueue !== "undefined" && loggingQueue) {
+                            loggingQueue.warn("[" + request.requestId + "] View creation blocked: name '" +
+                                            body.name + "' already exists (id: " + existingView.getId() + ")");
+                        }
+                        return;
+                    }
+                }
+            }
+
             if (typeof loggingQueue !== "undefined" && loggingQueue) {
                 loggingQueue.log("[" + request.requestId + "] Create view: " + body.name);
             }

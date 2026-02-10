@@ -1601,20 +1601,29 @@
                     throw new Error("Cannot find relationship: " + operation.relationshipId);
                 }
 
-                // Find source and target visual objects from idMap or search view
-                var sourceVisual = idMap[operation.sourceVisualId];
-                var targetVisual = idMap[operation.targetVisualId];
+                // Find source and target visual objects
+                var sourceVisual = null;
+                var targetVisual = null;
+                var autoResolved = false;
 
-                // If not in idMap, search in view children by explicit visual ID
-                if (!sourceVisual && operation.sourceVisualId) {
-                    sourceVisual = findVisualObjectInView(viewForConn, operation.sourceVisualId);
-                }
-                if (!targetVisual && operation.targetVisualId) {
-                    targetVisual = findVisualObjectInView(viewForConn, operation.targetVisualId);
+                if (!operation.autoResolveVisuals) {
+                    // Explicit mode: look up by provided visual IDs
+                    sourceVisual = idMap[operation.sourceVisualId];
+                    targetVisual = idMap[operation.targetVisualId];
+
+                    // If not in idMap, search in view children by explicit visual ID
+                    if (!sourceVisual && operation.sourceVisualId) {
+                        sourceVisual = findVisualObjectInView(viewForConn, operation.sourceVisualId);
+                    }
+                    if (!targetVisual && operation.targetVisualId) {
+                        targetVisual = findVisualObjectInView(viewForConn, operation.targetVisualId);
+                    }
                 }
 
-                // Auto-discover: if still missing, find visuals by matching the relationship's
-                // source/target element IDs. First check idMap index (works within same batch),
+                // Auto-discover: find visuals by matching the relationship's source/target
+                // element IDs. When autoResolveVisuals is true this is the primary mechanism;
+                // otherwise it is a fallback for missing explicit IDs.
+                // First check idMap index (works within same batch),
                 // then fall back to iterating already-committed view children.
                 if (!sourceVisual || !targetVisual) {
                     // Use relEndpoints cache for same-batch relationships (getSource/getTarget
@@ -1645,6 +1654,9 @@
                                 }
                             }
                         }
+                    }
+                    if (sourceVisual && targetVisual) {
+                        autoResolved = true;
                     }
                 }
 
@@ -1731,14 +1743,18 @@
                     compound.add(new AddConnectionCmd());
                 })(sourceVisual, targetVisual, connection);
 
-                results.push({
+                var connResult = {
                     op: "addConnectionToView",
                     connectionId: connection.getId(),
                     viewId: viewForConn.getId(),
                     relationshipId: relationship.getId ? relationship.getId() : relationship.id,
                     sourceVisualId: sourceVisual.getId ? sourceVisual.getId() : sourceVisual.id,
                     targetVisualId: targetVisual.getId ? targetVisual.getId() : targetVisual.id
-                });
+                };
+                if (autoResolved) {
+                    connResult.autoResolved = true;
+                }
+                results.push(connResult);
             }
             else if (operation.op === "deleteConnectionFromView") {
                 // Delete a visual connection from a view

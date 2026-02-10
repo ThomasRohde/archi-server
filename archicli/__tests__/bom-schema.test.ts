@@ -167,11 +167,14 @@ describe('addConnectionToView', () => {
   test('missing relationshipId', () => {
     expectInvalid({ op: 'addConnectionToView', viewId: 'v1', sourceVisualId: 'sv1', targetVisualId: 'tv1' });
   });
-  test('missing sourceVisualId', () => {
-    expectInvalid({ op: 'addConnectionToView', viewId: 'v1', relationshipId: 'r1', targetVisualId: 'tv1' });
+  test('valid without sourceVisualId (autoResolveVisuals)', () => {
+    expectValid({ op: 'addConnectionToView', viewId: 'v1', relationshipId: 'r1', targetVisualId: 'tv1' });
   });
-  test('missing targetVisualId', () => {
-    expectInvalid({ op: 'addConnectionToView', viewId: 'v1', relationshipId: 'r1', sourceVisualId: 'sv1' });
+  test('valid without targetVisualId (autoResolveVisuals)', () => {
+    expectValid({ op: 'addConnectionToView', viewId: 'v1', relationshipId: 'r1', sourceVisualId: 'sv1' });
+  });
+  test('valid with autoResolveVisuals and no visual IDs', () => {
+    expectValid({ op: 'addConnectionToView', viewId: 'v1', relationshipId: 'r1', autoResolveVisuals: true });
   });
   test('missing viewId', () => {
     expectInvalid({ op: 'addConnectionToView', relationshipId: 'r1', sourceVisualId: 'sv1', targetVisualId: 'tv1' });

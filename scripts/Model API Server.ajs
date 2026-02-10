@@ -29,6 +29,7 @@
  *   GET  /health                  - Server health check (detailed)
  *   GET  /test                    - UI thread test
  *   POST /model/query             - Query model snapshot (sync)
+ *   GET  /model/stats             - Get model statistics with type breakdowns
  *   POST /model/plan              - Generate change plan (no mutation)
  *   POST /model/apply             - Apply changes asynchronously (returns operation ID)
  *   POST /model/search            - Search elements/relationships
@@ -267,7 +268,17 @@ function routeModelEndpoint(req, res, state, apiEndpoints) {
         res.body = { error: { code: "MethodNotAllowed", message: "Use POST for /model/save" } };
         return;
     }
-    
+
+    // /model/stats
+    if (path === "/model/stats" || path === "/model/stats/") {
+        if (method === "GET") {
+            return apiEndpoints.handleStats(req, res, state);
+        }
+        res.statusCode = 405;
+        res.body = { error: { code: "MethodNotAllowed", message: "Use GET for /model/stats" } };
+        return;
+    }
+
     // /model/element/{id}
     pathMatch = path.match(/^\/model\/element\/([^\/]+)\/?$/);
     if (pathMatch) {

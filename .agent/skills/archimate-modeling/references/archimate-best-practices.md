@@ -76,7 +76,7 @@ Technology Node --realizes--> Technology Service --serves--> Application Compone
 | A team performs a process | Assignment | Actor/Role --> Process |
 | A component provides a service | Realization | Component --> Service |
 | A service is used by a consumer | Serving | Service --> Consumer |
-| A process reads/writes data | Access | Process --> Data Object |
+| A process reads/writes data | Access | Process --> Data Object (accessType: 0=write, 1=read, 3=readwrite) |
 | One process triggers another | Triggering | Process A --> Process B |
 | Data moves between processes | Flow | Process A --> Process B |
 | A component is part of a system | Composition | System --> Component |
@@ -105,6 +105,21 @@ Technology Node --realizes--> Technology Service --serves--> Application Compone
 - **Flow**: Source sends, target receives
 - **Composition/Aggregation**: Source is whole, target is part
 - **Assignment**: Source is performer, target is behavior
+
+### Common Direction Mistakes
+
+1. **Realization**: Always concrete → abstract
+   - CORRECT: `Application Component --realizes--> Application Service`
+   - WRONG: `Application Service --realizes--> Application Component`
+
+2. **Access**: Always behavior → data
+   - CORRECT: `Business Process --access--> Business Object`
+   - WRONG: `Business Object --access--> Business Process`
+   - Remember to set `accessType` as integer (0-3)
+
+3. **Serving**: Always provider → consumer
+   - CORRECT: `Application Service --serves--> Business Process`
+   - WRONG: `Business Process --serves--> Application Service`
 
 ## Viewpoint Selection Guide
 

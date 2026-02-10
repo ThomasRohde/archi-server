@@ -16,9 +16,13 @@ import { print, success, failure } from '../../utils/output';
 import { pollUntilDone, type OperationErrorDetails } from '../../utils/poll';
 import { collectTempIdRefs, REFERENCE_ID_FIELDS, resolveTempIdsByName, substituteIds } from '../../utils/tempIds';
 import {
+  autoResolveVisualIds,
+  buildElementToVisualMap,
   buildVisualToElementMap,
+  clearElementCache,
   clearRelationshipCache,
   crossValidateConnections,
+  type AutoResolutionResult,
   type CrossValidationSummary,
 } from '../../utils/crossValidation';
 
@@ -404,9 +408,15 @@ export function batchApplyCommand(): Command {
           const visualToElementMap = options.validateConnections
             ? buildVisualToElementMap(allChanges)
             : {};
+          // Build element-to-visual reverse index for auto-resolution
+          const elementToVisualMap = options.validateConnections
+            ? buildElementToVisualMap(allChanges)
+            : {};
           const connectionValidationSummaries: CrossValidationSummary[] = [];
+          const autoResolutionSummaries: AutoResolutionResult[] = [];
           if (options.validateConnections) {
             clearRelationshipCache();
+            clearElementCache();
             if (!options.poll) {
               process.stderr.write(
                 'Warning: --validate-connections requires --poll to resolve tempIds. Disabling validation.\n'
@@ -487,6 +497,23 @@ export function batchApplyCommand(): Command {
                 pendingOps.map((op) => op.change),
                 tempIdMap
               );
+
+              // Auto-resolve missing sourceVisualId/targetVisualId before validation
+              if (options.validateConnections) {
+                const autoResolution = await autoResolveVisualIds(
+                  currentChunk,
+                  tempIdMap,
+                  elementToVisualMap,
+                );
+                if (autoResolution.attempted > 0) {
+                  autoResolutionSummaries.push(autoResolution);
+                  if (autoResolution.resolved > 0) {
+                    process.stderr.write(
+                      `  [auto-resolve] Chunk ${i + 1}: resolved ${autoResolution.resolved}/${autoResolution.attempted} connection(s) missing visual IDs\n`
+                    );
+                  }
+                }
+              }
 
               // R5: Cross-validate addConnectionToView operations before submission
               if (options.validateConnections) {

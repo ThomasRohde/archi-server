@@ -67,6 +67,47 @@ function formatPath(filePath: string): string {
 }
 
 /**
+ * Mapping from human-readable accessType strings to integer values.
+ */
+const ACCESS_TYPE_ALIASES: Record<string, number> = {
+  'write': 0,
+  'read': 1,
+  'access': 2,
+  'readwrite': 3,
+};
+
+/**
+ * Normalize string accessType values to integers for access-relationship operations.
+ * Modifies the changes array in-place for performance.
+ * Case-insensitive matching. Integer values 0-3 are left unchanged.
+ */
+export function normalizeAccessTypes(changes: unknown[]): void {
+  for (const change of changes) {
+    if (typeof change !== 'object' || change === null) continue;
+
+    const op = (change as { op?: unknown }).op;
+    const type = (change as { type?: unknown }).type;
+    const accessType = (change as { accessType?: unknown }).accessType;
+
+    // Only process createRelationship operations with access-relationship type
+    if (op !== 'createRelationship' || type !== 'access-relationship') continue;
+    if (accessType === undefined) continue;
+
+    // If accessType is already an integer 0-3, leave it unchanged
+    if (typeof accessType === 'number' && accessType >= 0 && accessType <= 3) continue;
+
+    // If accessType is a string, convert to integer
+    if (typeof accessType === 'string') {
+      const normalized = ACCESS_TYPE_ALIASES[accessType.toLowerCase()];
+      if (normalized !== undefined) {
+        (change as { accessType: number }).accessType = normalized;
+      }
+      // If string doesn't match any alias, leave it unchanged - schema validation will catch it
+    }
+  }
+}
+
+/**
  * Detect duplicate tempIds after BOM includes are flattened.
  */
 export function findDuplicateTempIds(changes: unknown[]): DuplicateTempIdError[] {
@@ -154,6 +195,9 @@ export function loadBom(filePath: string): LoadedBom {
   };
 
   loadRecursive(root);
+
+  // Normalize string accessType values to integers before validation
+  normalizeAccessTypes(state.changes);
 
   return {
     changes: state.changes,

@@ -266,13 +266,14 @@
                       "properties": { "op": { "const": "addConnectionToView" } }
                     },
                     "then": {
-                      "required": ["op", "viewId", "relationshipId", "sourceVisualId", "targetVisualId"],
+                      "required": ["op", "viewId", "relationshipId"],
                       "properties": {
                         "op": { "type": "string" },
                         "viewId": { "type": "string", "description": "View ID containing the visual objects" },
                         "relationshipId": { "type": "string", "description": "Relationship ID or tempId to visualize" },
-                        "sourceVisualId": { "type": "string", "description": "Source visual object ID or tempId" },
-                        "targetVisualId": { "type": "string", "description": "Target visual object ID or tempId" },
+                        "sourceVisualId": { "type": "string", "description": "Source visual object ID or tempId. Optional when autoResolveVisuals is true." },
+                        "targetVisualId": { "type": "string", "description": "Target visual object ID or tempId. Optional when autoResolveVisuals is true." },
+                        "autoResolveVisuals": { "type": "boolean", "description": "When true, auto-resolve source/target visuals from the relationship's endpoints" },
                         "tempId": { "type": "string", "description": "Temporary ID for this connection visual" }
                       },
                       "additionalProperties": false

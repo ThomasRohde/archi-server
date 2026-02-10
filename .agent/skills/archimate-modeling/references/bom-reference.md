@@ -56,7 +56,26 @@ Required: `type`, `name`. Optional: `tempId`, `documentation`, `folder`.
 
 Required: `type`, `sourceId`, `targetId`. Optional: `tempId`, `name`, `documentation`.
 
-For access-relationship, add `accessType`: `"Read"`, `"Write"`, or `"ReadWrite"`.
+For access-relationship, add `accessType` as an integer:
+
+| Value | Meaning | Description |
+|-------|---------|-------------|
+| 0 | Write | Behavior can write to the data object |
+| 1 | Read | Behavior can read from the data object |
+| 2 | Access | Generic access (unspecified read/write) |
+| 3 | ReadWrite | Behavior can both read and write |
+
+Example:
+```json
+{
+  "op": "createRelationship",
+  "type": "access-relationship",
+  "sourceId": "bp-process",
+  "targetId": "do-data",
+  "tempId": "rel-access",
+  "accessType": 3
+}
+```
 
 ### updateElement
 
@@ -132,7 +151,9 @@ Required: `id`, `key`, `value`.
 }
 ```
 
-Required: `name`. Optional: `tempId`, `viewpoint`, `documentation`.
+Required: `name`. Optional: `tempId`, `viewpoint`, `documentation`, `allowDuplicate`.
+
+By default, creating a view with a name that already exists returns 409 Conflict. Set `allowDuplicate: true` to permit duplicate names.
 
 ### addToView
 
@@ -159,13 +180,29 @@ When using `--layout`, position values are overwritten by the layout engine, so 
 {
   "op": "addConnectionToView",
   "viewId": "v-app-landscape",
-  "relationshipId": "rel-portal-serves-customer"
+  "relationshipId": "rel-portal-serves-customer",
+  "sourceVisualId": "vis-portal",
+  "targetVisualId": "vis-customer"
 }
 ```
 
-Required: `viewId`, `relationshipId`.
+Required: `viewId`, `relationshipId`. Optional: `sourceVisualId`, `targetVisualId`, `autoResolveVisuals`.
 
-Both source and target elements of the relationship must already be in the view (via addToView).
+- `sourceVisualId` and `targetVisualId` are the visual object IDs (tempIds) returned from `addToView` operations
+- Both source and target elements of the relationship must already be in the view (via addToView)
+- The visual IDs must correspond to the source and target of the relationship concept
+- When `autoResolveVisuals: true`, the server automatically finds visual objects by matching the relationship's source/target elements against visuals in the view. This eliminates the need for explicit `sourceVisualId`/`targetVisualId`:
+
+```json
+{
+  "op": "addConnectionToView",
+  "viewId": "v-app-landscape",
+  "relationshipId": "rel-portal-serves-customer",
+  "autoResolveVisuals": true
+}
+```
+
+The result includes `autoResolved: true` when server-side resolution was used.
 
 ### deleteConnectionFromView
 
@@ -337,10 +374,14 @@ Required: `id`, `folderId`.
     { "op": "addToView", "viewId": "v-applandscape", "elementId": "as-custdata", "tempId": "vis-custdata" },
     { "op": "addToView", "viewId": "v-applandscape", "elementId": "as-orderproc", "tempId": "vis-orderproc" },
 
-    { "op": "addConnectionToView", "viewId": "v-applandscape", "relationshipId": "rel-crm-realizes-custdata" },
-    { "op": "addConnectionToView", "viewId": "v-applandscape", "relationshipId": "rel-orders-realizes-orderproc" },
-    { "op": "addConnectionToView", "viewId": "v-applandscape", "relationshipId": "rel-custdata-serves-orders" },
-    { "op": "addConnectionToView", "viewId": "v-applandscape", "relationshipId": "rel-orders-flow-payment" }
+    { "op": "addConnectionToView", "viewId": "v-applandscape", "relationshipId": "rel-crm-realizes-custdata",
+      "sourceVisualId": "vis-crm", "targetVisualId": "vis-custdata" },
+    { "op": "addConnectionToView", "viewId": "v-applandscape", "relationshipId": "rel-orders-realizes-orderproc",
+      "sourceVisualId": "vis-orders", "targetVisualId": "vis-orderproc" },
+    { "op": "addConnectionToView", "viewId": "v-applandscape", "relationshipId": "rel-custdata-serves-orders",
+      "sourceVisualId": "vis-custdata", "targetVisualId": "vis-orders" },
+    { "op": "addConnectionToView", "viewId": "v-applandscape", "relationshipId": "rel-orders-flow-payment",
+      "sourceVisualId": "vis-orders", "targetVisualId": "vis-payment" }
   ]
 }
 ```
@@ -391,13 +432,20 @@ Apply: `archicli batch apply app-landscape.json --layout`
     { "op": "addToView", "viewId": "v-layered", "elementId": "ts-hosting", "tempId": "vis-hosting" },
     { "op": "addToView", "viewId": "v-layered", "elementId": "nd-cloud", "tempId": "vis-cloud" },
 
-    { "op": "addConnectionToView", "viewId": "v-layered", "relationshipId": "rel-bs-serves-ba" },
-    { "op": "addConnectionToView", "viewId": "v-layered", "relationshipId": "rel-bp-realizes-bs" },
-    { "op": "addConnectionToView", "viewId": "v-layered", "relationshipId": "rel-br-assigned-bp" },
-    { "op": "addConnectionToView", "viewId": "v-layered", "relationshipId": "rel-as-serves-bp" },
-    { "op": "addConnectionToView", "viewId": "v-layered", "relationshipId": "rel-ac-realizes-as" },
-    { "op": "addConnectionToView", "viewId": "v-layered", "relationshipId": "rel-ts-serves-ac" },
-    { "op": "addConnectionToView", "viewId": "v-layered", "relationshipId": "rel-nd-realizes-ts" }
+    { "op": "addConnectionToView", "viewId": "v-layered", "relationshipId": "rel-bs-serves-ba",
+      "sourceVisualId": "vis-orderplace", "targetVisualId": "vis-customer" },
+    { "op": "addConnectionToView", "viewId": "v-layered", "relationshipId": "rel-bp-realizes-bs",
+      "sourceVisualId": "vis-handleorder", "targetVisualId": "vis-orderplace" },
+    { "op": "addConnectionToView", "viewId": "v-layered", "relationshipId": "rel-br-assigned-bp",
+      "sourceVisualId": "vis-salesrep", "targetVisualId": "vis-handleorder" },
+    { "op": "addConnectionToView", "viewId": "v-layered", "relationshipId": "rel-as-serves-bp",
+      "sourceVisualId": "vis-online", "targetVisualId": "vis-handleorder" },
+    { "op": "addConnectionToView", "viewId": "v-layered", "relationshipId": "rel-ac-realizes-as",
+      "sourceVisualId": "vis-ecommerce", "targetVisualId": "vis-online" },
+    { "op": "addConnectionToView", "viewId": "v-layered", "relationshipId": "rel-ts-serves-ac",
+      "sourceVisualId": "vis-hosting", "targetVisualId": "vis-ecommerce" },
+    { "op": "addConnectionToView", "viewId": "v-layered", "relationshipId": "rel-nd-realizes-ts",
+      "sourceVisualId": "vis-cloud", "targetVisualId": "vis-hosting" }
   ]
 }
 ```
@@ -432,9 +480,12 @@ Apply: `archicli batch apply app-landscape.json --layout`
     { "op": "addToView", "viewId": "v-capmap", "elementId": "cap-custret", "tempId": "vis-custret" },
     { "op": "addToView", "viewId": "v-capmap", "elementId": "cap-custanal", "tempId": "vis-custanal" },
 
-    { "op": "addConnectionToView", "viewId": "v-capmap", "relationshipId": "rel-comp-acq" },
-    { "op": "addConnectionToView", "viewId": "v-capmap", "relationshipId": "rel-comp-ret" },
-    { "op": "addConnectionToView", "viewId": "v-capmap", "relationshipId": "rel-comp-anal" },
+    { "op": "addConnectionToView", "viewId": "v-capmap", "relationshipId": "rel-comp-acq",
+      "sourceVisualId": "vis-custmgmt", "targetVisualId": "vis-custacq" },
+    { "op": "addConnectionToView", "viewId": "v-capmap", "relationshipId": "rel-comp-ret",
+      "sourceVisualId": "vis-custmgmt", "targetVisualId": "vis-custret" },
+    { "op": "addConnectionToView", "viewId": "v-capmap", "relationshipId": "rel-comp-anal",
+      "sourceVisualId": "vis-custmgmt", "targetVisualId": "vis-custanal" },
 
     { "op": "styleViewObject", "viewId": "v-capmap", "viewObjectId": "vis-custacq",
       "fillColor": "#C8E6C9" },
@@ -482,3 +533,42 @@ BOMs can compose other BOMs:
 ```
 
 Included files are flattened into a single operation list in order.
+
+### Complete Multi-BOM Workflow Example
+
+**Step 1: Create elements** (`01-elements.json`)
+```json
+{
+  "version": "1.0",
+  "description": "Core elements",
+  "changes": [
+    { "op": "createElement", "type": "application-component", "name": "CRM", "tempId": "ac-crm" },
+    { "op": "createElement", "type": "application-component", "name": "ERP", "tempId": "ac-erp" },
+    { "op": "createRelationship", "type": "flow-relationship", "sourceId": "ac-crm", "targetId": "ac-erp",
+      "name": "customer data", "tempId": "rel-flow" }
+  ]
+}
+```
+
+Apply: `archicli batch apply 01-elements.json`
+Result: Creates `01-elements.ids.json` with real IDs.
+
+**Step 2: Create views** (`02-views.json`)
+```json
+{
+  "version": "1.0",
+  "description": "Application landscape view",
+  "idFiles": ["01-elements.ids.json"],
+  "changes": [
+    { "op": "createView", "name": "Application Landscape", "viewpoint": "application_cooperation", "tempId": "v-apps" },
+    { "op": "addToView", "viewId": "v-apps", "elementId": "ac-crm", "tempId": "vis-crm" },
+    { "op": "addToView", "viewId": "v-apps", "elementId": "ac-erp", "tempId": "vis-erp" },
+    { "op": "addConnectionToView", "viewId": "v-apps", "relationshipId": "rel-flow",
+      "sourceVisualId": "vis-crm", "targetVisualId": "vis-erp" }
+  ]
+}
+```
+
+Apply: `archicli batch apply 02-views.json --layout`
+
+Note: `ac-crm`, `ac-erp`, and `rel-flow` are resolved from `01-elements.ids.json`.

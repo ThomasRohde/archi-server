@@ -66,6 +66,9 @@
         handleQuery: function(request, response, serverState) {
             return modelEndpoints.handleQuery(request, response, serverState);
         },
+        handleStats: function(request, response, serverState) {
+            return modelEndpoints.handleStats(request, response, serverState);
+        },
         handlePlan: function(request, response, serverState) {
             return modelEndpoints.handlePlan(request, response, serverState);
         },

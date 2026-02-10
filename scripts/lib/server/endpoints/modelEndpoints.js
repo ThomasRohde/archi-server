@@ -444,6 +444,81 @@
         },
 
         /**
+         * Handle GET /model/stats - Get model statistics with type-level breakdowns
+         * @param {Object} request - HTTP request object
+         * @param {Object} response - HTTP response object
+         * @param {Object} serverState - Server state object
+         */
+        handleStats: function(request, response, serverState) {
+            if (typeof loggingQueue !== "undefined" && loggingQueue) {
+                loggingQueue.log("[" + request.requestId + "] Get model stats");
+            }
+
+            try {
+                if (!modelSnapshot || !modelSnapshot.getSnapshot()) {
+                    throw new Error("No model snapshot available");
+                }
+
+                var elements = modelSnapshot.getElements();
+                var relationships = modelSnapshot.getRelationships();
+                var views = modelSnapshot.getViews();
+
+                // Count elements by type
+                var elementsByType = {};
+                for (var i = 0; i < elements.length; i++) {
+                    var type = elements[i].type;
+                    elementsByType[type] = (elementsByType[type] || 0) + 1;
+                }
+
+                // Count relationships by type
+                var relationshipsByType = {};
+                for (var j = 0; j < relationships.length; j++) {
+                    var relType = relationships[j].type;
+                    relationshipsByType[relType] = (relationshipsByType[relType] || 0) + 1;
+                }
+
+                // Count views by type
+                var viewsByType = {};
+                for (var k = 0; k < views.length; k++) {
+                    var viewType = views[k].type;
+                    viewsByType[viewType] = (viewsByType[viewType] || 0) + 1;
+                }
+
+                // Build response
+                response.body = {
+                    summary: {
+                        totalElements: elements.length,
+                        totalRelationships: relationships.length,
+                        totalViews: views.length,
+                        elementTypes: Object.keys(elementsByType).length,
+                        relationshipTypes: Object.keys(relationshipsByType).length,
+                        viewTypes: Object.keys(viewsByType).length
+                    },
+                    elements: elementsByType,
+                    relationships: relationshipsByType,
+                    views: viewsByType
+                };
+
+                if (typeof loggingQueue !== "undefined" && loggingQueue) {
+                    loggingQueue.log("[" + request.requestId + "] Stats: " + elements.length +
+                                   " elements across " + Object.keys(elementsByType).length + " types");
+                }
+
+            } catch (e) {
+                if (typeof loggingQueue !== "undefined" && loggingQueue) {
+                    loggingQueue.error("[" + request.requestId + "] Stats failed: " + e);
+                }
+                response.statusCode = 500;
+                response.body = {
+                    error: {
+                        code: "StatsFailed",
+                        message: String(e)
+                    }
+                };
+            }
+        },
+
+        /**
          * Handle POST /model/plan - Generate change plan (no mutation)
          * @param {Object} request - HTTP request object with body.action
          * @param {Object} response - HTTP response object
@@ -771,18 +846,28 @@
                 var hasExistingFile = (currentPath !== null && currentPath !== undefined);
 
                 if (!hasExistingFile && !requestedPath) {
-                    // Model has never been saved and no path provided — would open file dialog
-                    response.statusCode = 400;
-                    response.body = {
-                        error: {
-                            code: "PathRequired",
-                            message: "Model has not been saved before. Provide a 'path' (e.g. \"/path/to/model.archimate\") in the request body to save it for the first time."
-                        }
-                    };
-                    return;
+                    // Auto-generate path from model name
+                    var System = Java.type("java.lang.System");
+                    var userHome = System.getProperty("user.home");
+                    var modelName = serverState.modelRef.getName() || "untitled-model";
+
+                    // Sanitize model name for filesystem (remove invalid characters)
+                    var safeName = String(modelName).replace(/[\/\\:*?"<>|]/g, "_");
+
+                    // Generate path in Documents/archi-models/
+                    var File = Java.type("java.io.File");
+                    var autoPath = userHome + "/Documents/archi-models/" + safeName + ".archimate";
+                    requestedPath = autoPath;
+
+                    if (typeof loggingQueue !== "undefined" && loggingQueue) {
+                        loggingQueue.log("[" + request.requestId + "] Auto-generated save path: " + autoPath);
+                    }
                 }
 
-                // If a path was provided, set the file on the model before saving
+                // Track if path was auto-generated
+                var autoGenerated = (!hasExistingFile && !body.path);
+
+                // If a path was provided (or auto-generated), set the file on the model before saving
                 if (requestedPath) {
                     var File = Java.type("java.io.File");
                     var targetFile = new File(String(requestedPath));
@@ -811,7 +896,7 @@
                     loggingQueue.log("[" + request.requestId + "] Model saved to " + (savedPath || "existing path") + " (" + durationMs + "ms)");
                 }
 
-                response.body = {
+                var responseBody = {
                     success: true,
                     message: "Model saved successfully",
                     modelName: serverState.modelRef.getName() || '',
@@ -819,6 +904,12 @@
                     path: savedPath,
                     durationMs: durationMs
                 };
+
+                if (autoGenerated) {
+                    responseBody.autoGeneratedPath = true;
+                }
+
+                response.body = responseBody;
 
             } catch (e) {
                 if (typeof loggingQueue !== "undefined" && loggingQueue) {

@@ -4,6 +4,7 @@ import { modelApplyCommand } from './apply';
 import { modelSearchCommand } from './search';
 import { modelElementCommand } from './element';
 import { modelSaveCommand } from './save';
+import { modelStatsCommand } from './stats';
 
 /**
  * Model query/mutation namespace.
@@ -12,7 +13,7 @@ export function modelCommand(): Command {
   return new Command('model')
     .description(
       'Query and mutate the ArchiMate model.\n\n' +
-        'READ commands (sync): query, search, element\n' +
+        'READ commands (sync): query, search, element, stats\n' +
         'WRITE commands (async, require --poll): apply\n\n' +
         'For large batches of changes, use "batch apply" instead of "model apply".\n' +
         'It handles chunking, polling, and tempId persistence automatically.'
@@ -27,5 +28,6 @@ export function modelCommand(): Command {
     .addCommand(modelApplyCommand())
     .addCommand(modelSearchCommand())
     .addCommand(modelElementCommand())
-    .addCommand(modelSaveCommand());
+    .addCommand(modelSaveCommand())
+    .addCommand(modelStatsCommand());
 }

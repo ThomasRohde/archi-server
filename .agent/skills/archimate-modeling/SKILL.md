@@ -123,7 +123,8 @@ Assign `tempId` strings to create operations. Later operations reference them:
     { "op": "createView", "name": "Customer View", "tempId": "v-customer" },
     { "op": "addToView", "viewId": "v-customer", "elementId": "ba-customer", "tempId": "vis-customer" },
     { "op": "addToView", "viewId": "v-customer", "elementId": "bs-order", "tempId": "vis-order" },
-    { "op": "addConnectionToView", "viewId": "v-customer", "relationshipId": "rel-serving" }
+    { "op": "addConnectionToView", "viewId": "v-customer", "relationshipId": "rel-serving",
+      "sourceVisualId": "vis-order", "targetVisualId": "vis-customer" }
   ]
 }
 ```
@@ -217,7 +218,7 @@ model/
 | `assignment-relationship` | Who/what performs behavior |
 | `realization-relationship` | Logical-to-physical mapping |
 | `serving-relationship` | Service delivery (arrow toward consumer) |
-| `access-relationship` | Data access (use `accessType`: `Read`, `Write`, `ReadWrite`) |
+| `access-relationship` | Data access (use `accessType`: 0=write, 1=read, 2=access, 3=readwrite) |
 | `influence-relationship` | Affects motivation elements |
 | `association-relationship` | Generic relationship |
 | `triggering-relationship` | Temporal/causal precedence |
@@ -321,3 +322,91 @@ Key principles to always follow:
 6. **Separate actors from roles**: Business Actor is a specific entity; Business Role is a responsibility
 7. **Use services for cross-layer integration**: Never connect Business directly to Technology layer
 8. **Label flow relationships**: Always label what flows between behaviors
+
+## Common Pitfalls and Solutions
+
+### 1. accessType String vs Integer
+
+**Problem**: Documentation says `"Read"`, `"Write"`, `"ReadWrite"` but schema requires integers.
+
+**Solution**: Use integer values in your BOM:
+```json
+{
+  "op": "createRelationship",
+  "type": "access-relationship",
+  "sourceId": "bp-process",
+  "targetId": "do-customer",
+  "accessType": 1
+}
+```
+
+Access type mapping:
+- `0` = Write
+- `1` = Read
+- `2` = Access (generic, unspecified)
+- `3` = ReadWrite
+
+### 2. Resolving sourceVisualId/targetVisualId in addConnectionToView
+
+**Problem**: `addConnectionToView` needs source and target visual objects to draw the connection.
+
+**Solution A** (preferred): Use `autoResolveVisuals: true` — the server automatically matches visuals by element ID:
+```json
+{ "op": "addToView", "viewId": "v-main", "elementId": "ac-app1", "tempId": "vis-app1" },
+{ "op": "addToView", "viewId": "v-main", "elementId": "ac-app2", "tempId": "vis-app2" },
+{ "op": "addConnectionToView", "viewId": "v-main", "relationshipId": "rel-serves",
+  "autoResolveVisuals": true }
+```
+
+**Solution B**: Provide explicit visual IDs from `addToView` operations:
+```json
+{ "op": "addConnectionToView", "viewId": "v-main", "relationshipId": "rel-serves",
+  "sourceVisualId": "vis-app1", "targetVisualId": "vis-app2" }
+```
+
+### 3. Realization Relationship Direction
+
+**Problem**: Confusion about which way realization arrows point.
+
+**Solution**: Realization points from concrete to abstract:
+- Artifact realizes Component (NOT Component realizes Artifact)
+- Component realizes Service (NOT Service realizes Component)
+- Process realizes Service (NOT Service realizes Process)
+
+Correct pattern:
+```json
+{ "op": "createRelationship", "type": "realization-relationship",
+  "sourceId": "ac-component", "targetId": "as-service" }
+```
+
+Think: "Component realizes (implements) the Service"
+
+### 4. Adding Connections Before Elements
+
+**Problem**: Trying to add connections to a view before the endpoint elements are in the view.
+
+**Solution**: Always follow this order:
+1. Create elements (createElement)
+2. Create relationships (createRelationship)
+3. Create view (createView)
+4. Add elements to view (addToView) - capture visual IDs
+5. Add connections to view (addConnectionToView) - use visual IDs
+
+### 5. Forgetting to Declare idFiles for Multi-BOM Workflows
+
+**Problem**: Second BOM can't resolve tempIds from first BOM.
+
+**Solution**: Reference the `.ids.json` file from the first BOM:
+```json
+{
+  "version": "1.0",
+  "description": "Views referencing elements from 01-elements.json",
+  "idFiles": ["01-elements.ids.json"],
+  "changes": [
+    { "op": "createView", "name": "Overview", "tempId": "v-overview" },
+    { "op": "addToView", "viewId": "v-overview", "elementId": "ac-app1", "tempId": "vis-app1" }
+  ]
+}
+```
+
+The `ac-app1` ID is resolved from `01-elements.ids.json`.
