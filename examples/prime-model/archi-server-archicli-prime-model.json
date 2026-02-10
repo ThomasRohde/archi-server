@@ -1,0 +1,3758 @@
+{
+  "version": "1.0",
+  "description": "Prime example model of Archi Server and ArchiCLI with layered architecture, rich element documentation, and multiple viewpoints.",
+  "changes": [
+    {
+      "op": "createElement",
+      "type": "stakeholder",
+      "name": "Enterprise Architect",
+      "tempId": "st-enterprise-architect",
+      "documentation": "Enterprise Architect models architecture governance expectations in the Motivation layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "stakeholder",
+      "name": "Platform Operator",
+      "tempId": "st-platform-operator",
+      "documentation": "Platform Operator models operational reliability expectations in the Motivation layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "driver",
+      "name": "Automation Pressure",
+      "tempId": "dr-automation",
+      "documentation": "Automation Pressure models need for programmable modeling in the Motivation layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "driver",
+      "name": "Reliability Pressure",
+      "tempId": "dr-reliability",
+      "documentation": "Reliability Pressure models need for deterministic operations in the Motivation layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "goal",
+      "name": "Faster Modeling Delivery",
+      "tempId": "gl-speed",
+      "documentation": "Faster Modeling Delivery models reduce model turnaround in the Motivation layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "goal",
+      "name": "Trusted Model Integrity",
+      "tempId": "gl-quality",
+      "documentation": "Trusted Model Integrity models preserve consistency in the Motivation layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "requirement",
+      "name": "Scriptable API Requirement",
+      "tempId": "rq-api",
+      "documentation": "Scriptable API Requirement models expose model operations in the Motivation layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "requirement",
+      "name": "Deterministic Batch Requirement",
+      "tempId": "rq-batch",
+      "documentation": "Deterministic Batch Requirement models safe ordered apply in the Motivation layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "requirement",
+      "name": "Repeatable CLI Requirement",
+      "tempId": "rq-cli",
+      "documentation": "Repeatable CLI Requirement models scriptable user workflows in the Motivation layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "principle",
+      "name": "API First Principle",
+      "tempId": "pr-api-first",
+      "documentation": "API First Principle models design around executable contracts in the Motivation layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "capability",
+      "name": "API Modeling Capability",
+      "tempId": "cap-modeling",
+      "documentation": "API Modeling Capability models automate model authoring in the Strategy layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "capability",
+      "name": "Validation Capability",
+      "tempId": "cap-quality",
+      "documentation": "Validation Capability models assure model correctness in the Strategy layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "value-stream",
+      "name": "Change Automation Stream",
+      "tempId": "vs-change",
+      "documentation": "Change Automation Stream models author verify apply flow in the Strategy layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "outcome",
+      "name": "Shorter Delivery Cycle",
+      "tempId": "oc-cycle",
+      "documentation": "Shorter Delivery Cycle models faster architecture iteration in the Motivation layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "outcome",
+      "name": "Higher Automation Confidence",
+      "tempId": "oc-confidence",
+      "documentation": "Higher Automation Confidence models trust automation outcomes in the Motivation layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "business-actor",
+      "name": "Architecture Team",
+      "tempId": "ba-arch-team",
+      "documentation": "Architecture Team models owns enterprise model in the Business layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "business-role",
+      "name": "Model Automation Specialist",
+      "tempId": "br-modeler",
+      "documentation": "Model Automation Specialist models executes automation workflow in the Business layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "business-process",
+      "name": "Author BOM Changes",
+      "tempId": "bp-author",
+      "documentation": "Author BOM Changes models define model deltas in the Business layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "business-process",
+      "name": "Verify BOM Changes",
+      "tempId": "bp-verify",
+      "documentation": "Verify BOM Changes models validate before apply in the Business layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "business-process",
+      "name": "Apply and Validate",
+      "tempId": "bp-apply",
+      "documentation": "Apply and Validate models execute and confirm changes in the Business layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "business-service",
+      "name": "Architecture Automation Service",
+      "tempId": "bs-modeling",
+      "documentation": "Architecture Automation Service models delivers automated modeling in the Business layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "business-object",
+      "name": "ArchiMate BOM",
+      "tempId": "bo-bom",
+      "documentation": "ArchiMate BOM models change specification artifact in the Business layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "business-object",
+      "name": "ID Mapping File",
+      "tempId": "bo-ids",
+      "documentation": "ID Mapping File models tempId mapping artifact in the Business layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "product",
+      "name": "Archi Automation Toolkit",
+      "tempId": "product-toolkit",
+      "documentation": "Archi Automation Toolkit models combined server and cli offering in the Business layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "application-component",
+      "name": "Archi Server",
+      "tempId": "ac-archi-server",
+      "documentation": "Archi Server models model api runtime in the Application layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "application-component",
+      "name": "ArchiCLI",
+      "tempId": "ac-archicli",
+      "documentation": "ArchiCLI models command line automation client in the Application layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "application-interface",
+      "name": "REST API Interface",
+      "tempId": "ai-rest",
+      "documentation": "REST API Interface models external HTTP contract in the Application layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "application-service",
+      "name": "Health Diagnostics Service",
+      "tempId": "as-health",
+      "documentation": "Health Diagnostics Service models runtime status queries in the Application layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "application-service",
+      "name": "Model Query Service",
+      "tempId": "as-query",
+      "documentation": "Model Query Service models read model data in the Application layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "application-service",
+      "name": "Model Apply Service",
+      "tempId": "as-mutate",
+      "documentation": "Model Apply Service models execute model changes in the Application layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "application-service",
+      "name": "View Management Service",
+      "tempId": "as-view",
+      "documentation": "View Management Service models create and layout views in the Application layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "application-service",
+      "name": "Script Execution Service",
+      "tempId": "as-script",
+      "documentation": "Script Execution Service models run custom scripts in the Application layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "application-component",
+      "name": "Endpoint Router",
+      "tempId": "ac-endpoints",
+      "documentation": "Endpoint Router models route endpoint handlers in the Application layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "application-component",
+      "name": "Operation Queue",
+      "tempId": "ac-queue",
+      "documentation": "Operation Queue models serialize apply operations in the Application layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "application-component",
+      "name": "Operation Validation Engine",
+      "tempId": "ac-validation",
+      "documentation": "Operation Validation Engine models validate change operations in the Application layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "application-component",
+      "name": "Model Snapshot Builder",
+      "tempId": "ac-snapshot",
+      "documentation": "Model Snapshot Builder models build query snapshots in the Application layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "application-component",
+      "name": "Dagre Layout Adapter",
+      "tempId": "ac-layout",
+      "documentation": "Dagre Layout Adapter models perform auto layout in the Application layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "data-object",
+      "name": "Operation Record",
+      "tempId": "do-operation",
+      "documentation": "Operation Record models async operation metadata in the Application layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "data-object",
+      "name": "Query Result",
+      "tempId": "do-query",
+      "documentation": "Query Result models query response payload in the Application layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "data-object",
+      "name": "OpenAPI Contract",
+      "tempId": "do-openapi",
+      "documentation": "OpenAPI Contract models formal api schema in the Application layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "application-component",
+      "name": "BOM Verifier",
+      "tempId": "ac-cli-verify",
+      "documentation": "BOM Verifier models schema and semantic checks in the Application layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "application-component",
+      "name": "Batch Orchestrator",
+      "tempId": "ac-cli-batch",
+      "documentation": "Batch Orchestrator models chunk submit poll flow in the Application layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "application-component",
+      "name": "Polling Monitor",
+      "tempId": "ac-cli-poll",
+      "documentation": "Polling Monitor models wait for operation status in the Application layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "application-component",
+      "name": "TempId Resolver",
+      "tempId": "ac-cli-tempid",
+      "documentation": "TempId Resolver models map temporary references in the Application layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "application-component",
+      "name": "Output Formatter",
+      "tempId": "ac-cli-output",
+      "documentation": "Output Formatter models json text yaml rendering in the Application layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "application-component",
+      "name": "HTTP Client",
+      "tempId": "ac-cli-client",
+      "documentation": "HTTP Client models typed api transport in the Application layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "data-object",
+      "name": "BOM File",
+      "tempId": "do-bom",
+      "documentation": "BOM File models cli input file in the Application layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "data-object",
+      "name": "TempId Mapping Store",
+      "tempId": "do-ids",
+      "documentation": "TempId Mapping Store models persisted id mappings in the Application layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "data-object",
+      "name": "CLI Report",
+      "tempId": "do-report",
+      "documentation": "CLI Report models command execution summary in the Application layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "device",
+      "name": "EA Workstation",
+      "tempId": "dv-workstation",
+      "documentation": "EA Workstation models user execution environment in the Technology layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "node",
+      "name": "Archi Runtime Node",
+      "tempId": "nd-runtime",
+      "documentation": "Archi Runtime Node models local process host in the Technology layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "system-software",
+      "name": "Archi plus jArchi",
+      "tempId": "ss-archi",
+      "documentation": "Archi plus jArchi models scripting runtime in the Technology layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "technology-service",
+      "name": "Local HTTP Service",
+      "tempId": "ts-http",
+      "documentation": "Local HTTP Service models localhost api transport in the Technology layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "technology-service",
+      "name": "Local File Service",
+      "tempId": "ts-filesystem",
+      "documentation": "Local File Service models persistent storage in the Technology layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "communication-network",
+      "name": "Loopback Network",
+      "tempId": "cn-loopback",
+      "documentation": "Loopback Network models localhost network path in the Technology layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "artifact",
+      "name": "Model API Server Script",
+      "tempId": "ar-server",
+      "documentation": "Model API Server Script models server implementation artifact in the Technology layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "artifact",
+      "name": "ArchiCLI Distribution",
+      "tempId": "ar-cli",
+      "documentation": "ArchiCLI Distribution models cli packaged artifact in the Technology layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "artifact",
+      "name": "archi-server Repository",
+      "tempId": "ar-repo",
+      "documentation": "archi-server Repository models source code artifact in the Technology layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "technology-function",
+      "name": "Graph Layout Computation",
+      "tempId": "tf-layout",
+      "documentation": "Graph Layout Computation models dagre layout calculation in the Technology layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "work-package",
+      "name": "Harden Server Surface",
+      "tempId": "wp-server",
+      "documentation": "Harden Server Surface models improve server robustness in the Implementation and Migration layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "work-package",
+      "name": "Scale CLI Adoption",
+      "tempId": "wp-cli",
+      "documentation": "Scale CLI Adoption models improve cli usability in the Implementation and Migration layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "work-package",
+      "name": "Publish Prime Example",
+      "tempId": "wp-prime",
+      "documentation": "Publish Prime Example models deliver flagship model in the Implementation and Migration layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "plateau",
+      "name": "Baseline Capability",
+      "tempId": "pl-baseline",
+      "documentation": "Baseline Capability models initial platform state in the Implementation and Migration layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "plateau",
+      "name": "Current Capability",
+      "tempId": "pl-current",
+      "documentation": "Current Capability models mature platform state in the Implementation and Migration layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "gap",
+      "name": "Example Coverage Gap",
+      "tempId": "gp-example",
+      "documentation": "Example Coverage Gap models missing comprehensive sample in the Implementation and Migration layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "implementation-event",
+      "name": "Release 1.5 Event",
+      "tempId": "ie-release",
+      "documentation": "Release 1.5 Event models release milestone in the Implementation and Migration layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createElement",
+      "type": "deliverable",
+      "name": "Prime Example Model",
+      "tempId": "dl-prime",
+      "documentation": "Prime Example Model models final showcase artifact in the Implementation and Migration layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "st-enterprise-architect",
+      "targetId": "gl-speed",
+      "tempId": "r01",
+      "documentation": "Relationship from Enterprise Architect to Faster Modeling Delivery."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "st-platform-operator",
+      "targetId": "gl-quality",
+      "tempId": "r02",
+      "documentation": "Relationship from Platform Operator to Trusted Model Integrity."
+    },
+    {
+      "op": "createRelationship",
+      "type": "influence-relationship",
+      "sourceId": "dr-automation",
+      "targetId": "gl-speed",
+      "tempId": "r03",
+      "documentation": "Relationship from Automation Pressure to Faster Modeling Delivery."
+    },
+    {
+      "op": "createRelationship",
+      "type": "influence-relationship",
+      "sourceId": "dr-reliability",
+      "targetId": "gl-quality",
+      "tempId": "r04",
+      "documentation": "Relationship from Reliability Pressure to Trusted Model Integrity."
+    },
+    {
+      "op": "createRelationship",
+      "type": "influence-relationship",
+      "sourceId": "rq-api",
+      "targetId": "gl-speed",
+      "tempId": "r05",
+      "documentation": "Relationship from Scriptable API Requirement to Faster Modeling Delivery."
+    },
+    {
+      "op": "createRelationship",
+      "type": "influence-relationship",
+      "sourceId": "rq-batch",
+      "targetId": "gl-quality",
+      "tempId": "r06",
+      "documentation": "Relationship from Deterministic Batch Requirement to Trusted Model Integrity."
+    },
+    {
+      "op": "createRelationship",
+      "type": "influence-relationship",
+      "sourceId": "rq-cli",
+      "targetId": "gl-speed",
+      "tempId": "r07",
+      "documentation": "Relationship from Repeatable CLI Requirement to Faster Modeling Delivery."
+    },
+    {
+      "op": "createRelationship",
+      "type": "influence-relationship",
+      "sourceId": "pr-api-first",
+      "targetId": "rq-api",
+      "tempId": "r08",
+      "documentation": "Relationship from API First Principle to Scriptable API Requirement."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "cap-modeling",
+      "targetId": "rq-api",
+      "tempId": "r09",
+      "documentation": "Relationship from API Modeling Capability to Scriptable API Requirement."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "cap-quality",
+      "targetId": "rq-batch",
+      "tempId": "r10",
+      "documentation": "Relationship from Validation Capability to Deterministic Batch Requirement."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "vs-change",
+      "targetId": "cap-modeling",
+      "tempId": "r11",
+      "documentation": "Relationship from Change Automation Stream to API Modeling Capability."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "vs-change",
+      "targetId": "cap-quality",
+      "tempId": "r12",
+      "documentation": "Relationship from Change Automation Stream to Validation Capability."
+    },
+    {
+      "op": "createRelationship",
+      "type": "influence-relationship",
+      "sourceId": "gl-speed",
+      "targetId": "oc-cycle",
+      "tempId": "r13",
+      "documentation": "Relationship from Faster Modeling Delivery to Shorter Delivery Cycle."
+    },
+    {
+      "op": "createRelationship",
+      "type": "influence-relationship",
+      "sourceId": "gl-quality",
+      "targetId": "oc-confidence",
+      "tempId": "r14",
+      "documentation": "Relationship from Trusted Model Integrity to Higher Automation Confidence."
+    },
+    {
+      "op": "createRelationship",
+      "type": "assignment-relationship",
+      "sourceId": "ba-arch-team",
+      "targetId": "br-modeler",
+      "tempId": "r15",
+      "documentation": "Relationship from Architecture Team to Model Automation Specialist."
+    },
+    {
+      "op": "createRelationship",
+      "type": "assignment-relationship",
+      "sourceId": "br-modeler",
+      "targetId": "bp-author",
+      "tempId": "r16",
+      "documentation": "Relationship from Model Automation Specialist to Author BOM Changes."
+    },
+    {
+      "op": "createRelationship",
+      "type": "assignment-relationship",
+      "sourceId": "br-modeler",
+      "targetId": "bp-verify",
+      "tempId": "r17",
+      "documentation": "Relationship from Model Automation Specialist to Verify BOM Changes."
+    },
+    {
+      "op": "createRelationship",
+      "type": "assignment-relationship",
+      "sourceId": "br-modeler",
+      "targetId": "bp-apply",
+      "tempId": "r18",
+      "documentation": "Relationship from Model Automation Specialist to Apply and Validate."
+    },
+    {
+      "op": "createRelationship",
+      "type": "realization-relationship",
+      "sourceId": "bp-author",
+      "targetId": "bs-modeling",
+      "tempId": "r19",
+      "documentation": "Relationship from Author BOM Changes to Architecture Automation Service."
+    },
+    {
+      "op": "createRelationship",
+      "type": "realization-relationship",
+      "sourceId": "bp-verify",
+      "targetId": "bs-modeling",
+      "tempId": "r20",
+      "documentation": "Relationship from Verify BOM Changes to Architecture Automation Service."
+    },
+    {
+      "op": "createRelationship",
+      "type": "realization-relationship",
+      "sourceId": "bp-apply",
+      "targetId": "bs-modeling",
+      "tempId": "r21",
+      "documentation": "Relationship from Apply and Validate to Architecture Automation Service."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "bp-author",
+      "targetId": "bo-bom",
+      "tempId": "r22",
+      "documentation": "Relationship from Author BOM Changes to ArchiMate BOM."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "bp-verify",
+      "targetId": "bo-bom",
+      "tempId": "r23",
+      "documentation": "Relationship from Verify BOM Changes to ArchiMate BOM."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "bp-apply",
+      "targetId": "bo-ids",
+      "tempId": "r24",
+      "documentation": "Relationship from Apply and Validate to ID Mapping File."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "bs-modeling",
+      "targetId": "product-toolkit",
+      "tempId": "r25",
+      "documentation": "Relationship from Architecture Automation Service to Archi Automation Toolkit."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "product-toolkit",
+      "targetId": "ac-archi-server",
+      "tempId": "r26",
+      "documentation": "Relationship from Archi Automation Toolkit to Archi Server."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "product-toolkit",
+      "targetId": "ac-archicli",
+      "tempId": "r27",
+      "documentation": "Relationship from Archi Automation Toolkit to ArchiCLI."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "oc-cycle",
+      "targetId": "product-toolkit",
+      "tempId": "r28",
+      "documentation": "Relationship from Shorter Delivery Cycle to Archi Automation Toolkit."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "oc-confidence",
+      "targetId": "product-toolkit",
+      "tempId": "r29",
+      "documentation": "Relationship from Higher Automation Confidence to Archi Automation Toolkit."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "cap-modeling",
+      "targetId": "bs-modeling",
+      "tempId": "r30",
+      "documentation": "Relationship from API Modeling Capability to Architecture Automation Service."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "cap-quality",
+      "targetId": "bs-modeling",
+      "tempId": "r31",
+      "documentation": "Relationship from Validation Capability to Architecture Automation Service."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "vs-change",
+      "targetId": "bp-author",
+      "tempId": "r32",
+      "documentation": "Relationship from Change Automation Stream to Author BOM Changes."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "vs-change",
+      "targetId": "bp-verify",
+      "tempId": "r33",
+      "documentation": "Relationship from Change Automation Stream to Verify BOM Changes."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "vs-change",
+      "targetId": "bp-apply",
+      "tempId": "r34",
+      "documentation": "Relationship from Change Automation Stream to Apply and Validate."
+    },
+    {
+      "op": "createRelationship",
+      "type": "realization-relationship",
+      "sourceId": "ac-endpoints",
+      "targetId": "ai-rest",
+      "tempId": "r35",
+      "documentation": "Relationship from Endpoint Router to REST API Interface."
+    },
+    {
+      "op": "createRelationship",
+      "type": "realization-relationship",
+      "sourceId": "ac-archi-server",
+      "targetId": "as-health",
+      "tempId": "r36",
+      "documentation": "Relationship from Archi Server to Health Diagnostics Service."
+    },
+    {
+      "op": "createRelationship",
+      "type": "realization-relationship",
+      "sourceId": "ac-archi-server",
+      "targetId": "as-query",
+      "tempId": "r37",
+      "documentation": "Relationship from Archi Server to Model Query Service."
+    },
+    {
+      "op": "createRelationship",
+      "type": "realization-relationship",
+      "sourceId": "ac-archi-server",
+      "targetId": "as-mutate",
+      "tempId": "r38",
+      "documentation": "Relationship from Archi Server to Model Apply Service."
+    },
+    {
+      "op": "createRelationship",
+      "type": "realization-relationship",
+      "sourceId": "ac-archi-server",
+      "targetId": "as-view",
+      "tempId": "r39",
+      "documentation": "Relationship from Archi Server to View Management Service."
+    },
+    {
+      "op": "createRelationship",
+      "type": "realization-relationship",
+      "sourceId": "ac-archi-server",
+      "targetId": "as-script",
+      "tempId": "r40",
+      "documentation": "Relationship from Archi Server to Script Execution Service."
+    },
+    {
+      "op": "createRelationship",
+      "type": "serving-relationship",
+      "sourceId": "as-health",
+      "targetId": "ac-archicli",
+      "tempId": "r41",
+      "documentation": "Relationship from Health Diagnostics Service to ArchiCLI."
+    },
+    {
+      "op": "createRelationship",
+      "type": "serving-relationship",
+      "sourceId": "as-query",
+      "targetId": "ac-archicli",
+      "tempId": "r42",
+      "documentation": "Relationship from Model Query Service to ArchiCLI."
+    },
+    {
+      "op": "createRelationship",
+      "type": "serving-relationship",
+      "sourceId": "as-mutate",
+      "targetId": "ac-archicli",
+      "tempId": "r43",
+      "documentation": "Relationship from Model Apply Service to ArchiCLI."
+    },
+    {
+      "op": "createRelationship",
+      "type": "serving-relationship",
+      "sourceId": "as-view",
+      "targetId": "ac-archicli",
+      "tempId": "r44",
+      "documentation": "Relationship from View Management Service to ArchiCLI."
+    },
+    {
+      "op": "createRelationship",
+      "type": "serving-relationship",
+      "sourceId": "as-script",
+      "targetId": "ac-archicli",
+      "tempId": "r45",
+      "documentation": "Relationship from Script Execution Service to ArchiCLI."
+    },
+    {
+      "op": "createRelationship",
+      "type": "composition-relationship",
+      "sourceId": "ac-archi-server",
+      "targetId": "ac-endpoints",
+      "tempId": "r46",
+      "documentation": "Relationship from Archi Server to Endpoint Router."
+    },
+    {
+      "op": "createRelationship",
+      "type": "composition-relationship",
+      "sourceId": "ac-archi-server",
+      "targetId": "ac-queue",
+      "tempId": "r47",
+      "documentation": "Relationship from Archi Server to Operation Queue."
+    },
+    {
+      "op": "createRelationship",
+      "type": "composition-relationship",
+      "sourceId": "ac-archi-server",
+      "targetId": "ac-validation",
+      "tempId": "r48",
+      "documentation": "Relationship from Archi Server to Operation Validation Engine."
+    },
+    {
+      "op": "createRelationship",
+      "type": "composition-relationship",
+      "sourceId": "ac-archi-server",
+      "targetId": "ac-snapshot",
+      "tempId": "r49",
+      "documentation": "Relationship from Archi Server to Model Snapshot Builder."
+    },
+    {
+      "op": "createRelationship",
+      "type": "composition-relationship",
+      "sourceId": "ac-archi-server",
+      "targetId": "ac-layout",
+      "tempId": "r50",
+      "documentation": "Relationship from Archi Server to Dagre Layout Adapter."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "ac-endpoints",
+      "targetId": "ac-validation",
+      "tempId": "r51",
+      "documentation": "Relationship from Endpoint Router to Operation Validation Engine."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "ac-endpoints",
+      "targetId": "ac-queue",
+      "tempId": "r52",
+      "documentation": "Relationship from Endpoint Router to Operation Queue."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "ac-validation",
+      "targetId": "as-mutate",
+      "tempId": "r53",
+      "documentation": "Relationship from Operation Validation Engine to Model Apply Service."
+    },
+    {
+      "op": "createRelationship",
+      "type": "realization-relationship",
+      "sourceId": "ac-snapshot",
+      "targetId": "as-query",
+      "tempId": "r54",
+      "documentation": "Relationship from Model Snapshot Builder to Model Query Service."
+    },
+    {
+      "op": "createRelationship",
+      "type": "realization-relationship",
+      "sourceId": "ac-layout",
+      "targetId": "as-view",
+      "tempId": "r55",
+      "documentation": "Relationship from Dagre Layout Adapter to View Management Service."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "ac-queue",
+      "targetId": "do-operation",
+      "tempId": "r56",
+      "documentation": "Relationship from Operation Queue to Operation Record."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "as-query",
+      "targetId": "do-query",
+      "tempId": "r57",
+      "documentation": "Relationship from Model Query Service to Query Result."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "as-query",
+      "targetId": "do-openapi",
+      "tempId": "r58",
+      "documentation": "Relationship from Model Query Service to OpenAPI Contract."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "as-mutate",
+      "targetId": "do-operation",
+      "tempId": "r59",
+      "documentation": "Relationship from Model Apply Service to Operation Record."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "as-script",
+      "targetId": "do-operation",
+      "tempId": "r60",
+      "documentation": "Relationship from Script Execution Service to Operation Record."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "ac-layout",
+      "targetId": "tf-layout",
+      "tempId": "r61",
+      "documentation": "Relationship from Dagre Layout Adapter to Graph Layout Computation."
+    },
+    {
+      "op": "createRelationship",
+      "type": "composition-relationship",
+      "sourceId": "ac-archicli",
+      "targetId": "ac-cli-verify",
+      "tempId": "r62",
+      "documentation": "Relationship from ArchiCLI to BOM Verifier."
+    },
+    {
+      "op": "createRelationship",
+      "type": "composition-relationship",
+      "sourceId": "ac-archicli",
+      "targetId": "ac-cli-batch",
+      "tempId": "r63",
+      "documentation": "Relationship from ArchiCLI to Batch Orchestrator."
+    },
+    {
+      "op": "createRelationship",
+      "type": "composition-relationship",
+      "sourceId": "ac-archicli",
+      "targetId": "ac-cli-poll",
+      "tempId": "r64",
+      "documentation": "Relationship from ArchiCLI to Polling Monitor."
+    },
+    {
+      "op": "createRelationship",
+      "type": "composition-relationship",
+      "sourceId": "ac-archicli",
+      "targetId": "ac-cli-tempid",
+      "tempId": "r65",
+      "documentation": "Relationship from ArchiCLI to TempId Resolver."
+    },
+    {
+      "op": "createRelationship",
+      "type": "composition-relationship",
+      "sourceId": "ac-archicli",
+      "targetId": "ac-cli-output",
+      "tempId": "r66",
+      "documentation": "Relationship from ArchiCLI to Output Formatter."
+    },
+    {
+      "op": "createRelationship",
+      "type": "composition-relationship",
+      "sourceId": "ac-archicli",
+      "targetId": "ac-cli-client",
+      "tempId": "r67",
+      "documentation": "Relationship from ArchiCLI to HTTP Client."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "ac-cli-verify",
+      "targetId": "ac-cli-batch",
+      "tempId": "r68",
+      "documentation": "Relationship from BOM Verifier to Batch Orchestrator."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "ac-cli-batch",
+      "targetId": "ac-cli-poll",
+      "tempId": "r69",
+      "documentation": "Relationship from Batch Orchestrator to Polling Monitor."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "ac-cli-batch",
+      "targetId": "ac-cli-tempid",
+      "tempId": "r70",
+      "documentation": "Relationship from Batch Orchestrator to TempId Resolver."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "ac-cli-batch",
+      "targetId": "ac-cli-client",
+      "tempId": "r71",
+      "documentation": "Relationship from Batch Orchestrator to HTTP Client."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "ac-cli-batch",
+      "targetId": "as-mutate",
+      "tempId": "r72",
+      "documentation": "Relationship from Batch Orchestrator to Model Apply Service."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "ac-cli-verify",
+      "targetId": "as-query",
+      "tempId": "r73",
+      "documentation": "Relationship from BOM Verifier to Model Query Service."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "ac-cli-poll",
+      "targetId": "as-health",
+      "tempId": "r74",
+      "documentation": "Relationship from Polling Monitor to Health Diagnostics Service."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "ac-cli-output",
+      "targetId": "do-report",
+      "tempId": "r75",
+      "documentation": "Relationship from Output Formatter to CLI Report."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "ac-cli-verify",
+      "targetId": "do-bom",
+      "tempId": "r76",
+      "documentation": "Relationship from BOM Verifier to BOM File."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "ac-cli-batch",
+      "targetId": "do-bom",
+      "tempId": "r77",
+      "documentation": "Relationship from Batch Orchestrator to BOM File."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "ac-cli-tempid",
+      "targetId": "do-ids",
+      "tempId": "r78",
+      "documentation": "Relationship from TempId Resolver to TempId Mapping Store."
+    },
+    {
+      "op": "createRelationship",
+      "type": "realization-relationship",
+      "sourceId": "do-bom",
+      "targetId": "bo-bom",
+      "tempId": "r79",
+      "documentation": "Relationship from BOM File to ArchiMate BOM."
+    },
+    {
+      "op": "createRelationship",
+      "type": "realization-relationship",
+      "sourceId": "do-ids",
+      "targetId": "bo-ids",
+      "tempId": "r80",
+      "documentation": "Relationship from TempId Mapping Store to ID Mapping File."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "do-openapi",
+      "targetId": "ac-cli-client",
+      "tempId": "r81",
+      "documentation": "Relationship from OpenAPI Contract to HTTP Client."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "ac-cli-client",
+      "targetId": "ai-rest",
+      "tempId": "r82",
+      "documentation": "Relationship from HTTP Client to REST API Interface."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "dv-workstation",
+      "targetId": "nd-runtime",
+      "tempId": "r83",
+      "documentation": "Relationship from EA Workstation to Archi Runtime Node."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "nd-runtime",
+      "targetId": "ss-archi",
+      "tempId": "r84",
+      "documentation": "Relationship from Archi Runtime Node to Archi plus jArchi."
+    },
+    {
+      "op": "createRelationship",
+      "type": "realization-relationship",
+      "sourceId": "ss-archi",
+      "targetId": "ts-http",
+      "tempId": "r85",
+      "documentation": "Relationship from Archi plus jArchi to Local HTTP Service."
+    },
+    {
+      "op": "createRelationship",
+      "type": "realization-relationship",
+      "sourceId": "ss-archi",
+      "targetId": "ts-filesystem",
+      "tempId": "r86",
+      "documentation": "Relationship from Archi plus jArchi to Local File Service."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "cn-loopback",
+      "targetId": "ts-http",
+      "tempId": "r87",
+      "documentation": "Relationship from Loopback Network to Local HTTP Service."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "cn-loopback",
+      "targetId": "ai-rest",
+      "tempId": "r88",
+      "documentation": "Relationship from Loopback Network to REST API Interface."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "ar-server",
+      "targetId": "ss-archi",
+      "tempId": "r89",
+      "documentation": "Relationship from Model API Server Script to Archi plus jArchi."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "ar-server",
+      "targetId": "ac-archi-server",
+      "tempId": "r90",
+      "documentation": "Relationship from Model API Server Script to Archi Server."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "ar-cli",
+      "targetId": "dv-workstation",
+      "tempId": "r91",
+      "documentation": "Relationship from ArchiCLI Distribution to EA Workstation."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "ar-cli",
+      "targetId": "ac-archicli",
+      "tempId": "r92",
+      "documentation": "Relationship from ArchiCLI Distribution to ArchiCLI."
+    },
+    {
+      "op": "createRelationship",
+      "type": "realization-relationship",
+      "sourceId": "ar-repo",
+      "targetId": "ar-server",
+      "tempId": "r93",
+      "documentation": "Relationship from archi-server Repository to Model API Server Script."
+    },
+    {
+      "op": "createRelationship",
+      "type": "realization-relationship",
+      "sourceId": "ar-repo",
+      "targetId": "ar-cli",
+      "tempId": "r94",
+      "documentation": "Relationship from archi-server Repository to ArchiCLI Distribution."
+    },
+    {
+      "op": "createRelationship",
+      "type": "serving-relationship",
+      "sourceId": "ts-filesystem",
+      "targetId": "ac-archicli",
+      "tempId": "r95",
+      "documentation": "Relationship from Local File Service to ArchiCLI."
+    },
+    {
+      "op": "createRelationship",
+      "type": "serving-relationship",
+      "sourceId": "ts-filesystem",
+      "targetId": "ac-archi-server",
+      "tempId": "r96",
+      "documentation": "Relationship from Local File Service to Archi Server."
+    },
+    {
+      "op": "createRelationship",
+      "type": "serving-relationship",
+      "sourceId": "ts-http",
+      "targetId": "as-health",
+      "tempId": "r97",
+      "documentation": "Relationship from Local HTTP Service to Health Diagnostics Service."
+    },
+    {
+      "op": "createRelationship",
+      "type": "serving-relationship",
+      "sourceId": "ts-http",
+      "targetId": "as-query",
+      "tempId": "r98",
+      "documentation": "Relationship from Local HTTP Service to Model Query Service."
+    },
+    {
+      "op": "createRelationship",
+      "type": "serving-relationship",
+      "sourceId": "ts-http",
+      "targetId": "as-mutate",
+      "tempId": "r99",
+      "documentation": "Relationship from Local HTTP Service to Model Apply Service."
+    },
+    {
+      "op": "createRelationship",
+      "type": "serving-relationship",
+      "sourceId": "ts-http",
+      "targetId": "as-view",
+      "tempId": "r100",
+      "documentation": "Relationship from Local HTTP Service to View Management Service."
+    },
+    {
+      "op": "createRelationship",
+      "type": "serving-relationship",
+      "sourceId": "ts-http",
+      "targetId": "as-script",
+      "tempId": "r101",
+      "documentation": "Relationship from Local HTTP Service to Script Execution Service."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "ts-filesystem",
+      "targetId": "do-bom",
+      "tempId": "r102",
+      "documentation": "Relationship from Local File Service to BOM File."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "ts-filesystem",
+      "targetId": "do-ids",
+      "tempId": "r103",
+      "documentation": "Relationship from Local File Service to TempId Mapping Store."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "ts-http",
+      "targetId": "ai-rest",
+      "tempId": "r104",
+      "documentation": "Relationship from Local HTTP Service to REST API Interface."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "ar-repo",
+      "targetId": "product-toolkit",
+      "tempId": "r105",
+      "documentation": "Relationship from archi-server Repository to Archi Automation Toolkit."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "wp-server",
+      "targetId": "ac-archi-server",
+      "tempId": "r106",
+      "documentation": "Relationship from Harden Server Surface to Archi Server."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "wp-cli",
+      "targetId": "ac-archicli",
+      "tempId": "r107",
+      "documentation": "Relationship from Scale CLI Adoption to ArchiCLI."
+    },
+    {
+      "op": "createRelationship",
+      "type": "realization-relationship",
+      "sourceId": "wp-prime",
+      "targetId": "dl-prime",
+      "tempId": "r108",
+      "documentation": "Relationship from Publish Prime Example to Prime Example Model."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "wp-server",
+      "targetId": "pl-current",
+      "tempId": "r109",
+      "documentation": "Relationship from Harden Server Surface to Current Capability."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "wp-cli",
+      "targetId": "pl-current",
+      "tempId": "r110",
+      "documentation": "Relationship from Scale CLI Adoption to Current Capability."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "pl-baseline",
+      "targetId": "gp-example",
+      "tempId": "r111",
+      "documentation": "Relationship from Baseline Capability to Example Coverage Gap."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "gp-example",
+      "targetId": "pl-current",
+      "tempId": "r112",
+      "documentation": "Relationship from Example Coverage Gap to Current Capability."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "wp-prime",
+      "targetId": "ie-release",
+      "tempId": "r113",
+      "documentation": "Relationship from Publish Prime Example to Release 1.5 Event."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "ie-release",
+      "targetId": "pl-current",
+      "tempId": "r114",
+      "documentation": "Relationship from Release 1.5 Event to Current Capability."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "dl-prime",
+      "targetId": "product-toolkit",
+      "tempId": "r115",
+      "documentation": "Relationship from Prime Example Model to Archi Automation Toolkit."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "oc-cycle",
+      "targetId": "cap-modeling",
+      "tempId": "r116",
+      "documentation": "Relationship from Shorter Delivery Cycle to API Modeling Capability."
+    },
+    {
+      "op": "createRelationship",
+      "type": "association-relationship",
+      "sourceId": "oc-confidence",
+      "targetId": "cap-quality",
+      "tempId": "r117",
+      "documentation": "Relationship from Higher Automation Confidence to Validation Capability."
+    },
+    {
+      "op": "updateElement",
+      "id": "st-enterprise-architect",
+      "documentation": "Enterprise Architect models architecture governance expectations in the Motivation layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "st-platform-operator",
+      "documentation": "Platform Operator models operational reliability expectations in the Motivation layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "dr-automation",
+      "documentation": "Automation Pressure models need for programmable modeling in the Motivation layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "dr-reliability",
+      "documentation": "Reliability Pressure models need for deterministic operations in the Motivation layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "gl-speed",
+      "documentation": "Faster Modeling Delivery models reduce model turnaround in the Motivation layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "gl-quality",
+      "documentation": "Trusted Model Integrity models preserve consistency in the Motivation layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "rq-api",
+      "documentation": "Scriptable API Requirement models expose model operations in the Motivation layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "rq-batch",
+      "documentation": "Deterministic Batch Requirement models safe ordered apply in the Motivation layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "rq-cli",
+      "documentation": "Repeatable CLI Requirement models scriptable user workflows in the Motivation layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "pr-api-first",
+      "documentation": "API First Principle models design around executable contracts in the Motivation layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "cap-modeling",
+      "documentation": "API Modeling Capability models automate model authoring in the Strategy layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "cap-quality",
+      "documentation": "Validation Capability models assure model correctness in the Strategy layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "vs-change",
+      "documentation": "Change Automation Stream models author verify apply flow in the Strategy layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "oc-cycle",
+      "documentation": "Shorter Delivery Cycle models faster architecture iteration in the Motivation layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "oc-confidence",
+      "documentation": "Higher Automation Confidence models trust automation outcomes in the Motivation layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "ba-arch-team",
+      "documentation": "Architecture Team models owns enterprise model in the Business layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "br-modeler",
+      "documentation": "Model Automation Specialist models executes automation workflow in the Business layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "bp-author",
+      "documentation": "Author BOM Changes models define model deltas in the Business layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "bp-verify",
+      "documentation": "Verify BOM Changes models validate before apply in the Business layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "bp-apply",
+      "documentation": "Apply and Validate models execute and confirm changes in the Business layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "bs-modeling",
+      "documentation": "Architecture Automation Service models delivers automated modeling in the Business layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "bo-bom",
+      "documentation": "ArchiMate BOM models change specification artifact in the Business layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "bo-ids",
+      "documentation": "ID Mapping File models tempId mapping artifact in the Business layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "product-toolkit",
+      "documentation": "Archi Automation Toolkit models combined server and cli offering in the Business layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "ac-archi-server",
+      "documentation": "Archi Server models model api runtime in the Application layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "ac-archicli",
+      "documentation": "ArchiCLI models command line automation client in the Application layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "ai-rest",
+      "documentation": "REST API Interface models external HTTP contract in the Application layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "as-health",
+      "documentation": "Health Diagnostics Service models runtime status queries in the Application layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "as-query",
+      "documentation": "Model Query Service models read model data in the Application layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "as-mutate",
+      "documentation": "Model Apply Service models execute model changes in the Application layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "as-view",
+      "documentation": "View Management Service models create and layout views in the Application layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "as-script",
+      "documentation": "Script Execution Service models run custom scripts in the Application layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "ac-endpoints",
+      "documentation": "Endpoint Router models route endpoint handlers in the Application layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "ac-queue",
+      "documentation": "Operation Queue models serialize apply operations in the Application layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "ac-validation",
+      "documentation": "Operation Validation Engine models validate change operations in the Application layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "ac-snapshot",
+      "documentation": "Model Snapshot Builder models build query snapshots in the Application layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "ac-layout",
+      "documentation": "Dagre Layout Adapter models perform auto layout in the Application layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "do-operation",
+      "documentation": "Operation Record models async operation metadata in the Application layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "do-query",
+      "documentation": "Query Result models query response payload in the Application layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "do-openapi",
+      "documentation": "OpenAPI Contract models formal api schema in the Application layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "ac-cli-verify",
+      "documentation": "BOM Verifier models schema and semantic checks in the Application layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "ac-cli-batch",
+      "documentation": "Batch Orchestrator models chunk submit poll flow in the Application layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "ac-cli-poll",
+      "documentation": "Polling Monitor models wait for operation status in the Application layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "ac-cli-tempid",
+      "documentation": "TempId Resolver models map temporary references in the Application layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "ac-cli-output",
+      "documentation": "Output Formatter models json text yaml rendering in the Application layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "ac-cli-client",
+      "documentation": "HTTP Client models typed api transport in the Application layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "do-bom",
+      "documentation": "BOM File models cli input file in the Application layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "do-ids",
+      "documentation": "TempId Mapping Store models persisted id mappings in the Application layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "do-report",
+      "documentation": "CLI Report models command execution summary in the Application layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "dv-workstation",
+      "documentation": "EA Workstation models user execution environment in the Technology layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "nd-runtime",
+      "documentation": "Archi Runtime Node models local process host in the Technology layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "ss-archi",
+      "documentation": "Archi plus jArchi models scripting runtime in the Technology layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "ts-http",
+      "documentation": "Local HTTP Service models localhost api transport in the Technology layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "ts-filesystem",
+      "documentation": "Local File Service models persistent storage in the Technology layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "cn-loopback",
+      "documentation": "Loopback Network models localhost network path in the Technology layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "ar-server",
+      "documentation": "Model API Server Script models server implementation artifact in the Technology layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "ar-cli",
+      "documentation": "ArchiCLI Distribution models cli packaged artifact in the Technology layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "ar-repo",
+      "documentation": "archi-server Repository models source code artifact in the Technology layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "tf-layout",
+      "documentation": "Graph Layout Computation models dagre layout calculation in the Technology layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "wp-server",
+      "documentation": "Harden Server Surface models improve server robustness in the Implementation and Migration layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "wp-cli",
+      "documentation": "Scale CLI Adoption models improve cli usability in the Implementation and Migration layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "wp-prime",
+      "documentation": "Publish Prime Example models deliver flagship model in the Implementation and Migration layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "pl-baseline",
+      "documentation": "Baseline Capability models initial platform state in the Implementation and Migration layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "pl-current",
+      "documentation": "Current Capability models mature platform state in the Implementation and Migration layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "gp-example",
+      "documentation": "Example Coverage Gap models missing comprehensive sample in the Implementation and Migration layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "ie-release",
+      "documentation": "Release 1.5 Event models release milestone in the Implementation and Migration layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "updateElement",
+      "id": "dl-prime",
+      "documentation": "Prime Example Model models final showcase artifact in the Implementation and Migration layer for the Archi Server and ArchiCLI architecture."
+    },
+    {
+      "op": "setProperty",
+      "id": "st-enterprise-architect",
+      "key": "Markdown",
+      "value": "### Purpose\nEnterprise Architect is represented as a **stakeholder** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "st-platform-operator",
+      "key": "Markdown",
+      "value": "### Purpose\nPlatform Operator is represented as a **stakeholder** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "dr-automation",
+      "key": "Markdown",
+      "value": "### Purpose\nAutomation Pressure is represented as a **driver** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "dr-reliability",
+      "key": "Markdown",
+      "value": "### Purpose\nReliability Pressure is represented as a **driver** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "gl-speed",
+      "key": "Markdown",
+      "value": "### Purpose\nFaster Modeling Delivery is represented as a **goal** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "gl-quality",
+      "key": "Markdown",
+      "value": "### Purpose\nTrusted Model Integrity is represented as a **goal** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "rq-api",
+      "key": "Markdown",
+      "value": "### Purpose\nScriptable API Requirement is represented as a **requirement** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "rq-batch",
+      "key": "Markdown",
+      "value": "### Purpose\nDeterministic Batch Requirement is represented as a **requirement** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "rq-cli",
+      "key": "Markdown",
+      "value": "### Purpose\nRepeatable CLI Requirement is represented as a **requirement** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "pr-api-first",
+      "key": "Markdown",
+      "value": "### Purpose\nAPI First Principle is represented as a **principle** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "cap-modeling",
+      "key": "Markdown",
+      "value": "### Purpose\nAPI Modeling Capability is represented as a **capability** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "cap-quality",
+      "key": "Markdown",
+      "value": "### Purpose\nValidation Capability is represented as a **capability** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "vs-change",
+      "key": "Markdown",
+      "value": "### Purpose\nChange Automation Stream is represented as a **value-stream** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "oc-cycle",
+      "key": "Markdown",
+      "value": "### Purpose\nShorter Delivery Cycle is represented as a **outcome** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "oc-confidence",
+      "key": "Markdown",
+      "value": "### Purpose\nHigher Automation Confidence is represented as a **outcome** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "ba-arch-team",
+      "key": "Markdown",
+      "value": "### Purpose\nArchitecture Team is represented as a **business-actor** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "br-modeler",
+      "key": "Markdown",
+      "value": "### Purpose\nModel Automation Specialist is represented as a **business-role** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "bp-author",
+      "key": "Markdown",
+      "value": "### Purpose\nAuthor BOM Changes is represented as a **business-process** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "bp-verify",
+      "key": "Markdown",
+      "value": "### Purpose\nVerify BOM Changes is represented as a **business-process** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "bp-apply",
+      "key": "Markdown",
+      "value": "### Purpose\nApply and Validate is represented as a **business-process** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "bs-modeling",
+      "key": "Markdown",
+      "value": "### Purpose\nArchitecture Automation Service is represented as a **business-service** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "bo-bom",
+      "key": "Markdown",
+      "value": "### Purpose\nArchiMate BOM is represented as a **business-object** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "bo-ids",
+      "key": "Markdown",
+      "value": "### Purpose\nID Mapping File is represented as a **business-object** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "product-toolkit",
+      "key": "Markdown",
+      "value": "### Purpose\nArchi Automation Toolkit is represented as a **product** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "ac-archi-server",
+      "key": "Markdown",
+      "value": "### Purpose\nArchi Server is represented as a **application-component** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "ac-archicli",
+      "key": "Markdown",
+      "value": "### Purpose\nArchiCLI is represented as a **application-component** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "ai-rest",
+      "key": "Markdown",
+      "value": "### Purpose\nREST API Interface is represented as a **application-interface** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "as-health",
+      "key": "Markdown",
+      "value": "### Purpose\nHealth Diagnostics Service is represented as a **application-service** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "as-query",
+      "key": "Markdown",
+      "value": "### Purpose\nModel Query Service is represented as a **application-service** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "as-mutate",
+      "key": "Markdown",
+      "value": "### Purpose\nModel Apply Service is represented as a **application-service** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "as-view",
+      "key": "Markdown",
+      "value": "### Purpose\nView Management Service is represented as a **application-service** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "as-script",
+      "key": "Markdown",
+      "value": "### Purpose\nScript Execution Service is represented as a **application-service** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "ac-endpoints",
+      "key": "Markdown",
+      "value": "### Purpose\nEndpoint Router is represented as a **application-component** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "ac-queue",
+      "key": "Markdown",
+      "value": "### Purpose\nOperation Queue is represented as a **application-component** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "ac-validation",
+      "key": "Markdown",
+      "value": "### Purpose\nOperation Validation Engine is represented as a **application-component** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "ac-snapshot",
+      "key": "Markdown",
+      "value": "### Purpose\nModel Snapshot Builder is represented as a **application-component** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "ac-layout",
+      "key": "Markdown",
+      "value": "### Purpose\nDagre Layout Adapter is represented as a **application-component** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "do-operation",
+      "key": "Markdown",
+      "value": "### Purpose\nOperation Record is represented as a **data-object** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "do-query",
+      "key": "Markdown",
+      "value": "### Purpose\nQuery Result is represented as a **data-object** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "do-openapi",
+      "key": "Markdown",
+      "value": "### Purpose\nOpenAPI Contract is represented as a **data-object** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "ac-cli-verify",
+      "key": "Markdown",
+      "value": "### Purpose\nBOM Verifier is represented as a **application-component** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "ac-cli-batch",
+      "key": "Markdown",
+      "value": "### Purpose\nBatch Orchestrator is represented as a **application-component** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "ac-cli-poll",
+      "key": "Markdown",
+      "value": "### Purpose\nPolling Monitor is represented as a **application-component** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "ac-cli-tempid",
+      "key": "Markdown",
+      "value": "### Purpose\nTempId Resolver is represented as a **application-component** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "ac-cli-output",
+      "key": "Markdown",
+      "value": "### Purpose\nOutput Formatter is represented as a **application-component** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "ac-cli-client",
+      "key": "Markdown",
+      "value": "### Purpose\nHTTP Client is represented as a **application-component** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "do-bom",
+      "key": "Markdown",
+      "value": "### Purpose\nBOM File is represented as a **data-object** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "do-ids",
+      "key": "Markdown",
+      "value": "### Purpose\nTempId Mapping Store is represented as a **data-object** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "do-report",
+      "key": "Markdown",
+      "value": "### Purpose\nCLI Report is represented as a **data-object** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "dv-workstation",
+      "key": "Markdown",
+      "value": "### Purpose\nEA Workstation is represented as a **device** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "nd-runtime",
+      "key": "Markdown",
+      "value": "### Purpose\nArchi Runtime Node is represented as a **node** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "ss-archi",
+      "key": "Markdown",
+      "value": "### Purpose\nArchi plus jArchi is represented as a **system-software** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "ts-http",
+      "key": "Markdown",
+      "value": "### Purpose\nLocal HTTP Service is represented as a **technology-service** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "ts-filesystem",
+      "key": "Markdown",
+      "value": "### Purpose\nLocal File Service is represented as a **technology-service** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "cn-loopback",
+      "key": "Markdown",
+      "value": "### Purpose\nLoopback Network is represented as a **communication-network** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "ar-server",
+      "key": "Markdown",
+      "value": "### Purpose\nModel API Server Script is represented as a **artifact** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "ar-cli",
+      "key": "Markdown",
+      "value": "### Purpose\nArchiCLI Distribution is represented as a **artifact** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "ar-repo",
+      "key": "Markdown",
+      "value": "### Purpose\narchi-server Repository is represented as a **artifact** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "tf-layout",
+      "key": "Markdown",
+      "value": "### Purpose\nGraph Layout Computation is represented as a **technology-function** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "wp-server",
+      "key": "Markdown",
+      "value": "### Purpose\nHarden Server Surface is represented as a **work-package** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "wp-cli",
+      "key": "Markdown",
+      "value": "### Purpose\nScale CLI Adoption is represented as a **work-package** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "wp-prime",
+      "key": "Markdown",
+      "value": "### Purpose\nPublish Prime Example is represented as a **work-package** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "pl-baseline",
+      "key": "Markdown",
+      "value": "### Purpose\nBaseline Capability is represented as a **plateau** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "pl-current",
+      "key": "Markdown",
+      "value": "### Purpose\nCurrent Capability is represented as a **plateau** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "gp-example",
+      "key": "Markdown",
+      "value": "### Purpose\nExample Coverage Gap is represented as a **gap** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "ie-release",
+      "key": "Markdown",
+      "value": "### Purpose\nRelease 1.5 Event is represented as a **implementation-event** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "setProperty",
+      "id": "dl-prime",
+      "key": "Markdown",
+      "value": "### Purpose\nPrime Example Model is represented as a **deliverable** in the Archi Server and ArchiCLI reference model.\n\n### Context\nThis element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.\n\n### Notes\nThis property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."
+    },
+    {
+      "op": "createView",
+      "name": "Archi Server and ArchiCLI - Layered Overview",
+      "tempId": "v-layered-overview",
+      "viewpoint": "layered",
+      "documentation": "Cross-layer view of motivation, business, application, and technology concerns."
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-layered-overview",
+      "elementId": "ba-arch-team",
+      "tempId": "vis-v-layered-overview-ba-arch-team"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-layered-overview",
+      "elementId": "br-modeler",
+      "tempId": "vis-v-layered-overview-br-modeler"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-layered-overview",
+      "elementId": "bp-author",
+      "tempId": "vis-v-layered-overview-bp-author"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-layered-overview",
+      "elementId": "bp-verify",
+      "tempId": "vis-v-layered-overview-bp-verify"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-layered-overview",
+      "elementId": "bp-apply",
+      "tempId": "vis-v-layered-overview-bp-apply"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-layered-overview",
+      "elementId": "bs-modeling",
+      "tempId": "vis-v-layered-overview-bs-modeling"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-layered-overview",
+      "elementId": "bo-bom",
+      "tempId": "vis-v-layered-overview-bo-bom"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-layered-overview",
+      "elementId": "bo-ids",
+      "tempId": "vis-v-layered-overview-bo-ids"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-layered-overview",
+      "elementId": "cap-modeling",
+      "tempId": "vis-v-layered-overview-cap-modeling"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-layered-overview",
+      "elementId": "cap-quality",
+      "tempId": "vis-v-layered-overview-cap-quality"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-layered-overview",
+      "elementId": "vs-change",
+      "tempId": "vis-v-layered-overview-vs-change"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-layered-overview",
+      "elementId": "oc-cycle",
+      "tempId": "vis-v-layered-overview-oc-cycle"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-layered-overview",
+      "elementId": "oc-confidence",
+      "tempId": "vis-v-layered-overview-oc-confidence"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-layered-overview",
+      "elementId": "product-toolkit",
+      "tempId": "vis-v-layered-overview-product-toolkit"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-layered-overview",
+      "elementId": "ac-archicli",
+      "tempId": "vis-v-layered-overview-ac-archicli"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-layered-overview",
+      "elementId": "ac-archi-server",
+      "tempId": "vis-v-layered-overview-ac-archi-server"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-layered-overview",
+      "elementId": "ai-rest",
+      "tempId": "vis-v-layered-overview-ai-rest"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-layered-overview",
+      "elementId": "as-query",
+      "tempId": "vis-v-layered-overview-as-query"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-layered-overview",
+      "elementId": "as-mutate",
+      "tempId": "vis-v-layered-overview-as-mutate"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-layered-overview",
+      "elementId": "as-health",
+      "tempId": "vis-v-layered-overview-as-health"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-layered-overview",
+      "elementId": "do-bom",
+      "tempId": "vis-v-layered-overview-do-bom"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-layered-overview",
+      "elementId": "do-ids",
+      "tempId": "vis-v-layered-overview-do-ids"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-layered-overview",
+      "elementId": "dv-workstation",
+      "tempId": "vis-v-layered-overview-dv-workstation"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-layered-overview",
+      "elementId": "nd-runtime",
+      "tempId": "vis-v-layered-overview-nd-runtime"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-layered-overview",
+      "elementId": "ss-archi",
+      "tempId": "vis-v-layered-overview-ss-archi"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-layered-overview",
+      "elementId": "ts-http",
+      "tempId": "vis-v-layered-overview-ts-http"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-layered-overview",
+      "elementId": "ts-filesystem",
+      "tempId": "vis-v-layered-overview-ts-filesystem"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-layered-overview",
+      "elementId": "cn-loopback",
+      "tempId": "vis-v-layered-overview-cn-loopback"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-layered-overview",
+      "relationshipId": "r11",
+      "sourceVisualId": "vis-v-layered-overview-vs-change",
+      "targetVisualId": "vis-v-layered-overview-cap-modeling"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-layered-overview",
+      "relationshipId": "r12",
+      "sourceVisualId": "vis-v-layered-overview-vs-change",
+      "targetVisualId": "vis-v-layered-overview-cap-quality"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-layered-overview",
+      "relationshipId": "r15",
+      "sourceVisualId": "vis-v-layered-overview-ba-arch-team",
+      "targetVisualId": "vis-v-layered-overview-br-modeler"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-layered-overview",
+      "relationshipId": "r16",
+      "sourceVisualId": "vis-v-layered-overview-br-modeler",
+      "targetVisualId": "vis-v-layered-overview-bp-author"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-layered-overview",
+      "relationshipId": "r17",
+      "sourceVisualId": "vis-v-layered-overview-br-modeler",
+      "targetVisualId": "vis-v-layered-overview-bp-verify"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-layered-overview",
+      "relationshipId": "r18",
+      "sourceVisualId": "vis-v-layered-overview-br-modeler",
+      "targetVisualId": "vis-v-layered-overview-bp-apply"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-layered-overview",
+      "relationshipId": "r19",
+      "sourceVisualId": "vis-v-layered-overview-bp-author",
+      "targetVisualId": "vis-v-layered-overview-bs-modeling"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-layered-overview",
+      "relationshipId": "r20",
+      "sourceVisualId": "vis-v-layered-overview-bp-verify",
+      "targetVisualId": "vis-v-layered-overview-bs-modeling"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-layered-overview",
+      "relationshipId": "r21",
+      "sourceVisualId": "vis-v-layered-overview-bp-apply",
+      "targetVisualId": "vis-v-layered-overview-bs-modeling"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-layered-overview",
+      "relationshipId": "r22",
+      "sourceVisualId": "vis-v-layered-overview-bp-author",
+      "targetVisualId": "vis-v-layered-overview-bo-bom"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-layered-overview",
+      "relationshipId": "r23",
+      "sourceVisualId": "vis-v-layered-overview-bp-verify",
+      "targetVisualId": "vis-v-layered-overview-bo-bom"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-layered-overview",
+      "relationshipId": "r24",
+      "sourceVisualId": "vis-v-layered-overview-bp-apply",
+      "targetVisualId": "vis-v-layered-overview-bo-ids"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-layered-overview",
+      "relationshipId": "r25",
+      "sourceVisualId": "vis-v-layered-overview-bs-modeling",
+      "targetVisualId": "vis-v-layered-overview-product-toolkit"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-layered-overview",
+      "relationshipId": "r26",
+      "sourceVisualId": "vis-v-layered-overview-product-toolkit",
+      "targetVisualId": "vis-v-layered-overview-ac-archi-server"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-layered-overview",
+      "relationshipId": "r27",
+      "sourceVisualId": "vis-v-layered-overview-product-toolkit",
+      "targetVisualId": "vis-v-layered-overview-ac-archicli"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-layered-overview",
+      "relationshipId": "r28",
+      "sourceVisualId": "vis-v-layered-overview-oc-cycle",
+      "targetVisualId": "vis-v-layered-overview-product-toolkit"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-layered-overview",
+      "relationshipId": "r29",
+      "sourceVisualId": "vis-v-layered-overview-oc-confidence",
+      "targetVisualId": "vis-v-layered-overview-product-toolkit"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-layered-overview",
+      "relationshipId": "r30",
+      "sourceVisualId": "vis-v-layered-overview-cap-modeling",
+      "targetVisualId": "vis-v-layered-overview-bs-modeling"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-layered-overview",
+      "relationshipId": "r31",
+      "sourceVisualId": "vis-v-layered-overview-cap-quality",
+      "targetVisualId": "vis-v-layered-overview-bs-modeling"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-layered-overview",
+      "relationshipId": "r32",
+      "sourceVisualId": "vis-v-layered-overview-vs-change",
+      "targetVisualId": "vis-v-layered-overview-bp-author"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-layered-overview",
+      "relationshipId": "r33",
+      "sourceVisualId": "vis-v-layered-overview-vs-change",
+      "targetVisualId": "vis-v-layered-overview-bp-verify"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-layered-overview",
+      "relationshipId": "r34",
+      "sourceVisualId": "vis-v-layered-overview-vs-change",
+      "targetVisualId": "vis-v-layered-overview-bp-apply"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-layered-overview",
+      "relationshipId": "r36",
+      "sourceVisualId": "vis-v-layered-overview-ac-archi-server",
+      "targetVisualId": "vis-v-layered-overview-as-health"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-layered-overview",
+      "relationshipId": "r37",
+      "sourceVisualId": "vis-v-layered-overview-ac-archi-server",
+      "targetVisualId": "vis-v-layered-overview-as-query"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-layered-overview",
+      "relationshipId": "r38",
+      "sourceVisualId": "vis-v-layered-overview-ac-archi-server",
+      "targetVisualId": "vis-v-layered-overview-as-mutate"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-layered-overview",
+      "relationshipId": "r41",
+      "sourceVisualId": "vis-v-layered-overview-as-health",
+      "targetVisualId": "vis-v-layered-overview-ac-archicli"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-layered-overview",
+      "relationshipId": "r42",
+      "sourceVisualId": "vis-v-layered-overview-as-query",
+      "targetVisualId": "vis-v-layered-overview-ac-archicli"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-layered-overview",
+      "relationshipId": "r43",
+      "sourceVisualId": "vis-v-layered-overview-as-mutate",
+      "targetVisualId": "vis-v-layered-overview-ac-archicli"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-layered-overview",
+      "relationshipId": "r79",
+      "sourceVisualId": "vis-v-layered-overview-do-bom",
+      "targetVisualId": "vis-v-layered-overview-bo-bom"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-layered-overview",
+      "relationshipId": "r80",
+      "sourceVisualId": "vis-v-layered-overview-do-ids",
+      "targetVisualId": "vis-v-layered-overview-bo-ids"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-layered-overview",
+      "relationshipId": "r83",
+      "sourceVisualId": "vis-v-layered-overview-dv-workstation",
+      "targetVisualId": "vis-v-layered-overview-nd-runtime"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-layered-overview",
+      "relationshipId": "r84",
+      "sourceVisualId": "vis-v-layered-overview-nd-runtime",
+      "targetVisualId": "vis-v-layered-overview-ss-archi"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-layered-overview",
+      "relationshipId": "r85",
+      "sourceVisualId": "vis-v-layered-overview-ss-archi",
+      "targetVisualId": "vis-v-layered-overview-ts-http"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-layered-overview",
+      "relationshipId": "r86",
+      "sourceVisualId": "vis-v-layered-overview-ss-archi",
+      "targetVisualId": "vis-v-layered-overview-ts-filesystem"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-layered-overview",
+      "relationshipId": "r87",
+      "sourceVisualId": "vis-v-layered-overview-cn-loopback",
+      "targetVisualId": "vis-v-layered-overview-ts-http"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-layered-overview",
+      "relationshipId": "r88",
+      "sourceVisualId": "vis-v-layered-overview-cn-loopback",
+      "targetVisualId": "vis-v-layered-overview-ai-rest"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-layered-overview",
+      "relationshipId": "r95",
+      "sourceVisualId": "vis-v-layered-overview-ts-filesystem",
+      "targetVisualId": "vis-v-layered-overview-ac-archicli"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-layered-overview",
+      "relationshipId": "r96",
+      "sourceVisualId": "vis-v-layered-overview-ts-filesystem",
+      "targetVisualId": "vis-v-layered-overview-ac-archi-server"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-layered-overview",
+      "relationshipId": "r97",
+      "sourceVisualId": "vis-v-layered-overview-ts-http",
+      "targetVisualId": "vis-v-layered-overview-as-health"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-layered-overview",
+      "relationshipId": "r98",
+      "sourceVisualId": "vis-v-layered-overview-ts-http",
+      "targetVisualId": "vis-v-layered-overview-as-query"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-layered-overview",
+      "relationshipId": "r99",
+      "sourceVisualId": "vis-v-layered-overview-ts-http",
+      "targetVisualId": "vis-v-layered-overview-as-mutate"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-layered-overview",
+      "relationshipId": "r102",
+      "sourceVisualId": "vis-v-layered-overview-ts-filesystem",
+      "targetVisualId": "vis-v-layered-overview-do-bom"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-layered-overview",
+      "relationshipId": "r103",
+      "sourceVisualId": "vis-v-layered-overview-ts-filesystem",
+      "targetVisualId": "vis-v-layered-overview-do-ids"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-layered-overview",
+      "relationshipId": "r104",
+      "sourceVisualId": "vis-v-layered-overview-ts-http",
+      "targetVisualId": "vis-v-layered-overview-ai-rest"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-layered-overview",
+      "relationshipId": "r116",
+      "sourceVisualId": "vis-v-layered-overview-oc-cycle",
+      "targetVisualId": "vis-v-layered-overview-cap-modeling"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-layered-overview",
+      "relationshipId": "r117",
+      "sourceVisualId": "vis-v-layered-overview-oc-confidence",
+      "targetVisualId": "vis-v-layered-overview-cap-quality"
+    },
+    {
+      "op": "createView",
+      "name": "Archi Server - Internal Application Architecture",
+      "tempId": "v-server-internals",
+      "viewpoint": "application_cooperation",
+      "documentation": "Decomposition of server services, validation, queueing, and data objects."
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-server-internals",
+      "elementId": "ac-archi-server",
+      "tempId": "vis-v-server-internals-ac-archi-server"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-server-internals",
+      "elementId": "ai-rest",
+      "tempId": "vis-v-server-internals-ai-rest"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-server-internals",
+      "elementId": "as-health",
+      "tempId": "vis-v-server-internals-as-health"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-server-internals",
+      "elementId": "as-query",
+      "tempId": "vis-v-server-internals-as-query"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-server-internals",
+      "elementId": "as-mutate",
+      "tempId": "vis-v-server-internals-as-mutate"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-server-internals",
+      "elementId": "as-view",
+      "tempId": "vis-v-server-internals-as-view"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-server-internals",
+      "elementId": "as-script",
+      "tempId": "vis-v-server-internals-as-script"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-server-internals",
+      "elementId": "ac-endpoints",
+      "tempId": "vis-v-server-internals-ac-endpoints"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-server-internals",
+      "elementId": "ac-queue",
+      "tempId": "vis-v-server-internals-ac-queue"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-server-internals",
+      "elementId": "ac-validation",
+      "tempId": "vis-v-server-internals-ac-validation"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-server-internals",
+      "elementId": "ac-snapshot",
+      "tempId": "vis-v-server-internals-ac-snapshot"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-server-internals",
+      "elementId": "ac-layout",
+      "tempId": "vis-v-server-internals-ac-layout"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-server-internals",
+      "elementId": "do-operation",
+      "tempId": "vis-v-server-internals-do-operation"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-server-internals",
+      "elementId": "do-query",
+      "tempId": "vis-v-server-internals-do-query"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-server-internals",
+      "elementId": "do-openapi",
+      "tempId": "vis-v-server-internals-do-openapi"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-server-internals",
+      "elementId": "ss-archi",
+      "tempId": "vis-v-server-internals-ss-archi"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-server-internals",
+      "elementId": "ts-http",
+      "tempId": "vis-v-server-internals-ts-http"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-server-internals",
+      "elementId": "tf-layout",
+      "tempId": "vis-v-server-internals-tf-layout"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-server-internals",
+      "elementId": "ar-server",
+      "tempId": "vis-v-server-internals-ar-server"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-server-internals",
+      "relationshipId": "r35",
+      "sourceVisualId": "vis-v-server-internals-ac-endpoints",
+      "targetVisualId": "vis-v-server-internals-ai-rest"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-server-internals",
+      "relationshipId": "r36",
+      "sourceVisualId": "vis-v-server-internals-ac-archi-server",
+      "targetVisualId": "vis-v-server-internals-as-health"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-server-internals",
+      "relationshipId": "r37",
+      "sourceVisualId": "vis-v-server-internals-ac-archi-server",
+      "targetVisualId": "vis-v-server-internals-as-query"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-server-internals",
+      "relationshipId": "r38",
+      "sourceVisualId": "vis-v-server-internals-ac-archi-server",
+      "targetVisualId": "vis-v-server-internals-as-mutate"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-server-internals",
+      "relationshipId": "r39",
+      "sourceVisualId": "vis-v-server-internals-ac-archi-server",
+      "targetVisualId": "vis-v-server-internals-as-view"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-server-internals",
+      "relationshipId": "r40",
+      "sourceVisualId": "vis-v-server-internals-ac-archi-server",
+      "targetVisualId": "vis-v-server-internals-as-script"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-server-internals",
+      "relationshipId": "r46",
+      "sourceVisualId": "vis-v-server-internals-ac-archi-server",
+      "targetVisualId": "vis-v-server-internals-ac-endpoints"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-server-internals",
+      "relationshipId": "r47",
+      "sourceVisualId": "vis-v-server-internals-ac-archi-server",
+      "targetVisualId": "vis-v-server-internals-ac-queue"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-server-internals",
+      "relationshipId": "r48",
+      "sourceVisualId": "vis-v-server-internals-ac-archi-server",
+      "targetVisualId": "vis-v-server-internals-ac-validation"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-server-internals",
+      "relationshipId": "r49",
+      "sourceVisualId": "vis-v-server-internals-ac-archi-server",
+      "targetVisualId": "vis-v-server-internals-ac-snapshot"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-server-internals",
+      "relationshipId": "r50",
+      "sourceVisualId": "vis-v-server-internals-ac-archi-server",
+      "targetVisualId": "vis-v-server-internals-ac-layout"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-server-internals",
+      "relationshipId": "r51",
+      "sourceVisualId": "vis-v-server-internals-ac-endpoints",
+      "targetVisualId": "vis-v-server-internals-ac-validation"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-server-internals",
+      "relationshipId": "r52",
+      "sourceVisualId": "vis-v-server-internals-ac-endpoints",
+      "targetVisualId": "vis-v-server-internals-ac-queue"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-server-internals",
+      "relationshipId": "r53",
+      "sourceVisualId": "vis-v-server-internals-ac-validation",
+      "targetVisualId": "vis-v-server-internals-as-mutate"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-server-internals",
+      "relationshipId": "r54",
+      "sourceVisualId": "vis-v-server-internals-ac-snapshot",
+      "targetVisualId": "vis-v-server-internals-as-query"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-server-internals",
+      "relationshipId": "r55",
+      "sourceVisualId": "vis-v-server-internals-ac-layout",
+      "targetVisualId": "vis-v-server-internals-as-view"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-server-internals",
+      "relationshipId": "r56",
+      "sourceVisualId": "vis-v-server-internals-ac-queue",
+      "targetVisualId": "vis-v-server-internals-do-operation"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-server-internals",
+      "relationshipId": "r57",
+      "sourceVisualId": "vis-v-server-internals-as-query",
+      "targetVisualId": "vis-v-server-internals-do-query"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-server-internals",
+      "relationshipId": "r58",
+      "sourceVisualId": "vis-v-server-internals-as-query",
+      "targetVisualId": "vis-v-server-internals-do-openapi"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-server-internals",
+      "relationshipId": "r59",
+      "sourceVisualId": "vis-v-server-internals-as-mutate",
+      "targetVisualId": "vis-v-server-internals-do-operation"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-server-internals",
+      "relationshipId": "r60",
+      "sourceVisualId": "vis-v-server-internals-as-script",
+      "targetVisualId": "vis-v-server-internals-do-operation"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-server-internals",
+      "relationshipId": "r61",
+      "sourceVisualId": "vis-v-server-internals-ac-layout",
+      "targetVisualId": "vis-v-server-internals-tf-layout"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-server-internals",
+      "relationshipId": "r85",
+      "sourceVisualId": "vis-v-server-internals-ss-archi",
+      "targetVisualId": "vis-v-server-internals-ts-http"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-server-internals",
+      "relationshipId": "r89",
+      "sourceVisualId": "vis-v-server-internals-ar-server",
+      "targetVisualId": "vis-v-server-internals-ss-archi"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-server-internals",
+      "relationshipId": "r90",
+      "sourceVisualId": "vis-v-server-internals-ar-server",
+      "targetVisualId": "vis-v-server-internals-ac-archi-server"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-server-internals",
+      "relationshipId": "r97",
+      "sourceVisualId": "vis-v-server-internals-ts-http",
+      "targetVisualId": "vis-v-server-internals-as-health"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-server-internals",
+      "relationshipId": "r98",
+      "sourceVisualId": "vis-v-server-internals-ts-http",
+      "targetVisualId": "vis-v-server-internals-as-query"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-server-internals",
+      "relationshipId": "r99",
+      "sourceVisualId": "vis-v-server-internals-ts-http",
+      "targetVisualId": "vis-v-server-internals-as-mutate"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-server-internals",
+      "relationshipId": "r100",
+      "sourceVisualId": "vis-v-server-internals-ts-http",
+      "targetVisualId": "vis-v-server-internals-as-view"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-server-internals",
+      "relationshipId": "r101",
+      "sourceVisualId": "vis-v-server-internals-ts-http",
+      "targetVisualId": "vis-v-server-internals-as-script"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-server-internals",
+      "relationshipId": "r104",
+      "sourceVisualId": "vis-v-server-internals-ts-http",
+      "targetVisualId": "vis-v-server-internals-ai-rest"
+    },
+    {
+      "op": "createView",
+      "name": "ArchiCLI - Internal Application Architecture",
+      "tempId": "v-cli-internals",
+      "viewpoint": "application_cooperation",
+      "documentation": "CLI verification, orchestration, polling, tempId resolution, and transport."
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-cli-internals",
+      "elementId": "ac-archicli",
+      "tempId": "vis-v-cli-internals-ac-archicli"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-cli-internals",
+      "elementId": "ac-cli-verify",
+      "tempId": "vis-v-cli-internals-ac-cli-verify"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-cli-internals",
+      "elementId": "ac-cli-batch",
+      "tempId": "vis-v-cli-internals-ac-cli-batch"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-cli-internals",
+      "elementId": "ac-cli-poll",
+      "tempId": "vis-v-cli-internals-ac-cli-poll"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-cli-internals",
+      "elementId": "ac-cli-tempid",
+      "tempId": "vis-v-cli-internals-ac-cli-tempid"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-cli-internals",
+      "elementId": "ac-cli-output",
+      "tempId": "vis-v-cli-internals-ac-cli-output"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-cli-internals",
+      "elementId": "ac-cli-client",
+      "tempId": "vis-v-cli-internals-ac-cli-client"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-cli-internals",
+      "elementId": "do-bom",
+      "tempId": "vis-v-cli-internals-do-bom"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-cli-internals",
+      "elementId": "do-ids",
+      "tempId": "vis-v-cli-internals-do-ids"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-cli-internals",
+      "elementId": "do-report",
+      "tempId": "vis-v-cli-internals-do-report"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-cli-internals",
+      "elementId": "ai-rest",
+      "tempId": "vis-v-cli-internals-ai-rest"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-cli-internals",
+      "elementId": "as-health",
+      "tempId": "vis-v-cli-internals-as-health"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-cli-internals",
+      "elementId": "as-query",
+      "tempId": "vis-v-cli-internals-as-query"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-cli-internals",
+      "elementId": "as-mutate",
+      "tempId": "vis-v-cli-internals-as-mutate"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-cli-internals",
+      "elementId": "bo-bom",
+      "tempId": "vis-v-cli-internals-bo-bom"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-cli-internals",
+      "elementId": "bo-ids",
+      "tempId": "vis-v-cli-internals-bo-ids"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-cli-internals",
+      "elementId": "ts-filesystem",
+      "tempId": "vis-v-cli-internals-ts-filesystem"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-cli-internals",
+      "elementId": "ar-cli",
+      "tempId": "vis-v-cli-internals-ar-cli"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-cli-internals",
+      "elementId": "product-toolkit",
+      "tempId": "vis-v-cli-internals-product-toolkit"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-cli-internals",
+      "relationshipId": "r27",
+      "sourceVisualId": "vis-v-cli-internals-product-toolkit",
+      "targetVisualId": "vis-v-cli-internals-ac-archicli"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-cli-internals",
+      "relationshipId": "r41",
+      "sourceVisualId": "vis-v-cli-internals-as-health",
+      "targetVisualId": "vis-v-cli-internals-ac-archicli"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-cli-internals",
+      "relationshipId": "r42",
+      "sourceVisualId": "vis-v-cli-internals-as-query",
+      "targetVisualId": "vis-v-cli-internals-ac-archicli"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-cli-internals",
+      "relationshipId": "r43",
+      "sourceVisualId": "vis-v-cli-internals-as-mutate",
+      "targetVisualId": "vis-v-cli-internals-ac-archicli"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-cli-internals",
+      "relationshipId": "r62",
+      "sourceVisualId": "vis-v-cli-internals-ac-archicli",
+      "targetVisualId": "vis-v-cli-internals-ac-cli-verify"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-cli-internals",
+      "relationshipId": "r63",
+      "sourceVisualId": "vis-v-cli-internals-ac-archicli",
+      "targetVisualId": "vis-v-cli-internals-ac-cli-batch"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-cli-internals",
+      "relationshipId": "r64",
+      "sourceVisualId": "vis-v-cli-internals-ac-archicli",
+      "targetVisualId": "vis-v-cli-internals-ac-cli-poll"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-cli-internals",
+      "relationshipId": "r65",
+      "sourceVisualId": "vis-v-cli-internals-ac-archicli",
+      "targetVisualId": "vis-v-cli-internals-ac-cli-tempid"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-cli-internals",
+      "relationshipId": "r66",
+      "sourceVisualId": "vis-v-cli-internals-ac-archicli",
+      "targetVisualId": "vis-v-cli-internals-ac-cli-output"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-cli-internals",
+      "relationshipId": "r67",
+      "sourceVisualId": "vis-v-cli-internals-ac-archicli",
+      "targetVisualId": "vis-v-cli-internals-ac-cli-client"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-cli-internals",
+      "relationshipId": "r68",
+      "sourceVisualId": "vis-v-cli-internals-ac-cli-verify",
+      "targetVisualId": "vis-v-cli-internals-ac-cli-batch"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-cli-internals",
+      "relationshipId": "r69",
+      "sourceVisualId": "vis-v-cli-internals-ac-cli-batch",
+      "targetVisualId": "vis-v-cli-internals-ac-cli-poll"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-cli-internals",
+      "relationshipId": "r70",
+      "sourceVisualId": "vis-v-cli-internals-ac-cli-batch",
+      "targetVisualId": "vis-v-cli-internals-ac-cli-tempid"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-cli-internals",
+      "relationshipId": "r71",
+      "sourceVisualId": "vis-v-cli-internals-ac-cli-batch",
+      "targetVisualId": "vis-v-cli-internals-ac-cli-client"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-cli-internals",
+      "relationshipId": "r72",
+      "sourceVisualId": "vis-v-cli-internals-ac-cli-batch",
+      "targetVisualId": "vis-v-cli-internals-as-mutate"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-cli-internals",
+      "relationshipId": "r73",
+      "sourceVisualId": "vis-v-cli-internals-ac-cli-verify",
+      "targetVisualId": "vis-v-cli-internals-as-query"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-cli-internals",
+      "relationshipId": "r74",
+      "sourceVisualId": "vis-v-cli-internals-ac-cli-poll",
+      "targetVisualId": "vis-v-cli-internals-as-health"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-cli-internals",
+      "relationshipId": "r75",
+      "sourceVisualId": "vis-v-cli-internals-ac-cli-output",
+      "targetVisualId": "vis-v-cli-internals-do-report"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-cli-internals",
+      "relationshipId": "r76",
+      "sourceVisualId": "vis-v-cli-internals-ac-cli-verify",
+      "targetVisualId": "vis-v-cli-internals-do-bom"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-cli-internals",
+      "relationshipId": "r77",
+      "sourceVisualId": "vis-v-cli-internals-ac-cli-batch",
+      "targetVisualId": "vis-v-cli-internals-do-bom"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-cli-internals",
+      "relationshipId": "r78",
+      "sourceVisualId": "vis-v-cli-internals-ac-cli-tempid",
+      "targetVisualId": "vis-v-cli-internals-do-ids"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-cli-internals",
+      "relationshipId": "r79",
+      "sourceVisualId": "vis-v-cli-internals-do-bom",
+      "targetVisualId": "vis-v-cli-internals-bo-bom"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-cli-internals",
+      "relationshipId": "r80",
+      "sourceVisualId": "vis-v-cli-internals-do-ids",
+      "targetVisualId": "vis-v-cli-internals-bo-ids"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-cli-internals",
+      "relationshipId": "r82",
+      "sourceVisualId": "vis-v-cli-internals-ac-cli-client",
+      "targetVisualId": "vis-v-cli-internals-ai-rest"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-cli-internals",
+      "relationshipId": "r92",
+      "sourceVisualId": "vis-v-cli-internals-ar-cli",
+      "targetVisualId": "vis-v-cli-internals-ac-archicli"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-cli-internals",
+      "relationshipId": "r95",
+      "sourceVisualId": "vis-v-cli-internals-ts-filesystem",
+      "targetVisualId": "vis-v-cli-internals-ac-archicli"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-cli-internals",
+      "relationshipId": "r102",
+      "sourceVisualId": "vis-v-cli-internals-ts-filesystem",
+      "targetVisualId": "vis-v-cli-internals-do-bom"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-cli-internals",
+      "relationshipId": "r103",
+      "sourceVisualId": "vis-v-cli-internals-ts-filesystem",
+      "targetVisualId": "vis-v-cli-internals-do-ids"
+    },
+    {
+      "op": "createView",
+      "name": "Motivation and Strategy - Why This Platform Exists",
+      "tempId": "v-motivation-strategy",
+      "viewpoint": "motivation",
+      "documentation": "Stakeholders, drivers, goals, requirements, capabilities, and outcomes."
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-motivation-strategy",
+      "elementId": "st-enterprise-architect",
+      "tempId": "vis-v-motivation-strategy-st-enterprise-architect"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-motivation-strategy",
+      "elementId": "st-platform-operator",
+      "tempId": "vis-v-motivation-strategy-st-platform-operator"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-motivation-strategy",
+      "elementId": "dr-automation",
+      "tempId": "vis-v-motivation-strategy-dr-automation"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-motivation-strategy",
+      "elementId": "dr-reliability",
+      "tempId": "vis-v-motivation-strategy-dr-reliability"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-motivation-strategy",
+      "elementId": "gl-speed",
+      "tempId": "vis-v-motivation-strategy-gl-speed"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-motivation-strategy",
+      "elementId": "gl-quality",
+      "tempId": "vis-v-motivation-strategy-gl-quality"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-motivation-strategy",
+      "elementId": "rq-api",
+      "tempId": "vis-v-motivation-strategy-rq-api"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-motivation-strategy",
+      "elementId": "rq-batch",
+      "tempId": "vis-v-motivation-strategy-rq-batch"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-motivation-strategy",
+      "elementId": "rq-cli",
+      "tempId": "vis-v-motivation-strategy-rq-cli"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-motivation-strategy",
+      "elementId": "pr-api-first",
+      "tempId": "vis-v-motivation-strategy-pr-api-first"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-motivation-strategy",
+      "elementId": "cap-modeling",
+      "tempId": "vis-v-motivation-strategy-cap-modeling"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-motivation-strategy",
+      "elementId": "cap-quality",
+      "tempId": "vis-v-motivation-strategy-cap-quality"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-motivation-strategy",
+      "elementId": "vs-change",
+      "tempId": "vis-v-motivation-strategy-vs-change"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-motivation-strategy",
+      "elementId": "oc-cycle",
+      "tempId": "vis-v-motivation-strategy-oc-cycle"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-motivation-strategy",
+      "elementId": "oc-confidence",
+      "tempId": "vis-v-motivation-strategy-oc-confidence"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-motivation-strategy",
+      "elementId": "ba-arch-team",
+      "tempId": "vis-v-motivation-strategy-ba-arch-team"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-motivation-strategy",
+      "elementId": "br-modeler",
+      "tempId": "vis-v-motivation-strategy-br-modeler"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-motivation-strategy",
+      "elementId": "bs-modeling",
+      "tempId": "vis-v-motivation-strategy-bs-modeling"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-motivation-strategy",
+      "elementId": "product-toolkit",
+      "tempId": "vis-v-motivation-strategy-product-toolkit"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-motivation-strategy",
+      "relationshipId": "r01",
+      "sourceVisualId": "vis-v-motivation-strategy-st-enterprise-architect",
+      "targetVisualId": "vis-v-motivation-strategy-gl-speed"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-motivation-strategy",
+      "relationshipId": "r02",
+      "sourceVisualId": "vis-v-motivation-strategy-st-platform-operator",
+      "targetVisualId": "vis-v-motivation-strategy-gl-quality"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-motivation-strategy",
+      "relationshipId": "r03",
+      "sourceVisualId": "vis-v-motivation-strategy-dr-automation",
+      "targetVisualId": "vis-v-motivation-strategy-gl-speed"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-motivation-strategy",
+      "relationshipId": "r04",
+      "sourceVisualId": "vis-v-motivation-strategy-dr-reliability",
+      "targetVisualId": "vis-v-motivation-strategy-gl-quality"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-motivation-strategy",
+      "relationshipId": "r05",
+      "sourceVisualId": "vis-v-motivation-strategy-rq-api",
+      "targetVisualId": "vis-v-motivation-strategy-gl-speed"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-motivation-strategy",
+      "relationshipId": "r06",
+      "sourceVisualId": "vis-v-motivation-strategy-rq-batch",
+      "targetVisualId": "vis-v-motivation-strategy-gl-quality"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-motivation-strategy",
+      "relationshipId": "r07",
+      "sourceVisualId": "vis-v-motivation-strategy-rq-cli",
+      "targetVisualId": "vis-v-motivation-strategy-gl-speed"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-motivation-strategy",
+      "relationshipId": "r08",
+      "sourceVisualId": "vis-v-motivation-strategy-pr-api-first",
+      "targetVisualId": "vis-v-motivation-strategy-rq-api"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-motivation-strategy",
+      "relationshipId": "r09",
+      "sourceVisualId": "vis-v-motivation-strategy-cap-modeling",
+      "targetVisualId": "vis-v-motivation-strategy-rq-api"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-motivation-strategy",
+      "relationshipId": "r10",
+      "sourceVisualId": "vis-v-motivation-strategy-cap-quality",
+      "targetVisualId": "vis-v-motivation-strategy-rq-batch"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-motivation-strategy",
+      "relationshipId": "r11",
+      "sourceVisualId": "vis-v-motivation-strategy-vs-change",
+      "targetVisualId": "vis-v-motivation-strategy-cap-modeling"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-motivation-strategy",
+      "relationshipId": "r12",
+      "sourceVisualId": "vis-v-motivation-strategy-vs-change",
+      "targetVisualId": "vis-v-motivation-strategy-cap-quality"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-motivation-strategy",
+      "relationshipId": "r13",
+      "sourceVisualId": "vis-v-motivation-strategy-gl-speed",
+      "targetVisualId": "vis-v-motivation-strategy-oc-cycle"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-motivation-strategy",
+      "relationshipId": "r14",
+      "sourceVisualId": "vis-v-motivation-strategy-gl-quality",
+      "targetVisualId": "vis-v-motivation-strategy-oc-confidence"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-motivation-strategy",
+      "relationshipId": "r15",
+      "sourceVisualId": "vis-v-motivation-strategy-ba-arch-team",
+      "targetVisualId": "vis-v-motivation-strategy-br-modeler"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-motivation-strategy",
+      "relationshipId": "r25",
+      "sourceVisualId": "vis-v-motivation-strategy-bs-modeling",
+      "targetVisualId": "vis-v-motivation-strategy-product-toolkit"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-motivation-strategy",
+      "relationshipId": "r28",
+      "sourceVisualId": "vis-v-motivation-strategy-oc-cycle",
+      "targetVisualId": "vis-v-motivation-strategy-product-toolkit"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-motivation-strategy",
+      "relationshipId": "r29",
+      "sourceVisualId": "vis-v-motivation-strategy-oc-confidence",
+      "targetVisualId": "vis-v-motivation-strategy-product-toolkit"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-motivation-strategy",
+      "relationshipId": "r30",
+      "sourceVisualId": "vis-v-motivation-strategy-cap-modeling",
+      "targetVisualId": "vis-v-motivation-strategy-bs-modeling"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-motivation-strategy",
+      "relationshipId": "r31",
+      "sourceVisualId": "vis-v-motivation-strategy-cap-quality",
+      "targetVisualId": "vis-v-motivation-strategy-bs-modeling"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-motivation-strategy",
+      "relationshipId": "r116",
+      "sourceVisualId": "vis-v-motivation-strategy-oc-cycle",
+      "targetVisualId": "vis-v-motivation-strategy-cap-modeling"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-motivation-strategy",
+      "relationshipId": "r117",
+      "sourceVisualId": "vis-v-motivation-strategy-oc-confidence",
+      "targetVisualId": "vis-v-motivation-strategy-cap-quality"
+    },
+    {
+      "op": "createView",
+      "name": "Implementation and Migration - Delivery Roadmap",
+      "tempId": "v-implementation-roadmap",
+      "viewpoint": "implementation_and_migration",
+      "documentation": "Work packages, gaps, plateaus, milestones, and deliverables."
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-implementation-roadmap",
+      "elementId": "wp-server",
+      "tempId": "vis-v-implementation-roadmap-wp-server"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-implementation-roadmap",
+      "elementId": "wp-cli",
+      "tempId": "vis-v-implementation-roadmap-wp-cli"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-implementation-roadmap",
+      "elementId": "wp-prime",
+      "tempId": "vis-v-implementation-roadmap-wp-prime"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-implementation-roadmap",
+      "elementId": "pl-baseline",
+      "tempId": "vis-v-implementation-roadmap-pl-baseline"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-implementation-roadmap",
+      "elementId": "pl-current",
+      "tempId": "vis-v-implementation-roadmap-pl-current"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-implementation-roadmap",
+      "elementId": "gp-example",
+      "tempId": "vis-v-implementation-roadmap-gp-example"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-implementation-roadmap",
+      "elementId": "ie-release",
+      "tempId": "vis-v-implementation-roadmap-ie-release"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-implementation-roadmap",
+      "elementId": "dl-prime",
+      "tempId": "vis-v-implementation-roadmap-dl-prime"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-implementation-roadmap",
+      "elementId": "ac-archi-server",
+      "tempId": "vis-v-implementation-roadmap-ac-archi-server"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-implementation-roadmap",
+      "elementId": "ac-archicli",
+      "tempId": "vis-v-implementation-roadmap-ac-archicli"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-implementation-roadmap",
+      "elementId": "product-toolkit",
+      "tempId": "vis-v-implementation-roadmap-product-toolkit"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-implementation-roadmap",
+      "elementId": "oc-cycle",
+      "tempId": "vis-v-implementation-roadmap-oc-cycle"
+    },
+    {
+      "op": "addToView",
+      "viewId": "v-implementation-roadmap",
+      "elementId": "oc-confidence",
+      "tempId": "vis-v-implementation-roadmap-oc-confidence"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-implementation-roadmap",
+      "relationshipId": "r26",
+      "sourceVisualId": "vis-v-implementation-roadmap-product-toolkit",
+      "targetVisualId": "vis-v-implementation-roadmap-ac-archi-server"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-implementation-roadmap",
+      "relationshipId": "r27",
+      "sourceVisualId": "vis-v-implementation-roadmap-product-toolkit",
+      "targetVisualId": "vis-v-implementation-roadmap-ac-archicli"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-implementation-roadmap",
+      "relationshipId": "r28",
+      "sourceVisualId": "vis-v-implementation-roadmap-oc-cycle",
+      "targetVisualId": "vis-v-implementation-roadmap-product-toolkit"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-implementation-roadmap",
+      "relationshipId": "r29",
+      "sourceVisualId": "vis-v-implementation-roadmap-oc-confidence",
+      "targetVisualId": "vis-v-implementation-roadmap-product-toolkit"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-implementation-roadmap",
+      "relationshipId": "r106",
+      "sourceVisualId": "vis-v-implementation-roadmap-wp-server",
+      "targetVisualId": "vis-v-implementation-roadmap-ac-archi-server"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-implementation-roadmap",
+      "relationshipId": "r107",
+      "sourceVisualId": "vis-v-implementation-roadmap-wp-cli",
+      "targetVisualId": "vis-v-implementation-roadmap-ac-archicli"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-implementation-roadmap",
+      "relationshipId": "r108",
+      "sourceVisualId": "vis-v-implementation-roadmap-wp-prime",
+      "targetVisualId": "vis-v-implementation-roadmap-dl-prime"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-implementation-roadmap",
+      "relationshipId": "r109",
+      "sourceVisualId": "vis-v-implementation-roadmap-wp-server",
+      "targetVisualId": "vis-v-implementation-roadmap-pl-current"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-implementation-roadmap",
+      "relationshipId": "r110",
+      "sourceVisualId": "vis-v-implementation-roadmap-wp-cli",
+      "targetVisualId": "vis-v-implementation-roadmap-pl-current"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-implementation-roadmap",
+      "relationshipId": "r111",
+      "sourceVisualId": "vis-v-implementation-roadmap-pl-baseline",
+      "targetVisualId": "vis-v-implementation-roadmap-gp-example"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-implementation-roadmap",
+      "relationshipId": "r112",
+      "sourceVisualId": "vis-v-implementation-roadmap-gp-example",
+      "targetVisualId": "vis-v-implementation-roadmap-pl-current"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-implementation-roadmap",
+      "relationshipId": "r113",
+      "sourceVisualId": "vis-v-implementation-roadmap-wp-prime",
+      "targetVisualId": "vis-v-implementation-roadmap-ie-release"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-implementation-roadmap",
+      "relationshipId": "r114",
+      "sourceVisualId": "vis-v-implementation-roadmap-ie-release",
+      "targetVisualId": "vis-v-implementation-roadmap-pl-current"
+    },
+    {
+      "op": "addConnectionToView",
+      "viewId": "v-implementation-roadmap",
+      "relationshipId": "r115",
+      "sourceVisualId": "vis-v-implementation-roadmap-dl-prime",
+      "targetVisualId": "vis-v-implementation-roadmap-product-toolkit"
+    }
+  ]
+}
