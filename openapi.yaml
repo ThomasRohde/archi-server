@@ -2075,22 +2075,31 @@ components:
           enum: [dagre]
           default: dagre
           description: Layout algorithm to apply
-        options:
-          type: object
-          properties:
-            rankdir:
-              type: string
-              enum: [TB, BT, LR, RL]
-              default: TB
-              description: Graph direction (TB=top-bottom, LR=left-right, etc.)
-            ranksep:
-              type: integer
-              default: 80
-              description: Vertical separation between ranks
-            nodesep:
-              type: integer
-              default: 60
-              description: Horizontal separation between nodes
+        rankdir:
+          type: string
+          enum: [TB, BT, LR, RL]
+          default: TB
+          description: Graph direction (TB=top-bottom, LR=left-right, etc.)
+        ranksep:
+          type: integer
+          default: 80
+          description: Vertical separation between ranks in pixels
+        nodesep:
+          type: integer
+          default: 50
+          description: Horizontal separation between nodes in pixels
+        edgesep:
+          type: integer
+          default: 10
+          description: Pixels between edges
+        marginx:
+          type: integer
+          default: 20
+          description: Left/right margin in pixels
+        marginy:
+          type: integer
+          default: 20
+          description: Top/bottom margin in pixels
 
     LayoutResponse:
       type: object
@@ -2099,16 +2108,17 @@ components:
           type: boolean
         viewId:
           type: string
-        viewName:
+        algorithm:
           type: string
-        elementsLayouted:
+        options:
+          type: object
+          description: Layout options that were applied
+        nodesPositioned:
           type: integer
-          description: Number of elements repositioned
-        connectionsUpdated:
-          type: integer
-          description: Number of connections updated
+          description: Number of nodes repositioned
         durationMs:
           type: integer
+          description: Layout duration in milliseconds
 
     # --- Additional View Schemas ---
 

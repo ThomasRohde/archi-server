@@ -19,7 +19,15 @@ export function modelElementCommand(): Command {
       try {
         let resolvedId = id;
         if (options.idFile) {
-          const { map } = loadIdFilesWithDiagnostics([options.idFile]);
+          const { map, diagnostics } = loadIdFilesWithDiagnostics([options.idFile]);
+          if (diagnostics.missing.length > 0 || diagnostics.malformed.length > 0) {
+            const details: Record<string, unknown> = {};
+            if (diagnostics.missing.length > 0) details['missing'] = diagnostics.missing;
+            if (diagnostics.malformed.length > 0) details['malformed'] = diagnostics.malformed;
+            print(failure('IDFILE_ERROR', `Could not load id-file: ${options.idFile}`, details));
+            cmd.error('', { exitCode: 1 });
+            return;
+          }
           if (map[id]) {
             resolvedId = map[id];
           } else {

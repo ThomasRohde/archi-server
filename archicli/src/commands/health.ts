@@ -23,7 +23,7 @@ function formatHealthText(data: Record<string, unknown>): string {
   const elements = model?.elements ?? 0;
   const relationships = model?.relationships ?? 0;
   const views = model?.views ?? 0;
-  const uptime = typeof server?.uptime === 'number' ? formatUptime(server.uptime) : 'unknown';
+  const uptime = typeof server?.uptime === 'number' ? formatUptime(server.uptime / 1000) : 'unknown';
   return `${String(status).toUpperCase()} | Archi ${version} | ${elements} elements, ${relationships} relationships, ${views} views | uptime ${uptime}`;
 }
 

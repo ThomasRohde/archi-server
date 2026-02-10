@@ -1,5 +1,6 @@
 import { Command } from 'commander';
 import { post } from '../../utils/api';
+import { ArgumentValidationError, parseNonNegativeInt } from '../../utils/args';
 import { isCommanderError } from '../../utils/commander';
 import { getConfig } from '../../utils/config';
 import { print, success, failure } from '../../utils/output';
@@ -33,18 +34,8 @@ export function viewLayoutCommand(): Command {
             return;
           }
 
-          const ranksep = parseInt(options.ranksep, 10);
-          const nodesep = parseInt(options.nodesep, 10);
-          if (isNaN(ranksep) || ranksep < 0) {
-            print(failure('INVALID_ARGUMENT', `--ranksep must be a non-negative integer`));
-            cmd.error('', { exitCode: 1 });
-            return;
-          }
-          if (isNaN(nodesep) || nodesep < 0) {
-            print(failure('INVALID_ARGUMENT', `--nodesep must be a non-negative integer`));
-            cmd.error('', { exitCode: 1 });
-            return;
-          }
+          const ranksep = parseNonNegativeInt(options.ranksep, '--ranksep');
+          const nodesep = parseNonNegativeInt(options.nodesep, '--nodesep');
 
           const body = {
             algorithm: options.algorithm,
@@ -64,6 +55,11 @@ export function viewLayoutCommand(): Command {
           print(success(data));
         } catch (err) {
           if (isCommanderError(err)) throw err;
+          if (err instanceof ArgumentValidationError) {
+            print(failure(err.code, err.message));
+            cmd.error('', { exitCode: 1 });
+            return;
+          }
           print(failure('VIEW_LAYOUT_FAILED', String(err)));
           cmd.error('', { exitCode: 1 });
         }

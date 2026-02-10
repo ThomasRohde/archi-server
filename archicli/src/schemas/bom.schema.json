@@ -87,6 +87,21 @@
         "association-relationship"
       ]
     },
+    "StyleProperties": {
+      "type": "object",
+      "description": "Common style properties for view objects and connections",
+      "properties": {
+        "fillColor": { "type": "string", "description": "Fill color as hex string (e.g., '#FF0000')" },
+        "fontColor": { "type": "string", "description": "Font color as hex string" },
+        "fontStyle": { "type": "string", "description": "Font style (e.g., 'bold', 'italic')" },
+        "lineColor": { "type": "string", "description": "Line/border color as hex string" },
+        "lineWidth": { "type": "integer", "description": "Line width in pixels" },
+        "opacity": { "type": "integer", "description": "Opacity value (0-255)" },
+        "textAlignment": { "type": "integer", "description": "Text alignment" },
+        "textPosition": { "type": "integer", "description": "Text position" },
+        "font": { "type": "string", "description": "Font specification" }
+      }
+    },
     "ChangeOperation": {
       "type": "object",
       "required": ["op"],
@@ -245,6 +260,246 @@
                       "y": { "type": "integer", "description": "Y position relative to parent (default 10)" }
                     },
                     "additionalProperties": false
+                  },
+                  "else": {
+                    "if": {
+                      "properties": { "op": { "const": "addConnectionToView" } }
+                    },
+                    "then": {
+                      "required": ["op", "viewId", "relationshipId", "sourceVisualId", "targetVisualId"],
+                      "properties": {
+                        "op": { "type": "string" },
+                        "viewId": { "type": "string", "description": "View ID containing the visual objects" },
+                        "relationshipId": { "type": "string", "description": "Relationship ID or tempId to visualize" },
+                        "sourceVisualId": { "type": "string", "description": "Source visual object ID or tempId" },
+                        "targetVisualId": { "type": "string", "description": "Target visual object ID or tempId" },
+                        "tempId": { "type": "string", "description": "Temporary ID for this connection visual" }
+                      },
+                      "additionalProperties": false
+                    },
+                    "else": {
+                      "if": {
+                        "properties": { "op": { "const": "updateElement" } }
+                      },
+                      "then": {
+                        "required": ["op", "id"],
+                        "anyOf": [
+                          { "required": ["name"] },
+                          { "required": ["documentation"] },
+                          { "required": ["properties"] }
+                        ],
+                        "properties": {
+                          "op": { "type": "string" },
+                          "id": { "type": "string", "description": "Element ID or tempId to update" },
+                          "name": { "type": "string" },
+                          "documentation": { "type": "string" },
+                          "properties": {
+                            "type": "object",
+                            "description": "Key-value properties to set",
+                            "additionalProperties": { "type": "string" }
+                          }
+                        },
+                        "additionalProperties": false
+                      },
+                      "else": {
+                        "if": {
+                          "properties": { "op": { "const": "updateRelationship" } }
+                        },
+                        "then": {
+                          "required": ["op", "id"],
+                          "anyOf": [
+                            { "required": ["name"] },
+                            { "required": ["documentation"] },
+                            { "required": ["properties"] }
+                          ],
+                          "properties": {
+                            "op": { "type": "string" },
+                            "id": { "type": "string", "description": "Relationship ID or tempId to update" },
+                            "name": { "type": "string" },
+                            "documentation": { "type": "string" },
+                            "properties": {
+                              "type": "object",
+                              "description": "Key-value properties to set",
+                              "additionalProperties": { "type": "string" }
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        "else": {
+                          "if": {
+                            "properties": { "op": { "const": "deleteElement" } }
+                          },
+                          "then": {
+                            "required": ["op", "id"],
+                            "properties": {
+                              "op": { "type": "string" },
+                              "id": { "type": "string", "description": "Element ID or tempId to delete" },
+                              "cascade": { "type": "boolean", "description": "Whether to cascade delete relationships (default true)" }
+                            },
+                            "additionalProperties": false
+                          },
+                          "else": {
+                            "if": {
+                              "properties": { "op": { "const": "deleteRelationship" } }
+                            },
+                            "then": {
+                              "required": ["op", "id"],
+                              "properties": {
+                                "op": { "type": "string" },
+                                "id": { "type": "string", "description": "Relationship ID or tempId to delete" }
+                              },
+                              "additionalProperties": false
+                            },
+                            "else": {
+                              "if": {
+                                "properties": { "op": { "const": "setProperty" } }
+                              },
+                              "then": {
+                                "required": ["op", "id", "key", "value"],
+                                "properties": {
+                                  "op": { "type": "string" },
+                                  "id": { "type": "string", "description": "Element or relationship ID or tempId" },
+                                  "key": { "type": "string", "minLength": 1, "description": "Property key" },
+                                  "value": { "type": "string", "description": "Property value" }
+                                },
+                                "additionalProperties": false
+                              },
+                              "else": {
+                                "if": {
+                                  "properties": { "op": { "const": "moveToFolder" } }
+                                },
+                                "then": {
+                                  "required": ["op", "id", "folderId"],
+                                  "properties": {
+                                    "op": { "type": "string" },
+                                    "id": { "type": "string", "description": "Element or relationship ID or tempId to move" },
+                                    "folderId": { "type": "string", "description": "Target folder ID or tempId" }
+                                  },
+                                  "additionalProperties": false
+                                },
+                                "else": {
+                                  "if": {
+                                    "properties": { "op": { "const": "deleteConnectionFromView" } }
+                                  },
+                                  "then": {
+                                    "required": ["op", "viewId", "connectionId"],
+                                    "properties": {
+                                      "op": { "type": "string" },
+                                      "viewId": { "type": "string", "description": "View ID containing the connection" },
+                                      "connectionId": { "type": "string", "description": "Visual connection ID or tempId to remove" }
+                                    },
+                                    "additionalProperties": false
+                                  },
+                                  "else": {
+                                    "if": {
+                                      "properties": { "op": { "const": "styleViewObject" } }
+                                    },
+                                    "then": {
+                                      "required": ["op", "viewObjectId"],
+                                      "properties": {
+                                        "op": { "type": "string" },
+                                        "viewObjectId": { "type": "string", "description": "Visual object ID or tempId to style" },
+                                        "fillColor": { "type": "string" },
+                                        "fontColor": { "type": "string" },
+                                        "fontStyle": { "type": "string" },
+                                        "lineColor": { "type": "string" },
+                                        "lineWidth": { "type": "integer" },
+                                        "opacity": { "type": "integer" },
+                                        "textAlignment": { "type": "integer" },
+                                        "textPosition": { "type": "integer" },
+                                        "font": { "type": "string" }
+                                      },
+                                      "additionalProperties": false
+                                    },
+                                    "else": {
+                                      "if": {
+                                        "properties": { "op": { "const": "styleConnection" } }
+                                      },
+                                      "then": {
+                                        "required": ["op", "connectionId"],
+                                        "properties": {
+                                          "op": { "type": "string" },
+                                          "connectionId": { "type": "string", "description": "Visual connection ID or tempId to style" },
+                                          "lineColor": { "type": "string" },
+                                          "lineWidth": { "type": "integer" },
+                                          "font": { "type": "string" },
+                                          "fontColor": { "type": "string" },
+                                          "fontStyle": { "type": "string" },
+                                          "textPosition": { "type": "integer" }
+                                        },
+                                        "additionalProperties": false
+                                      },
+                                      "else": {
+                                        "if": {
+                                          "properties": { "op": { "const": "moveViewObject" } }
+                                        },
+                                        "then": {
+                                          "required": ["op", "viewObjectId"],
+                                          "anyOf": [
+                                            { "required": ["x"] },
+                                            { "required": ["y"] },
+                                            { "required": ["width"] },
+                                            { "required": ["height"] }
+                                          ],
+                                          "properties": {
+                                            "op": { "type": "string" },
+                                            "viewObjectId": { "type": "string", "description": "Visual object ID or tempId to move/resize" },
+                                            "x": { "type": "integer", "description": "New X position" },
+                                            "y": { "type": "integer", "description": "New Y position" },
+                                            "width": { "type": "integer", "description": "New width" },
+                                            "height": { "type": "integer", "description": "New height" }
+                                          },
+                                          "additionalProperties": false
+                                        },
+                                        "else": {
+                                          "if": {
+                                            "properties": { "op": { "const": "createNote" } }
+                                          },
+                                          "then": {
+                                            "required": ["op", "viewId", "content"],
+                                            "properties": {
+                                              "op": { "type": "string" },
+                                              "viewId": { "type": "string", "description": "View ID to add the note to" },
+                                              "content": { "type": "string", "minLength": 1, "description": "Note text content" },
+                                              "tempId": { "type": "string", "description": "Temporary ID for cross-referencing" },
+                                              "x": { "type": "integer" },
+                                              "y": { "type": "integer" },
+                                              "width": { "type": "integer" },
+                                              "height": { "type": "integer" }
+                                            },
+                                            "additionalProperties": false
+                                          },
+                                          "else": {
+                                            "if": {
+                                              "properties": { "op": { "const": "createGroup" } }
+                                            },
+                                            "then": {
+                                              "required": ["op", "viewId", "name"],
+                                              "properties": {
+                                                "op": { "type": "string" },
+                                                "viewId": { "type": "string", "description": "View ID to add the group to" },
+                                                "name": { "type": "string", "minLength": 1, "description": "Group label" },
+                                                "tempId": { "type": "string", "description": "Temporary ID for cross-referencing" },
+                                                "documentation": { "type": "string" },
+                                                "x": { "type": "integer" },
+                                                "y": { "type": "integer" },
+                                                "width": { "type": "integer" },
+                                                "height": { "type": "integer" }
+                                              },
+                                              "additionalProperties": false
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
                   }
                 }
               }

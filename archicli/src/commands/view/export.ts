@@ -104,7 +104,10 @@ export function viewExportCommand(): Command {
             const viewName = typeof view.name === 'string' && view.name.length > 0
               ? sanitizeFilename(view.name)
               : view.id;
-            const outputPath = join(outDir, `${viewName}.${ext}`);
+            const idSuffix = typeof view.id === 'string' && view.id.length > 11
+              ? view.id.slice(3, 11)
+              : view.id;
+            const outputPath = join(outDir, `${viewName}_${idSuffix}.${ext}`);
             try {
               const data = await exportSingleView(view.id, fmt, outputPath, scale, margin) as Record<string, unknown>;
               const savedPath = typeof data.filePath === 'string' ? data.filePath : outputPath;

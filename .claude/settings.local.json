@@ -19,7 +19,8 @@
       "Bash(find:*)",
       "Bash(grep:*)",
       "Bash(node dist/index.js batch apply:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(python:*)"
     ]
   }
 }

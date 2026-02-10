@@ -54,5 +54,5 @@ function filterFoldersByType(data: Record<string, unknown>, type: string): unkno
     }
   }
 
-  return results.length > 0 ? results : folders;
+  return results;
 }

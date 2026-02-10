@@ -22,6 +22,7 @@ const PHASE3_OPS = new Set([
 ]);
 
 const PHASE2_TEMPID_CREATORS = new Set([
+  'createElement',
   'createRelationship',
   'addToView',
   'createFolder',
@@ -55,7 +56,7 @@ function isRealId(value: string): boolean {
   return value.startsWith('id-');
 }
 
-async function validateBomSemantics(
+export async function validateBomSemantics(
   changes: unknown[],
   idFilePaths: string[],
   options: { resolveNames?: boolean }
@@ -102,13 +103,6 @@ async function validateBomSemantics(
 
   const availableTempIds = new Set<string>(Object.keys(idFileMap));
 
-  for (const change of changes) {
-    const operation = change as BomOperation;
-    if (operation.op === 'createElement' && typeof operation.tempId === 'string' && operation.tempId.length > 0) {
-      availableTempIds.add(operation.tempId);
-    }
-  }
-
   const checkReferences = (operation: BomOperation, opIndex: number): void => {
     const opName = typeof operation.op === 'string' ? operation.op : 'unknown';
     for (const field of REFERENCE_ID_FIELDS) {
@@ -141,7 +135,7 @@ async function validateBomSemantics(
   for (const [index, change] of changes.entries()) {
     const operation = change as BomOperation;
     const opName = typeof operation.op === 'string' ? operation.op : '';
-    if (opName === 'createElement' || PHASE3_OPS.has(opName)) continue;
+    if (PHASE3_OPS.has(opName)) continue;
 
     checkReferences(operation, index);
 
