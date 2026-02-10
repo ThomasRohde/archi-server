@@ -3,6 +3,9 @@ import { get } from '../../utils/api';
 import { isCommanderError } from '../../utils/commander';
 import { print, success, failure } from '../../utils/output';
 
+/**
+ * List folders, optionally filtered by folder type substring.
+ */
 export function folderListCommand(): Command {
   return new Command('list')
     .description(
@@ -31,6 +34,7 @@ export function folderListCommand(): Command {
     });
 }
 
+// Folder API is hierarchical; walk recursively so nested matches are returned.
 function filterFoldersByType(data: Record<string, unknown>, type: string): unknown {
   const folders = Array.isArray(data.folders) ? data.folders : (Array.isArray(data) ? data : []);
   const results: unknown[] = [];

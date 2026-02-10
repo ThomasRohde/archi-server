@@ -3,6 +3,9 @@ import { get } from '../../utils/api';
 import { isCommanderError } from '../../utils/commander';
 import { print, success, failure } from '../../utils/output';
 
+/**
+ * Retrieve all views from the current model.
+ */
 export function viewListCommand(): Command {
   return new Command('list')
     .description('List all views in the model')

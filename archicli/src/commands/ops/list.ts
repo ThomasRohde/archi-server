@@ -6,6 +6,9 @@ import { print, success, failure } from '../../utils/output';
 
 const VALID_STATUSES = new Set(['queued', 'processing', 'complete', 'error']);
 
+/**
+ * List recent operation queue entries with optional server-side status filter.
+ */
 export function opsListCommand(): Command {
   return new Command('list')
     .description(
@@ -66,4 +69,3 @@ export function opsListCommand(): Command {
       }
     });
 }
-

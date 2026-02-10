@@ -5,6 +5,9 @@ import { isCommanderError } from '../../utils/commander';
 import { print, success, failure } from '../../utils/output';
 import { pollUntilDone, type OperationStatus } from '../../utils/poll';
 
+/**
+ * Inspect a single operation or poll until completion.
+ */
 export function opsStatusCommand(): Command {
   return new Command('status')
     .description(

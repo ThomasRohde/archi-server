@@ -4,6 +4,9 @@ import { ArgumentValidationError, parsePositiveInt } from '../../utils/args';
 import { isCommanderError } from '../../utils/commander';
 import { print, success, failure } from '../../utils/output';
 
+/**
+ * Retrieve a high-level model snapshot plus optional relationship/view samples.
+ */
 export function modelQueryCommand(): Command {
   return new Command('query')
     .description(

@@ -1,6 +1,9 @@
 import { Command } from 'commander';
 import { folderListCommand } from './list';
 
+/**
+ * Folder command namespace.
+ */
 export function folderCommand(): Command {
   return new Command('folder')
     .description(

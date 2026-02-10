@@ -29,6 +29,9 @@ const VALID_VIEWPOINTS = new Set([
   'migration',
 ]);
 
+/**
+ * Create a view directly via `/views` (synchronous endpoint).
+ */
 export function viewCreateCommand(): Command {
   return new Command('create')
     .description(

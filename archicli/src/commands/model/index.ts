@@ -5,6 +5,9 @@ import { modelSearchCommand } from './search';
 import { modelElementCommand } from './element';
 import { modelSaveCommand } from './save';
 
+/**
+ * Model query/mutation namespace.
+ */
 export function modelCommand(): Command {
   return new Command('model')
     .description(

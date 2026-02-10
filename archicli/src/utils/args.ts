@@ -1,3 +1,7 @@
+/**
+ * Normalized validation error used by option parsers so callers can consistently
+ * map bad user input to CLI exit code 1 with structured output.
+ */
 export class ArgumentValidationError extends Error {
   readonly code = 'INVALID_ARGUMENT';
 
@@ -9,6 +13,9 @@ export class ArgumentValidationError extends Error {
 
 const STRICT_INT_RE = /^-?\d+$/;
 
+/**
+ * Parse an integer without accepting loose numeric formats such as "1.2" or "1e3".
+ */
 function parseStrictInteger(raw: string, optionName: string): number {
   if (!STRICT_INT_RE.test(raw.trim())) {
     throw new ArgumentValidationError(`${optionName} must be an integer, got '${raw}'`);
@@ -22,6 +29,9 @@ function parseStrictInteger(raw: string, optionName: string): number {
   return value;
 }
 
+/**
+ * Parse any finite numeric value (including decimals) and reject NaN/Infinity.
+ */
 function parseStrictNumber(raw: string, optionName: string): number {
   const value = Number(raw);
   if (!Number.isFinite(value)) {
@@ -30,6 +40,9 @@ function parseStrictNumber(raw: string, optionName: string): number {
   return value;
 }
 
+/**
+ * Parse and validate a strictly positive integer option.
+ */
 export function parsePositiveInt(raw: string, optionName: string): number {
   const value = parseStrictInteger(raw, optionName);
   if (value < 1) {
@@ -38,6 +51,9 @@ export function parsePositiveInt(raw: string, optionName: string): number {
   return value;
 }
 
+/**
+ * Parse and validate a non-negative integer option.
+ */
 export function parseNonNegativeInt(raw: string, optionName: string): number {
   const value = parseStrictInteger(raw, optionName);
   if (value < 0) {
@@ -46,6 +62,9 @@ export function parseNonNegativeInt(raw: string, optionName: string): number {
   return value;
 }
 
+/**
+ * Parse and validate a bounded floating-point option.
+ */
 export function parseBoundedFloat(
   raw: string,
   optionName: string,

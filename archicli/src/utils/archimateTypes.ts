@@ -1,3 +1,4 @@
+// Canonical ArchiMate concept types accepted by search and validation options.
 export const ARCHIMATE_TYPES = [
   'resource', 'capability', 'value-stream', 'course-of-action',
   'business-actor', 'business-role', 'business-collaboration',
@@ -23,8 +24,10 @@ export const ARCHIMATE_TYPES = [
   'specialization-relationship', 'association-relationship',
 ] as const;
 
+// Set form enables O(1) membership checks for --type validation.
 export const ARCHIMATE_TYPE_SET = new Set<string>(ARCHIMATE_TYPES);
 
+// Relationship subset is used for client-side filtering (e.g. --no-elements).
 export const RELATIONSHIP_TYPE_SET = new Set<string>(
   ARCHIMATE_TYPES.filter((t) => t.endsWith('-relationship'))
 );

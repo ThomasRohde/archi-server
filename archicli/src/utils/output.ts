@@ -1,5 +1,8 @@
 import { getConfig } from './config';
 
+/**
+ * Standard response envelope emitted by all commands in JSON/YAML modes.
+ */
 export interface CLIResponse<T = unknown> {
   success: boolean;
   data?: T;
@@ -33,6 +36,9 @@ export function failure(code: string, message: string, details?: unknown): CLIRe
   };
 }
 
+/**
+ * Emit CLI output according to global formatting/quiet preferences.
+ */
 export function print(response: CLIResponse): void {
   const config = getConfig();
   if (response.success && config.quiet) {
@@ -63,6 +69,9 @@ export function print(response: CLIResponse): void {
   console.log(JSON.stringify(response, null, 2).replace(/\n{3,}/g, '\n\n'));
 }
 
+/**
+ * Print quiet-mode payloads without wrapping metadata.
+ */
 function printByFormat(data: unknown, output: 'json' | 'text' | 'yaml'): void {
   if (data === undefined) return;
   if (output === 'json') {
@@ -91,6 +100,9 @@ function isObjectRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+/**
+ * Reduce successful payloads to a stable, concise subset for `--quiet`.
+ */
 export function pickQuietData(data: unknown): unknown {
   if (data === null || data === undefined) return data;
   if (typeof data !== 'object') return data;
@@ -207,11 +219,15 @@ export function toYamlString(value: unknown): string {
   return toYamlLines(value, 0).join('\n');
 }
 
+/**
+ * Render object arrays as fixed-width tables in text mode.
+ */
 function formatTable(rows: Record<string, unknown>[], indent = ''): string {
   if (rows.length === 0) return `${indent}(empty)`;
   const keys = Object.keys(rows[0]);
   const wideMode = getConfig().wide;
 
+  // Keep IDs and verbose text columns readable in narrow terminals by capping widths.
   const columnLimitFor = (key: string): number => {
     if (wideMode) return 120;
     const lower = key.toLowerCase();
@@ -261,6 +277,9 @@ function formatTable(rows: Record<string, unknown>[], indent = ''): string {
   return [indent + header, indent + sep, ...body.map((b) => indent + b)].join('\n');
 }
 
+/**
+ * Human-readable text formatter used by `--output text` and error detail rendering.
+ */
 function formatText(data: unknown, indent = ''): string {
   if (data === undefined || data === null) return '';
   if (typeof data !== 'object') return String(data);
@@ -287,6 +306,9 @@ function formatText(data: unknown, indent = ''): string {
     .join('\n');
 }
 
+/**
+ * Pretty-print structured failure details while preserving path/hint diagnostics.
+ */
 function formatErrorDetails(details: unknown, indent = '  '): string {
   if (details === null || details === undefined) return '';
 
@@ -351,6 +373,9 @@ function formatErrorDetails(details: unknown, indent = '  '): string {
   return `${indent}${String(details)}`;
 }
 
+/**
+ * Emit arbitrary data without success/error envelope (used by helper commands/tests).
+ */
 export function printRaw(data: unknown): void {
   const config = getConfig();
   if (config.output === 'yaml') {

@@ -5,6 +5,7 @@ import { isCommanderError } from '../../utils/commander';
 import { print, success, failure } from '../../utils/output';
 import { ARCHIMATE_TYPE_SET, ARCHIMATE_TYPES, RELATIONSHIP_TYPE_SET } from '../../utils/archimateTypes';
 
+// Extract user-entered args for duplicate option checks that Commander does not enforce.
 function rawArgsForCommand(cmd: Command): string[] {
   const programArgs = (cmd.parent?.parent as { rawArgs?: string[] } | undefined)?.rawArgs;
   if (Array.isArray(programArgs) && programArgs.length > 2) {
@@ -16,6 +17,9 @@ function rawArgsForCommand(cmd: Command): string[] {
   return [];
 }
 
+/**
+ * Count explicit `--type` occurrences so repeated filters can be rejected early.
+ */
 export function countTypeOptionOccurrences(rawArgs: string[]): number {
   let count = 0;
   for (let i = 0; i < rawArgs.length; i++) {
@@ -35,6 +39,9 @@ export function countTypeOptionOccurrences(rawArgs: string[]): number {
   return count;
 }
 
+/**
+ * Validate regex patterns locally to fail fast before issuing API calls.
+ */
 export function validateRegexPattern(pattern: string): string | null {
   try {
     // Mirror server behavior with case-insensitive matching.
@@ -46,6 +53,9 @@ export function validateRegexPattern(pattern: string): string | null {
   }
 }
 
+/**
+ * Search model concepts with server-side filtering and light client-side post-filtering.
+ */
 export function modelSearchCommand(): Command {
   return new Command('search')
     .description(

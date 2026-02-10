@@ -37,6 +37,9 @@ function parseRetryAfter(header: string | null): number {
   return DEFAULT_RETRY_AFTER_S * 1000;
 }
 
+/**
+ * Shared HTTP request wrapper with verbose logging, JSON parsing, and 429 retry policy.
+ */
 async function request<T>(
   method: string,
   path: string,

@@ -4,6 +4,7 @@ import { isCommanderError } from '../utils/commander';
 import { getConfig } from '../utils/config';
 import { print, success, failure } from '../utils/output';
 
+// Condensed uptime formatter for human-readable text mode output.
 function formatUptime(seconds: number): string {
   const d = Math.floor(seconds / 86400);
   const h = Math.floor((seconds % 86400) / 3600);
@@ -15,6 +16,7 @@ function formatUptime(seconds: number): string {
   return `${s}s`;
 }
 
+// Build a single-line health summary suitable for terminal dashboards.
 function formatHealthText(data: Record<string, unknown>): string {
   const status = data.status ?? 'unknown';
   const version = data.version ?? 'unknown';
@@ -27,6 +29,9 @@ function formatHealthText(data: Record<string, unknown>): string {
   return `${String(status).toUpperCase()} | Archi ${version} | ${elements} elements, ${relationships} relationships, ${views} views | uptime ${uptime}`;
 }
 
+/**
+ * Connectivity and server-state preflight command.
+ */
 export function healthCommand(): Command {
   return new Command('health')
     .description(

@@ -9,11 +9,17 @@ interface BomFile {
   idFiles?: string[];
 }
 
+/**
+ * Duplicate tempId diagnostics normalized to JSON Pointer-like paths.
+ */
 export interface DuplicateTempIdError {
   path: string;
   message: string;
 }
 
+/**
+ * Diagnostics from loading idFiles declared in a BOM.
+ */
 export interface IdFileDiagnostics {
   declared: number;
   loaded: number;
@@ -23,6 +29,9 @@ export interface IdFileDiagnostics {
   loadedFiles: string[];
 }
 
+/**
+ * Convenience shape used by commands that need pass/fail completeness checks.
+ */
 export interface IdFileCompleteness {
   complete: boolean;
   missingCount: number;
@@ -37,12 +46,18 @@ export interface IdFileCompleteness {
   };
 }
 
+/**
+ * Fully flattened BOM payload and supporting metadata.
+ */
 export interface LoadedBom {
   changes: unknown[];
   idFilePaths: string[];
   includedFiles: string[];
 }
 
+/**
+ * Prefer repo-relative paths in diagnostics so output is stable across machines.
+ */
 function formatPath(filePath: string): string {
   const rel = relative(process.cwd(), filePath);
   if (rel && !rel.startsWith('..')) {
@@ -51,6 +66,9 @@ function formatPath(filePath: string): string {
   return filePath;
 }
 
+/**
+ * Detect duplicate tempIds after BOM includes are flattened.
+ */
 export function findDuplicateTempIds(changes: unknown[]): DuplicateTempIdError[] {
   const seen = new Map<string, number>();
   const errors: DuplicateTempIdError[] = [];
@@ -70,6 +88,10 @@ export function findDuplicateTempIds(changes: unknown[]): DuplicateTempIdError[]
   return errors;
 }
 
+/**
+ * Load a BOM recursively, resolving include/idFile paths relative to each file.
+ * Includes are depth-first and cycles are rejected with a descriptive path trace.
+ */
 export function loadBom(filePath: string): LoadedBom {
   const root = resolve(filePath);
   const state = {
@@ -140,6 +162,10 @@ export function loadBom(filePath: string): LoadedBom {
   };
 }
 
+/**
+ * Best-effort loader for idFiles: missing/malformed files are reported and
+ * valid mappings from readable files are merged into a single tempId map.
+ */
 export function loadIdFilesWithDiagnostics(
   paths: string[]
 ): { map: Record<string, string>; diagnostics: IdFileDiagnostics } {
@@ -187,6 +213,9 @@ export function loadIdFilesWithDiagnostics(
   };
 }
 
+/**
+ * Convert detailed idFile diagnostics into a compact completeness summary.
+ */
 export function summarizeIdFileCompleteness(diagnostics: IdFileDiagnostics): IdFileCompleteness {
   const missingCount = diagnostics.missing.length;
   const malformedCount = diagnostics.malformed.length;

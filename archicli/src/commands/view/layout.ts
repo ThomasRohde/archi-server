@@ -5,6 +5,9 @@ import { isCommanderError } from '../../utils/commander';
 import { getConfig } from '../../utils/config';
 import { print, success, failure } from '../../utils/output';
 
+/**
+ * Run server-side auto-layout for a single view.
+ */
 export function viewLayoutCommand(): Command {
   return new Command('layout')
     .description(

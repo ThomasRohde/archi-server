@@ -6,6 +6,9 @@ import { viewExportCommand } from './export';
 import { viewDeleteCommand } from './delete';
 import { viewLayoutCommand } from './layout';
 
+/**
+ * View management namespace.
+ */
 export function viewCommand(): Command {
   return new Command('view')
     .description(

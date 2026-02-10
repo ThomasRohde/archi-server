@@ -7,6 +7,9 @@ import { findDuplicateTempIds, loadBom } from '../../utils/bom';
 import { isCommanderError } from '../../utils/commander';
 import { validate } from '../../schemas/registry';
 
+/**
+ * Split a flattened BOM into chunk files and emit an index BOM with `includes`.
+ */
 export function batchSplitCommand(): Command {
   return new Command('split')
     .description(

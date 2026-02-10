@@ -2,6 +2,9 @@ import { Command } from 'commander';
 import { batchApplyCommand } from './apply';
 import { batchSplitCommand } from './split';
 
+/**
+ * BOM-oriented bulk command namespace.
+ */
 export function batchCommand(): Command {
   return new Command('batch')
     .description(

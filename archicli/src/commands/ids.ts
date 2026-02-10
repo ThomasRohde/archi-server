@@ -5,6 +5,9 @@ import { isCommanderError } from '../utils/commander';
 import { getConfig } from '../utils/config';
 import { print, success, failure } from '../utils/output';
 
+/**
+ * Namespace command for ID-map utilities.
+ */
 export function idsCommand(): Command {
   return new Command('ids')
     .description(
@@ -25,6 +28,9 @@ export function idsCommand(): Command {
     .addCommand(idsLookupCommand());
 }
 
+/**
+ * Lookup helper for resolving a tempId across one or more .ids.json files.
+ */
 function idsLookupCommand(): Command {
   return new Command('lookup')
     .description('Look up a tempId across .ids.json files to find its resolved real ID')
@@ -47,6 +53,7 @@ function idsLookupCommand(): Command {
           const results: Array<{ tempId: string; realId: string; file: string }> = [];
           const errors: Array<{ file: string; error: string }> = [];
 
+          // Continue scanning all files so users can see every match and every read error.
           for (const file of files) {
             const resolvedPath = resolve(file);
             try {

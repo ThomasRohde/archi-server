@@ -13,6 +13,9 @@ import { completionCommand } from './commands/completion';
 import { folderCommand } from './commands/folder/index';
 import { idsCommand } from './commands/ids';
 
+/**
+ * Build the root Commander program with global options and all subcommands.
+ */
 export function createProgram(): Command {
   const program = new Command();
 

@@ -7,6 +7,9 @@ import { isCommanderError } from '../../utils/commander';
 import { print, success, failure } from '../../utils/output';
 import { pollUntilDone } from '../../utils/poll';
 
+/**
+ * Low-level model mutation command for submitting a single apply payload.
+ */
 export function modelApplyCommand(): Command {
   return new Command('apply')
     .description(

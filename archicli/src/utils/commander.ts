@@ -1,3 +1,7 @@
+/**
+ * Detect Commander-thrown usage/control-flow errors so command handlers can rethrow
+ * them instead of wrapping them as runtime failures.
+ */
 export function isCommanderError(err: unknown): boolean {
   if (!err || typeof err !== 'object') return false;
   const candidate = err as { name?: unknown; code?: unknown };

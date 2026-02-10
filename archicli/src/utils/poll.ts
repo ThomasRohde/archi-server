@@ -1,5 +1,8 @@
 import { getConfig } from './config';
 
+/**
+ * Polling behavior controls for async operation completion.
+ */
 export interface PollOptions {
   intervalMs?: number;
   timeoutMs?: number;
@@ -45,6 +48,9 @@ function parseRetryAfter(header: string | null): number {
   return DEFAULT_RETRY_AFTER_S * 1000;
 }
 
+/**
+ * Poll `/ops/status` until an operation reaches a terminal state or times out.
+ */
 export async function pollUntilDone(
   operationId: string,
   options: PollOptions = {}
@@ -59,7 +65,6 @@ export async function pollUntilDone(
     const url = `${config.baseUrl}/ops/status?opId=${encodeURIComponent(operationId)}`;
 
     let res: Response;
-    let retried429 = false;
     for (let r429 = 0; r429 < MAX_POLL_429_RETRIES; r429++) {
       res = await fetch(url);
       if (res.status === 429 && r429 < MAX_POLL_429_RETRIES - 1) {
@@ -68,7 +73,6 @@ export async function pollUntilDone(
           `  [429] Rate limited during poll, retrying in ${Math.ceil(retryMs / 1000)}s...\n`
         );
         await sleep(retryMs);
-        retried429 = true;
         continue;
       }
       break;
@@ -90,6 +94,9 @@ export async function pollUntilDone(
   throw new Error(`Timeout: operation ${operationId} did not complete within ${timeoutMs}ms`);
 }
 
+/**
+ * Local delay helper used for polling interval/backoff.
+ */
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }

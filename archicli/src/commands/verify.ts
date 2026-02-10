@@ -14,6 +14,7 @@ import { getConfig } from '../utils/config';
 import { print, success, failure } from '../utils/output';
 import { REFERENCE_ID_FIELDS, resolveTempIdsByName } from '../utils/tempIds';
 
+// Operations intentionally checked after forward-reference validation.
 const PHASE3_OPS = new Set([
   'deleteConnectionFromView',
   'deleteElement',
@@ -21,6 +22,7 @@ const PHASE3_OPS = new Set([
   'deleteView',
 ]);
 
+// Operations that can introduce new tempIds for later references.
 const PHASE2_TEMPID_CREATORS = new Set([
   'createElement',
   'createRelationship',
@@ -56,6 +58,10 @@ function isRealId(value: string): boolean {
   return value.startsWith('id-');
 }
 
+/**
+ * Run BOM semantic validation beyond JSON schema checks.
+ * Verifies tempId availability/order and basic connection direction consistency.
+ */
 export async function validateBomSemantics(
   changes: unknown[],
   idFilePaths: string[],
@@ -103,6 +109,7 @@ export async function validateBomSemantics(
 
   const availableTempIds = new Set<string>(Object.keys(idFileMap));
 
+  // Validate references against declared/loaded tempIds and execution ordering rules.
   const checkReferences = (operation: BomOperation, opIndex: number): void => {
     const opName = typeof operation.op === 'string' ? operation.op : 'unknown';
     for (const field of REFERENCE_ID_FIELDS) {
@@ -228,6 +235,9 @@ export async function validateBomSemantics(
   };
 }
 
+/**
+ * Validate schema (and optionally semantics) for JSON payloads before apply.
+ */
 export function verifyCommand(): Command {
   return new Command('verify')
     .description(

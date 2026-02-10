@@ -7,6 +7,7 @@ import { isCommanderError } from '../../utils/commander';
 import { getConfig } from '../../utils/config';
 import { print, success, failure } from '../../utils/output';
 
+// Keep generated filenames filesystem-safe across supported platforms.
 function sanitizeFilename(name: string): string {
   return name.replace(/[<>:"/\\|?*]+/g, '_').replace(/\s+/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
 }
@@ -17,6 +18,9 @@ interface ViewListItem {
   type?: string;
 }
 
+/**
+ * Export a single view through the server export endpoint.
+ */
 async function exportSingleView(
   id: string,
   fmt: string,
@@ -33,6 +37,9 @@ async function exportSingleView(
   return await post(`/views/${encodeURIComponent(id)}/export`, body);
 }
 
+/**
+ * Export one view or bulk-export all views.
+ */
 export function viewExportCommand(): Command {
   return new Command('export')
     .description(

@@ -2,6 +2,9 @@ import { Command } from 'commander';
 import { opsListCommand } from './list';
 import { opsStatusCommand } from './status';
 
+/**
+ * Async operation inspection namespace.
+ */
 export function opsCommand(): Command {
   return new Command('ops')
     .description(

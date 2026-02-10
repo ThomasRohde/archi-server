@@ -4,6 +4,9 @@ import { isCommanderError } from '../../utils/commander';
 import { getConfig } from '../../utils/config';
 import { print, success, failure } from '../../utils/output';
 
+/**
+ * Trigger model persistence to disk through the server save endpoint.
+ */
 export function modelSaveCommand(): Command {
   return new Command('save')
     .description(

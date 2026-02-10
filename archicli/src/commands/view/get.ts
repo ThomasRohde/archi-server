@@ -4,6 +4,7 @@ import { isCommanderError } from '../../utils/commander';
 import { print, success, failure } from '../../utils/output';
 import { getConfig } from '../../utils/config';
 
+// Verbose text renderer tailored for troubleshooting visual/concept ID mismatches.
 function formatViewDetailsText(data: Record<string, unknown>): string {
   const lines: string[] = [];
 
@@ -79,6 +80,9 @@ function formatViewDetailsText(data: Record<string, unknown>): string {
   return lines.join('\n');
 }
 
+/**
+ * Fetch a full view payload including visual objects and connections.
+ */
 export function viewGetCommand(): Command {
   return new Command('get')
     .description(

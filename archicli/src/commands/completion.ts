@@ -6,6 +6,7 @@ import { ARCHIMATE_TYPES } from '../utils/archimateTypes';
 
 export type CompletionShell = 'bash' | 'zsh' | 'fish' | 'pwsh';
 
+// Keep completion vocab centralized so scripts stay in sync with CLI command tree.
 const TOP_LEVEL_COMMANDS = ['health', 'verify', 'model', 'batch', 'view', 'ops', 'completion'];
 const MODEL_COMMANDS = ['query', 'search', 'element', 'apply'];
 const BATCH_COMMANDS = ['apply', 'split'];
@@ -13,6 +14,7 @@ const VIEW_COMMANDS = ['list', 'get', 'create', 'export', 'delete'];
 const OPS_COMMANDS = ['status', 'list'];
 const COMPLETION_SHELLS: CompletionShell[] = ['bash', 'zsh', 'fish', 'pwsh'];
 
+// Emit bash completion script as a literal string to avoid external template deps.
 function bashScript(): string {
   return `# archicli bash completion
 _archicli_complete() {
@@ -70,6 +72,7 @@ complete -F _archicli_complete archicli
 `;
 }
 
+// Emit zsh completion script with the same command/type coverage as bash.
 function zshScript(): string {
   return `#compdef archicli
 # archicli zsh completion
@@ -117,6 +120,7 @@ compdef _archicli_complete archicli
 `;
 }
 
+// Emit fish completion entries for top-level and nested commands.
 function fishScript(): string {
   const top = TOP_LEVEL_COMMANDS.join(' ');
   const model = MODEL_COMMANDS.join(' ');
@@ -138,6 +142,7 @@ complete -c archicli -n "__fish_seen_subcommand_from model; and __fish_seen_subc
 `;
 }
 
+// Emit PowerShell argument completer with type-aware completions for model search.
 function pwshScript(): string {
   return `# archicli PowerShell completion
 Register-ArgumentCompleter -CommandName archicli -ScriptBlock {
@@ -190,6 +195,9 @@ Register-ArgumentCompleter -CommandName archicli -ScriptBlock {
 `;
 }
 
+/**
+ * Build completion script contents for the requested shell target.
+ */
 export function buildCompletionScript(shell: CompletionShell): string {
   switch (shell) {
     case 'bash':
@@ -203,6 +211,9 @@ export function buildCompletionScript(shell: CompletionShell): string {
   }
 }
 
+/**
+ * Generate shell completion scripts (`--output text` prints raw script).
+ */
 export function completionCommand(): Command {
   return new Command('completion')
     .description(

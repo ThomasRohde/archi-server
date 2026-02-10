@@ -22,17 +22,20 @@ import {
   type CrossValidationSummary,
 } from '../../utils/crossValidation';
 
+// Minimal `/model/apply` acknowledgment payload before polling.
 interface ApplyResponse {
   operationId: string;
   status: string;
   message?: string;
 }
 
+// Operation plus original position tracking for duplicate-skip bookkeeping.
 interface ChunkOperation {
   change: unknown;
   originalIndexInChunk: number;
 }
 
+// Diagnostics for operations skipped due to duplicate/create conflicts.
 interface SkippedOperation {
   chunk: number;
   of: number;
@@ -43,6 +46,9 @@ interface SkippedOperation {
   reason: string;
 }
 
+/**
+ * Resolve where tempId mappings should be persisted for this run.
+ */
 export function resolveIdsOutputPath(file: string, saveIdsOption?: string | boolean): string {
   const sourceFile = resolve(file);
   if (typeof saveIdsOption === 'string') {
@@ -51,6 +57,9 @@ export function resolveIdsOutputPath(file: string, saveIdsOption?: string | bool
   return resolve(dirname(sourceFile), basename(sourceFile, extname(sourceFile)) + '.ids.json');
 }
 
+/**
+ * Extract duplicate operation index from server validation error messages.
+ */
 export function parseDuplicateExistingChangeIndex(message: string): number | null {
   if (!/already exists/i.test(message)) return null;
   const match = message.match(/Change\s+(\d+)\s+\([^)]+\):/i);
@@ -60,12 +69,18 @@ export function parseDuplicateExistingChangeIndex(message: string): number | nul
   return value;
 }
 
+/**
+ * Extract existing real ID from duplicate-create validation errors.
+ */
 export function parseExistingIdFromError(message: string): string | null {
   if (!/already exists/i.test(message)) return null;
   const match = message.match(/\(id:\s*(\S+)\)\s*$/);
   return match ? match[1] : null;
 }
 
+/**
+ * Build a concise multi-line message for partial chunk failures.
+ */
 function buildChunkFailureMessage(results: Array<Record<string, unknown>>): string {
   const failed = results.filter((r) => r.status === 'error');
   if (failed.length === 0) return 'One or more chunks failed';
@@ -111,6 +126,9 @@ function buildChunkFailureMessage(results: Array<Record<string, unknown>>): stri
     .join('\n');
 }
 
+/**
+ * Shrink noisy batch output into a text-friendly summary for terminal users.
+ */
 function summarizeBatchOutputForText(
   output: Record<string, unknown>,
   results: Array<Record<string, unknown>>,
@@ -174,6 +192,10 @@ function summarizeBatchOutputForText(
   return summary;
 }
 
+/**
+ * High-level BOM apply pipeline:
+ * validate -> flatten -> resolve tempIds -> submit/poll chunks -> persist ids.
+ */
 export function batchApplyCommand(): Command {
   return new Command('apply')
     .description(
@@ -266,6 +288,7 @@ export function batchApplyCommand(): Command {
         cmd: Command
       ) => {
         try {
+          // Phase 1: parse and schema-validate the root BOM file.
           const content = readFileSync(resolve(file), 'utf-8');
           const bom = JSON.parse(content);
           const validation = validate('bom', bom);
@@ -275,6 +298,7 @@ export function batchApplyCommand(): Command {
             return;
           }
 
+          // Phase 2: flatten includes and re-validate the effective operation list.
           const { changes: allChanges, idFilePaths, includedFiles } = loadBom(file);
 
           const flattenedValidation = validate('bom', {
@@ -292,6 +316,7 @@ export function batchApplyCommand(): Command {
             return;
           }
 
+          // Duplicate tempIds are ambiguous and must be rejected before apply.
           const duplicateTempIdErrors = findDuplicateTempIds(allChanges);
           if (duplicateTempIdErrors.length > 0) {
             print(
@@ -331,6 +356,7 @@ export function batchApplyCommand(): Command {
             chunks.push(allChanges.slice(i, i + chunkSize));
           }
 
+          // Load external tempId maps declared by BOM idFiles.
           const { map: tempIdMap, diagnostics: idFileDiagnostics } =
             loadIdFilesWithDiagnostics(idFilePaths);
           const idFilesCompleteness = summarizeIdFileCompleteness(idFileDiagnostics);
@@ -348,6 +374,7 @@ export function batchApplyCommand(): Command {
             return;
           }
 
+          // Stop after validation/planning when requested.
           if (options.dryRun) {
             print(
               success({
@@ -365,6 +392,7 @@ export function batchApplyCommand(): Command {
             return;
           }
 
+          // Optional best-effort tempId resolution by exact name lookup.
           if (options.resolveNames) {
             const unresolved = collectTempIdRefs(allChanges).filter((tempId) => !tempIdMap[tempId]);
             if (unresolved.length > 0) {
@@ -442,6 +470,7 @@ export function batchApplyCommand(): Command {
             }
 
             let resp: ApplyResponse | null = null;
+            // Retry loop is used only for duplicate-create skipping in --skip-existing mode.
             while (true) {
               if (pendingOps.length === 0) {
                 results.push({
@@ -626,6 +655,7 @@ export function batchApplyCommand(): Command {
             }
           }
 
+          // Persist the merged tempId map only when polling produced stable results.
           const shouldSave = options.saveIds !== false;
           const savedIdCount = Object.keys(tempIdMap).length;
           let idsSavedPath: string | undefined;
@@ -673,6 +703,7 @@ export function batchApplyCommand(): Command {
             }
           }
 
+          // Build final response payload after all chunk/layout work is complete.
           const output: Record<string, unknown> = {
             totalChanges: allChanges.length,
             chunks: chunks.length,
@@ -700,13 +731,15 @@ export function batchApplyCommand(): Command {
             output['idsSaved'] = { path: idsSavedPath, count: savedIdCount };
           }
           if (allChanges.length === 0) {
-            output['warning'] = 'Empty BOM -- no changes were applied';            if (!options.allowEmpty) {
+            output['warning'] = 'Empty BOM -- no changes were applied';
+            if (!options.allowEmpty) {
               print(
                 failure('EMPTY_BOM', 'Empty BOM -- no changes to apply. Use --allow-empty to permit this.')
               );
               cmd.error('', { exitCode: 1 });
               return;
-            }          }
+            }
+          }
 
           if (hadOperationErrors) {
             const failureDetails =

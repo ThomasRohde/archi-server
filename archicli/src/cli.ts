@@ -4,6 +4,8 @@ import { createProgram } from './index';
 import { setConfig } from './utils/config';
 import { failure, print } from './utils/output';
 
+// Parse the requested output mode before Commander initialization so usage errors
+// can be emitted in the same format the user asked for.
 function detectRequestedOutput(argv: string[]): 'json' | 'text' | 'yaml' {
   for (let i = 2; i < argv.length; i++) {
     const token = argv[i];
@@ -25,6 +27,7 @@ function normalizeCommanderMessage(message: string): string {
   return message.replace(/^error:\s*/i, '').trim();
 }
 
+// Recursively override Commander output handlers to keep error rendering centralized.
 function configureCommander(command: Command): void {
   command.configureOutput({
     writeOut: (str) => process.stdout.write(str),
@@ -38,6 +41,9 @@ function configureCommander(command: Command): void {
   }
 }
 
+/**
+ * CLI entrypoint: initialize config, parse args, and normalize usage errors.
+ */
 async function main(): Promise<void> {
   const output = detectRequestedOutput(process.argv);
   setConfig({ output });

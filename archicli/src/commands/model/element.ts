@@ -4,6 +4,9 @@ import { isCommanderError } from '../../utils/commander';
 import { print, success, failure } from '../../utils/output';
 import { loadIdFilesWithDiagnostics } from '../../utils/bom';
 
+/**
+ * Fetch complete element details by real ID (or tempId resolved through id-file).
+ */
 export function modelElementCommand(): Command {
   return new Command('element')
     .description(

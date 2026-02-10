@@ -3,6 +3,9 @@ import { del } from '../../utils/api';
 import { isCommanderError } from '../../utils/commander';
 import { print, success, failure } from '../../utils/output';
 
+/**
+ * Delete a view by persistent concept ID.
+ */
 export function viewDeleteCommand(): Command {
   return new Command('delete')
     .description('Delete a view by ID')
