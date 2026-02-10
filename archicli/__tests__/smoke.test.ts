@@ -185,16 +185,19 @@ describe('Smoke tests', () => {
         result: Array<{ tempId: string; realId: string; op: string }>;
       }>;
       idsSaved: { path: string; count: number };
-    }>('batch', 'apply', bomPath, '--poll');
+    }>('batch', 'apply', bomPath);
     const data = assertSuccess(r, 'batch apply smoke-elements');
 
     expect(data.totalChanges).toBe(3);
-    expect(data.results).toHaveLength(1);
-    expect(data.results[0].status).toBe('complete');
-    expect(data.results[0].result).toHaveLength(3);
+    // With atomic defaults (chunk-size 1), we get 3 chunks
+    const allResults = data.results.flatMap((c) => c.result);
+    expect(allResults).toHaveLength(3);
+    for (const chunk of data.results) {
+      expect(chunk.status).toBe('complete');
+    }
 
     // All tempIds should have realIds
-    for (const item of data.results[0].result) {
+    for (const item of allResults) {
       expect(item.tempId).toBeTruthy();
       expect(item.realId).toBeTruthy();
     }
@@ -271,15 +274,18 @@ describe('Smoke tests', () => {
         result: Array<{ tempId: string; realId: string; op: string }>;
       }>;
       idsSaved: { path: string; count: number };
-    }>('batch', 'apply', bomPath, '--poll');
+    }>('batch', 'apply', bomPath);
     const data = assertSuccess(r, 'batch apply smoke-relationships');
 
     expect(data.totalChanges).toBe(2);
-    expect(data.results[0].status).toBe('complete');
-    expect(data.results[0].result).toHaveLength(2);
+    const allRelResults = data.results.flatMap((c) => c.result);
+    expect(allRelResults).toHaveLength(2);
+    for (const chunk of data.results) {
+      expect(chunk.status).toBe('complete');
+    }
 
     // All relationships got real IDs
-    for (const item of data.results[0].result) {
+    for (const item of allRelResults) {
       expect(item.realId).toBeTruthy();
     }
 
@@ -304,11 +310,13 @@ describe('Smoke tests', () => {
       }>;
       idsSaved: { path: string; count: number };
       layoutResults?: Array<{ viewId: string; status: string }>;
-    }>('batch', 'apply', bomPath, '--poll', '--layout');
+    }>('batch', 'apply', bomPath, '--layout');
     const data = assertSuccess(r, 'batch apply smoke-view');
 
     expect(data.totalChanges).toBe(6); // 1 createView + 3 addToView + 2 addConnectionToView
-    expect(data.results[0].status).toBe('complete');
+    for (const chunk of data.results) {
+      expect(chunk.status).toBe('complete');
+    }
 
     // Read view ids
     viewIds = readIdsFile(bomPath);

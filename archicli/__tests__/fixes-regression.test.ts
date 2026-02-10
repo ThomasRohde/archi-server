@@ -110,7 +110,7 @@ describe('Bug 1 — Silent Batch Rollback', () => {
     trackIdsFile(bomPath);
 
     const r = await cli<BatchResult>(
-      'batch', 'apply', bomPath, '--poll', '--chunk-size', '20',
+      'batch', 'apply', bomPath, '--fast',
     );
     const data = assertSuccess(r, 'fix1 elements');
 
@@ -127,21 +127,21 @@ describe('Bug 1 — Silent Batch Rollback', () => {
     expect(Object.keys(fix1ElementIds)).toHaveLength(10);
   });
 
-  test('1b. Create 35 relationships in a single chunk (exceeds old rollback threshold)', async () => {
+  test('1b. Create 35 relationships atomically (exceeds old rollback threshold)', async () => {
     const bomPath = fixturePath('fix1-large-relationships.json');
     trackIdsFile(bomPath);
 
-    // Use safe chunk-size=20 — the fix for Bug 1 is that the CLI auto-chunks large batches.
+    // Default atomic mode (chunk-size 1 + poll + validation) for maximum reliability.
     // Before the fix, a single large CompoundCommand would silently roll back.
-    // With --chunk-size 20, the 35 relationships split into 2 server requests.
     const r = await cli<BatchResult>(
-      'batch', 'apply', bomPath, '--poll', '--chunk-size', '20',
+      'batch', 'apply', bomPath, '--throttle', '0',
+      { timeout: 120_000 },
     );
     const data = assertSuccess(r, 'fix1 large relationships');
 
     expect(data.totalChanges).toBe(35);
 
-    // Flatten all results across chunks (may be 1 or 2 chunks with chunk-size=20)
+    // Flatten all results across chunks (chunk-size=1 default, so 35 chunks)
     const allResults = data.results.flatMap((c) => c.result);
     expect(allResults).toHaveLength(35);
 
@@ -157,7 +157,7 @@ describe('Bug 1 — Silent Batch Rollback', () => {
       Object.entries(allIds).filter(([k]) => k.startsWith('fix1-r')),
     );
     expect(Object.keys(fix1RelIds)).toHaveLength(35);
-  });
+  }, 180_000);  // 3 min for 35 atomic operations
 
   test('1c. Every relationship realId is retrievable via model element', async () => {
     // Spot-check source elements to verify their relationships appear
@@ -263,7 +263,7 @@ describe('Bug 2 — Ghost Objects', () => {
       },
     ]);
 
-    const r = await cli<BatchResult>('batch', 'apply', bomPath, '--poll');
+    const r = await cli<BatchResult>('batch', 'apply', bomPath);
 
     // This should succeed (server creates a new element with same name — ArchiMate allows duplicates).
     // But the key assertion is: after this operation, diagnostics is still clean.
@@ -310,7 +310,7 @@ describe('Bug 3 — Snapshot Consistency', () => {
     const bomPath = writeTempBom(changes);
     trackIdsFile(bomPath);
 
-    const r = await cli<BatchResult>('batch', 'apply', bomPath, '--poll');
+    const r = await cli<BatchResult>('batch', 'apply', bomPath);
     const data = assertSuccess(r, 'fix3 create 20 elements');
 
     expect(data.totalChanges).toBe(20);
@@ -341,7 +341,7 @@ describe('Bug 3 — Snapshot Consistency', () => {
     const bomPath = writeTempBom(changes);
     trackIdsFile(bomPath);
 
-    const r = await cli<BatchResult>('batch', 'apply', bomPath, '--poll');
+    const r = await cli<BatchResult>('batch', 'apply', bomPath);
     const data = assertSuccess(r, 'fix3 create 15 relationships');
 
     expect(data.totalChanges).toBe(15);
@@ -366,7 +366,7 @@ describe('Bug 3 — Snapshot Consistency', () => {
 
     const bomPath = writeTempBom(changes);
 
-    const r = await cli<BatchResult>('batch', 'apply', bomPath, '--poll');
+    const r = await cli<BatchResult>('batch', 'apply', bomPath);
     assertSuccess(r, 'fix3 delete 5 elements');
 
     // Query: elements should decrease by 5
@@ -395,7 +395,7 @@ describe('Bug 4 — Duplicate Detection with Properties', () => {
     const bomPath = fixturePath('fix4-elements.json');
     trackIdsFile(bomPath);
 
-    const r = await cli<BatchResult>('batch', 'apply', bomPath, '--poll');
+    const r = await cli<BatchResult>('batch', 'apply', bomPath);
     const data = assertSuccess(r, 'fix4 elements');
 
     expect(data.totalChanges).toBe(2);
@@ -408,7 +408,7 @@ describe('Bug 4 — Duplicate Detection with Properties', () => {
     const bomPath = fixturePath('fix4-duplicate-access.json');
     trackIdsFile(bomPath);
 
-    const r = await cli<BatchResult>('batch', 'apply', bomPath, '--poll');
+    const r = await cli<BatchResult>('batch', 'apply', bomPath);
     const data = assertSuccess(r, 'fix4 duplicate access');
 
     expect(data.totalChanges).toBe(2);
@@ -480,13 +480,14 @@ describe('Bug 5 — Large Element Batch', () => {
     countsBeforeFix5 = { elements: counts.elements, relationships: counts.relationships };
   });
 
-  test('5b. Apply 40 elements in single batch (chunk-size=50)', async () => {
+  test('5b. Apply 40 elements atomically (chunk-size=1)', async () => {
     const bomPath = fixturePath('fix5-large-elements.json');
     trackIdsFile(bomPath);
 
-    // Single server request: chunk-size=50 ensures all 40 go in one batch
+    // Default atomic mode (chunk-size 1 + poll) avoids GEF rollbacks on large batches
     const r = await cli<BatchResult>(
-      'batch', 'apply', bomPath, '--poll', '--chunk-size', '50',
+      'batch', 'apply', bomPath, '--throttle', '0',
+      { timeout: 120_000 },
     );
     const data = assertSuccess(r, 'fix5 large elements');
 

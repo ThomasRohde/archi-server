@@ -199,7 +199,8 @@ Skills follow the [Agent Skills](https://agentskills.io) open standard and are a
 cd archicli && npm install && npm run build
 archicli health                                    # verify server
 archicli verify model/index.json                   # validate BOM schema
-archicli batch apply model/index.json --poll       # apply with auto-chunking + polling
+archicli batch apply model/index.json              # apply atomically (chunk-size 1, poll, validate)
+archicli batch apply model/index.json --fast       # fast mode: chunk-size 20, no validation
 ```
 
 ### BOM File Format
@@ -222,12 +223,13 @@ archicli batch apply model/index.json --poll       # apply with auto-chunking + 
 
 ### Critical Rules
 
-1. **Always use `--poll`** — `/model/apply` is async; without it you get an opId but no result or resolved IDs
-2. **tempIds resolve automatically**: within a batch, across chunks (with `--poll`), and across files (via `idFiles`)
-3. **Auto-saves `<file>.ids.json`** after `batch apply --poll` — reference in `idFiles` of subsequent BOMs
+1. **Correctness-first defaults** — chunk-size 1, polling, and connection validation are ON by default
+2. **tempIds resolve automatically**: within a batch, across chunks, and across files (via `idFiles`)
+3. **Auto-saves `<file>.ids.json`** after apply — reference in `idFiles` of subsequent BOMs
 4. **Verify first**: `archicli verify <file>` catches authoring errors before touching the model
 5. **Example BOMs**: see `model/` directory for working examples
-6. **Chunk size**: default 20 ops/request (lowered from 100 for safety). The server also internally chunks large GEF CompoundCommands (≈100 sub-commands) and detects silent rollback.
+6. **Use `--fast`** for bulk creates where speed matters (e.g., 200 elements). Defaults back to chunk-size 20.
+7. **Auto-retries on rate limits** (HTTP 429) with exponential backoff — no manual intervention needed.
 
 ### CLI Commands Reference
 
@@ -235,7 +237,8 @@ archicli batch apply model/index.json --poll       # apply with auto-chunking + 
 |---------|---------|
 | `archicli health` | Check server connectivity |
 | `archicli verify <file>` | Validate BOM/request JSON |
-| `archicli batch apply <bom> --poll` | Apply BOM (auto-chunks + polls) |
+| `archicli batch apply <bom>` | Apply BOM (atomic, polls, validates) |
+| `archicli batch apply <bom> --fast` | Apply BOM (chunk-size 20, fast) |
 | `archicli batch split <bom>` | Split large BOM into linked files |
 | `archicli model search` | Search elements by type/name/property |
 | `archicli model query` | Model summary with counts |

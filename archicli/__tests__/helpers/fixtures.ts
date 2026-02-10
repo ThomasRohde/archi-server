@@ -55,7 +55,7 @@ const TEMP_DIR = join(tmpdir(), 'archicli-tests');
  *   const bomPath = writeTempBom([
  *     { op: 'createElement', type: 'business-actor', name: 'Test', tempId: 't-1' }
  *   ]);
- *   const result = await cli('batch', 'apply', bomPath, '--poll');
+ *   const result = await cli('batch', 'apply', bomPath);
  */
 export function writeTempBom(
   changes: unknown[],

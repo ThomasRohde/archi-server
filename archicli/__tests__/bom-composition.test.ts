@@ -91,7 +91,7 @@ describe('BOM composition — includes', () => {
     trackIdsFile(parentPath);
 
     const result = await cli<BatchResult>(
-      'batch', 'apply', parentPath, '--poll',
+      'batch', 'apply', parentPath,
     );
 
     assertSuccess(result, 'includes parent apply');
@@ -151,7 +151,7 @@ describe('BOM composition — includes', () => {
 
     try {
       // batch apply should detect the cycle
-      const result = await cli('batch', 'apply', fileA, '--poll');
+      const result = await cli('batch', 'apply', fileA);
       expect(result.success).toBe(false);
       expect(result.exitCode).not.toBe(0);
       const errText = (result.error?.message ?? '') + (result.error?.code ?? '');
@@ -175,7 +175,7 @@ describe('BOM composition — idFiles cross-session resolution', () => {
     trackIdsFile(elemPath);
 
     const phase1 = await cli<BatchResult>(
-      'batch', 'apply', elemPath, '--poll',
+      'batch', 'apply', elemPath,
     );
     assertSuccess(phase1, 'phase1: create elements');
 
@@ -204,7 +204,7 @@ describe('BOM composition — idFiles cross-session resolution', () => {
     );
 
     const phase2 = await cli<BatchResult>(
-      'batch', 'apply', relBomPath, '--poll',
+      'batch', 'apply', relBomPath,
     );
     assertSuccess(phase2, 'phase2: create relationship via idFiles');
 
@@ -232,7 +232,7 @@ describe('BOM composition — idFiles cross-session resolution', () => {
       },
     );
 
-    const result = await cli('batch', 'apply', bomPath, '--poll');
+    const result = await cli('batch', 'apply', bomPath);
     expect(result.success).toBe(false);
     expect(result.exitCode).not.toBe(0);
     const errCode = result.error?.code ?? '';
@@ -252,7 +252,7 @@ describe('BOM composition — idFiles cross-session resolution', () => {
     );
 
     const result = await cli<BatchResult>(
-      'batch', 'apply', bomPath, '--poll', '--allow-incomplete-idfiles',
+      'batch', 'apply', bomPath, '--allow-incomplete-idfiles',
     );
     assertSuccess(result, 'apply with --allow-incomplete-idfiles');
 

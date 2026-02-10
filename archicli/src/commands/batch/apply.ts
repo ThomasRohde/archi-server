@@ -3,7 +3,7 @@ import { readFileSync, writeFileSync } from 'fs';
 import { basename, dirname, extname, resolve } from 'path';
 import { validate } from '../../schemas/registry';
 import { post, ApiError } from '../../utils/api';
-import { ArgumentValidationError, parsePositiveInt } from '../../utils/args';
+import { ArgumentValidationError, parsePositiveInt, parseNonNegativeInt } from '../../utils/args';
 import {
   findDuplicateTempIds,
   loadBom,
@@ -15,6 +15,12 @@ import { getConfig } from '../../utils/config';
 import { print, success, failure } from '../../utils/output';
 import { pollUntilDone, type OperationErrorDetails } from '../../utils/poll';
 import { collectTempIdRefs, REFERENCE_ID_FIELDS, resolveTempIdsByName, substituteIds } from '../../utils/tempIds';
+import {
+  buildVisualToElementMap,
+  clearRelationshipCache,
+  crossValidateConnections,
+  type CrossValidationSummary,
+} from '../../utils/crossValidation';
 
 interface ApplyResponse {
   operationId: string;
@@ -172,34 +178,30 @@ export function batchApplyCommand(): Command {
   return new Command('apply')
     .description(
       'Apply a BOM file to the ArchiMate model.\n\n' +
-        'Large change sets are auto-split into chunks (default 20 ops each) and\n' +
-        'submitted sequentially as async operations. The server also internally\n' +
-        'chunks large GEF CompoundCommands and verifies created objects persist.\n\n' +
-        'ALWAYS USE --poll when:\n' +
-        '  - You need real IDs of created elements (required for view population)\n' +
-        '  - Your BOM spans multiple chunks (tempIds resolved across chunks via --poll)\n' +
-        '  - You want the ID map saved to <file>.ids.json for future BOM files\n\n' +
+        'CORRECTNESS-FIRST: Each operation is submitted individually (chunk-size 1)\n' +
+        'and verified via polling by default. This eliminates GEF CompoundCommand\n' +
+        'rollbacks at the cost of speed. Use --fast for larger chunk sizes.\n\n' +
         'TEMPID RESOLUTION ORDER (per chunk submission):\n' +
         '  1. Declared "idFiles" in the BOM (loaded upfront)\n' +
         '  2. Results from previously polled chunks in this run\n' +
         '  3. Model name lookup if --resolve-names is set\n\n' +
-        'SYNC VS ASYNC NOTE:\n' +
-        '  "view create" is synchronous, but BOM createView runs through this async\n' +
-        '  queue path. Use --poll whenever the run depends on created view IDs.\n\n' +
         'EXAMPLE WORKFLOW:\n' +
-        '  archicli batch apply model/elements.json --poll\n' +
+        '  archicli batch apply model/elements.json\n' +
         '  # creates model/elements.ids.json with tempId->realId map\n' +
-        '  archicli batch apply model/views.json --poll\n' +
+        '  archicli batch apply model/views.json\n' +
         '  # views.json declares "idFiles": ["elements.ids.json"] to resolve element refs\n\n' +
+        'FAST MODE:\n' +
+        '  archicli batch apply model/elements.json --fast\n' +
+        '  # chunk-size 20, no connection validation — for bulk creates where speed matters\n\n' +
         'IDEMPOTENT RE-APPLY:\n' +
-        '  archicli batch apply model/elements.json --poll --skip-existing\n' +
+        '  archicli batch apply model/elements.json --skip-existing\n' +
         '  # safely re-run: skips createElement ops that already exist,\n' +
         '  # recovers their real IDs, and continues with remaining ops'
     )
     .argument('<file>', 'path to BOM JSON file')
-    .option('-c, --chunk-size <n>', 'operations per API request (max 1000, default 10 for safety)', '10')
+    .option('-c, --chunk-size <n>', 'operations per API request (default 1 for atomic safety, max 1000)', '1')
     .option('--dry-run', 'validate BOM and show what would be submitted, without applying')
-    .option('--poll', 'poll /ops/status until each chunk completes')
+    .option('--no-poll', 'skip polling — fire-and-forget (not recommended)')
     .option('--poll-timeout <ms>', 'polling timeout in ms per chunk', '60000')
     .option('--save-ids [path]', 'save tempId→realId map after apply (default: <file>.ids.json)')
     .option('--no-save-ids', 'skip saving the ID map after apply')
@@ -230,8 +232,16 @@ export function batchApplyCommand(): Command {
       'continue processing independent chunks when a chunk fails'
     )
     .option(
-      '--safe',
-      'safe mode: chunk-size 1 with verification for maximum reliability'
+      '--no-validate-connections',
+      'skip cross-validation of addConnectionToView ops against relationship endpoints'
+    )
+    .option(
+      '--throttle <ms>',
+      'delay between chunk submissions in ms (default 50 for atomic mode, 0 for fast mode)',
+    )
+    .option(
+      '--fast',
+      'fast mode: chunk-size 20, no connection validation, no throttle — use when speed matters'
     )
     .action(
       async (
@@ -239,7 +249,7 @@ export function batchApplyCommand(): Command {
         options: {
           chunkSize: string;
           dryRun?: boolean;
-          poll?: boolean;
+          poll: boolean;
           pollTimeout: string;
           saveIds?: string | boolean;
           resolveNames?: boolean;
@@ -249,7 +259,9 @@ export function batchApplyCommand(): Command {
           layout?: boolean;
           rankdir: string;
           continueOnError?: boolean;
-          safe?: boolean;
+          validateConnections: boolean;
+          throttle?: string;
+          fast?: boolean;
         },
         cmd: Command
       ) => {
@@ -291,14 +303,15 @@ export function batchApplyCommand(): Command {
             return;
           }
 
-          // --safe mode: override chunk-size to 1 for maximum reliability
-          if (options.safe) {
-            options.chunkSize = '1';
-            if (!options.poll) {
-              options.poll = true;
-              process.stderr.write('Safe mode: enabling --poll for verification\n');
+          // --fast mode: override to batch-oriented defaults for speed
+          if (options.fast) {
+            if (options.chunkSize === '1') {
+              options.chunkSize = '20';
             }
-            process.stderr.write('Safe mode: using chunk-size 1\n');
+            options.validateConnections = false;
+            process.stderr.write(
+              `Fast mode: chunk-size ${options.chunkSize}, no connection validation\n`
+            );
           }
 
           const chunkSizeInput = parsePositiveInt(options.chunkSize, '--chunk-size');
@@ -358,6 +371,26 @@ export function batchApplyCommand(): Command {
               await resolveTempIdsByName(unresolved, tempIdMap);
             }
           }
+
+          // Build visual-to-element map for connection cross-validation (R5)
+          const visualToElementMap = options.validateConnections
+            ? buildVisualToElementMap(allChanges)
+            : {};
+          const connectionValidationSummaries: CrossValidationSummary[] = [];
+          if (options.validateConnections) {
+            clearRelationshipCache();
+            if (!options.poll) {
+              process.stderr.write(
+                'Warning: --validate-connections requires --poll to resolve tempIds. Disabling validation.\n'
+              );
+              options.validateConnections = false;
+            }
+          }
+
+          // Determine inter-chunk throttle delay
+          const throttleMs = options.throttle !== undefined
+            ? parseNonNegativeInt(options.throttle, '--throttle')
+            : (chunkSize === 1 && !options.fast ? 50 : 0);
 
           const progressStream = process.stdout.isTTY ? process.stdout : null;
 
@@ -425,6 +458,49 @@ export function batchApplyCommand(): Command {
                 pendingOps.map((op) => op.change),
                 tempIdMap
               );
+
+              // R5: Cross-validate addConnectionToView operations before submission
+              if (options.validateConnections) {
+                const originalChunk = pendingOps.map((op) => op.change);
+                const validation = await crossValidateConnections(
+                  currentChunk,
+                  originalChunk,
+                  tempIdMap,
+                  visualToElementMap,
+                );
+                if (validation.checked > 0) {
+                  connectionValidationSummaries.push(validation);
+
+                  // Log swap warnings to stderr
+                  for (const detail of validation.details) {
+                    if (detail.swapped && detail.relationship) {
+                      process.stderr.write(
+                        `  [validate] Chunk ${i + 1}: swapped connection direction for ` +
+                        `relationship "${detail.relationship.name}" ` +
+                        `(${detail.relationship.sourceId} → ${detail.relationship.targetId})\n`
+                      );
+                    }
+                  }
+
+                  // Fail on complete mismatches (unless --continue-on-error)
+                  if (validation.failed > 0) {
+                    const errors = validation.details
+                      .filter((d) => !d.valid && !d.swapped)
+                      .map((d) => d.error)
+                      .join('\n');
+
+                    if (!options.continueOnError) {
+                      throw new Error(
+                        `Connection cross-validation failed for ${validation.failed} operation(s) in chunk ${i + 1}:\n${errors}`
+                      );
+                    }
+
+                    process.stderr.write(
+                      `  [validate] Chunk ${i + 1}: ${validation.failed} connection(s) failed validation:\n${errors}\n`
+                    );
+                  }
+                }
+              }
 
               try {
                 resp = await post<ApplyResponse>('/model/apply', { changes: currentChunk });
@@ -543,6 +619,11 @@ export function batchApplyCommand(): Command {
             }
 
             results.push(chunkResult);
+
+            // Throttle between chunks to avoid rate-limit spikes
+            if (throttleMs > 0 && i < chunks.length - 1) {
+              await new Promise((r) => setTimeout(r, throttleMs));
+            }
           }
 
           const shouldSave = options.saveIds !== false;
@@ -601,6 +682,19 @@ export function batchApplyCommand(): Command {
           };
           if (layoutResults.length > 0) {
             output['layoutResults'] = layoutResults;
+          }
+          if (connectionValidationSummaries.length > 0) {
+            const totalChecked = connectionValidationSummaries.reduce((s, v) => s + v.checked, 0);
+            const totalSwapped = connectionValidationSummaries.reduce((s, v) => s + v.swapped, 0);
+            const totalFailed = connectionValidationSummaries.reduce((s, v) => s + v.failed, 0);
+            const totalSkipped = connectionValidationSummaries.reduce((s, v) => s + v.skipped, 0);
+            output['connectionValidation'] = {
+              checked: totalChecked,
+              passed: totalChecked - totalSwapped - totalFailed - totalSkipped,
+              swapped: totalSwapped,
+              failed: totalFailed,
+              skipped: totalSkipped,
+            };
           }
           if (idsSavedPath) {
             output['idsSaved'] = { path: idsSavedPath, count: savedIdCount };

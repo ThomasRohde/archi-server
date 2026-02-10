@@ -1,7 +1,7 @@
 # Batch Execution & Rollback — Issues and Recommendations
 
 **Date**: 2026-02-09  
-**Status**: **10/11 Complete** ✅ (Only R5 remains)  
+**Status**: **11/11 Complete** ✅ (All recommendations implemented)  
 **Context**: Building a full ArchiMate model of archicli (80 elements, 123 relationships, 4 views) using `archicli batch apply` against the Model API Server.
 
 ---
@@ -140,9 +140,9 @@ var enumLiteral = IAccessRelationship.UNSPECIFIED_ACCESS; // or similar
 
 Test all four access types (0=write, 1=read, 2=access, 3=readwrite) individually against various element pair combinations to find which triggers the rejection.
 
-### ⬜ R5: Client-Side Visual ID Cross-Validation in archicli
-**Status**: NOT DONE — Remaining work for future session  
-**Scope**: archicli validation logic before `addConnectionToView` submission
+### ✅ R5: Client-Side Visual ID Cross-Validation in archicli
+**Status**: DONE — Implemented in `archicli/src/utils/crossValidation.ts` and `archicli/src/commands/batch/apply.ts`  
+**Implementation**: `--validate-connections` flag (auto-enabled with `--safe`) cross-validates `addConnectionToView` operations against relationship endpoints before submission; auto-swaps reversed direction with warning; fails on complete mismatch
 
 Before submitting `addConnectionToView`, archicli should:
 
@@ -215,7 +215,7 @@ Alternatively, add `--safe` flag that:
 | R2 | Per-operation CompoundCommand | Eliminates all batch rollbacks | Medium | **P0** | ✅ **DONE** |
 | R3 | Post-execution result capture | Eliminates tempId cross-mapping | Low | **P1** | ✅ **DONE** |
 | R4 | accessType:0 investigation | Fixes write-access bug | Low | **P1** | ✅ **DONE** |
-| R5 | Client-side visual cross-validation | Catches issues early | Medium | **P2** | ⬜ **TODO** |
+| R5 | Client-side visual cross-validation | Catches issues early | Medium | **P2** | ✅ **DONE** |
 | R6 | Direction auto-fix option | Better UX | Low | **P2** | ✅ **DONE** |
 | R7 | Richer result context | Debugging aid | Low | **P3** | ✅ **DONE** |
 | R8 | Lower default chunk-size | Reduces exposure | Trivial | **P1** | ✅ **DONE** |
@@ -240,7 +240,7 @@ Both issues are fixable without major architectural changes — R1 and R3 are ta
 
 ## Implementation Status (February 10, 2026)
 
-### ✅ Completed (10/11 items)
+### ✅ Completed (11/11 items)
 
 **Server-side fixes** (`scripts/lib/core/undoableCommands.js`, 3441 lines):
 - R1: Operation-aligned chunking via `opBoundaries` array
@@ -255,22 +255,24 @@ Both issues are fixable without major architectural changes — R1 and R3 are ta
 
 **CLI improvements** (`archicli/src/commands/batch/apply.ts`):
 - R8/QW2: Default `--chunk-size` lowered from 20 to 10
-- QW3: `--safe` flag (chunk-size 1 with verification)
+- QW3: `--safe` flag (chunk-size 1 with verification and connection validation)
+- R5: `--validate-connections` flag for client-side visual cross-validation
 
-**Tests**: All 107 unit tests passing, fixes verified with integration tests
+**Cross-validation utility** (`archicli/src/utils/crossValidation.ts`):
+- Builds visual tempId → element ID map from BOM's `addToView` operations
+- Fetches relationship details from server (with caching) to get source/target
+- Verifies connection direction matches relationship endpoints
+- Auto-swaps reversed source/target visual IDs with warning
+- Fails early on complete endpoint mismatch
 
-### ⬜ Remaining Work (1 item)
+**Tests**: All unit tests passing (13 cross-validation tests + 107 existing)
 
-**R5: Client-side visual cross-validation in archicli** (Priority P2, Medium effort)
+### ✅ All Recommendations Complete
 
-This is an enhancement that would add pre-submission validation to `addConnectionToView` operations in the archicli batch processor. Before sending connection requests to the server, archicli should:
+All 11 recommendations have been implemented. The R5 cross-validation adds a final layer of client-side defense:
 
-1. Resolve `relationshipId` tempId to realId
-2. Fetch relationship details via `GET /model/element/{realId}`
-3. Resolve `sourceVisualId`/`targetVisualId` tempIds to element IDs
-4. Cross-check that relationship endpoints match visual object elements
-5. Auto-swap if mismatched (with warning) or fail early with clear error
-
-**Why it's lower priority**: The server-side fixes (R1-R4, R6) already eliminate the root causes of tempId cross-mapping and direction mismatches. R5 is defensive validation that would catch issues earlier in the pipeline but isn't critical now that the underlying bugs are fixed.
-
-**Where to implement**: `archicli/src/commands/batch/apply.ts` — add validation pass before chunking `addConnectionToView` operations (around line 400-450 in the operation loop).
+- **`--validate-connections`** flag on `batch apply` enables pre-submission validation
+- **`--safe` mode** now automatically enables connection validation
+- Relationship endpoint verification prevents the cascading failures described in Issue 3 and Issue 4
+- Auto-swap corrects reversed direction without user intervention
+- Relationship details are cached to minimize API calls

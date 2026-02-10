@@ -50,7 +50,7 @@ describe('CLI error handling', () => {
 
   test('batch apply with invalid schema BOM exits non-zero', async () => {
     const result = await cli(
-      'batch', 'apply', fixturePath('verify-invalid-schema.json'), '--poll',
+      'batch', 'apply', fixturePath('verify-invalid-schema.json'),
     );
 
     expect(result.success).toBe(false);
@@ -64,7 +64,7 @@ describe('CLI error handling', () => {
 
   test('batch apply with empty BOM fails without --allow-empty', async () => {
     const result = await cli(
-      'batch', 'apply', fixturePath('empty.json'), '--poll',
+      'batch', 'apply', fixturePath('empty.json'),
     );
 
     expect(result.success).toBe(false);
@@ -77,7 +77,7 @@ describe('CLI error handling', () => {
 
   test('batch apply with empty BOM succeeds with --allow-empty', async () => {
     const result = await cli(
-      'batch', 'apply', fixturePath('empty.json'), '--poll', '--allow-empty',
+      'batch', 'apply', fixturePath('empty.json'), '--allow-empty',
     );
 
     expect(result.success).toBe(true);
@@ -171,7 +171,7 @@ describe('CLI error handling', () => {
 
   test('batch apply with duplicate tempId BOM fails validation', async () => {
     const result = await cli(
-      'batch', 'apply', fixturePath('verify-duplicate-tempid.json'), '--poll',
+      'batch', 'apply', fixturePath('verify-duplicate-tempid.json'),
     );
 
     expect(result.success).toBe(false);

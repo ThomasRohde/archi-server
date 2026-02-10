@@ -150,12 +150,12 @@ const VIEW_TEMP_IDS = [
 // ═════════════════════════════════════════════════════════════════════════════
 
 describe('Phase 1 — Elements (200)', () => {
-  test('1a. Batch apply 200 elements with --poll --chunk-size 20', async () => {
+  test('1a. Batch apply 200 elements with --fast', async () => {
     const bomPath = fixturePath('bulk-01-elements.json');
     trackIdsFile(bomPath);
 
     const r = await cli<BatchResult>(
-      'batch', 'apply', bomPath, '--poll', '--chunk-size', '20',
+      'batch', 'apply', bomPath, '--fast',
     );
     const data = assertSuccess(r, 'bulk phase 1 elements');
 
@@ -222,12 +222,15 @@ describe('Phase 1 — Elements (200)', () => {
 // ═════════════════════════════════════════════════════════════════════════════
 
 describe('Phase 2 — Relationships (338)', () => {
-  test('2a. Batch apply 338 relationships with --poll --chunk-size 20', async () => {
+  test('2a. Batch apply 338 relationships (atomic mode)', async () => {
     const bomPath = fixturePath('bulk-02-relationships.json');
     trackIdsFile(bomPath);
 
+    // Default atomic mode: chunk-size 1, --poll, --validate-connections
+    // Use longer CLI timeout for 338 individual operations
     const r = await cli<BatchResult>(
-      'batch', 'apply', bomPath, '--poll', '--chunk-size', '20',
+      'batch', 'apply', bomPath, '--throttle', '0',
+      { timeout: 300_000 },
     );
     const data = assertSuccess(r, 'bulk phase 2 relationships');
 
@@ -264,7 +267,7 @@ describe('Phase 2 — Relationships (338)', () => {
       Object.entries(allPhase2Ids).filter(([k]) => k.startsWith('b-r')),
     );
     expect(Object.keys(phase2Ids)).toHaveLength(338);
-  }, 120_000);
+  }, 360_000);  // 6 min for 338 atomic operations
 
   test('2b. Model query confirms 338 relationships', async () => {
     const r = await cli<QueryResult>('model', 'query');
@@ -314,8 +317,10 @@ describe('Phase 3 — Views (6 views + visual objects + connections)', () => {
     const bomPath = fixturePath('bulk-03-views.json');
     trackIdsFile(bomPath);
 
+    // Default atomic mode with layout; 245 atomic ops
     const r = await cli<BatchResult>(
-      'batch', 'apply', bomPath, '--poll', '--chunk-size', '20', '--layout',
+      'batch', 'apply', bomPath, '--layout', '--throttle', '0',
+      { timeout: 300_000 },
     );
     const data = assertSuccess(r, 'bulk phase 3 views');
 
@@ -347,7 +352,7 @@ describe('Phase 3 — Views (6 views + visual objects + connections)', () => {
     phase3Ids = readIdsFile(bomPath);
     // Should have IDs for views + visual objects + connections that had tempIds
     expect(Object.keys(phase3Ids).length).toBeGreaterThan(0);
-  }, 180_000);
+  }, 360_000);  // 6 min for 245 atomic operations
 
   test('3b. View list shows 6 views', async () => {
     const r = await cli<Array<{ id: string; name: string }>>('view', 'list');
@@ -430,7 +435,7 @@ describe('Phase 4 — Styling & Annotations (27 operations)', () => {
     trackIdsFile(bomPath);
 
     const r = await cli<BatchResult>(
-      'batch', 'apply', bomPath, '--poll', '--chunk-size', '20',
+      'batch', 'apply', bomPath, '--fast',
     );
     const data = assertSuccess(r, 'bulk phase 4 styling');
 
@@ -525,7 +530,7 @@ describe('Phase 6 — Idempotent Re-apply (--skip-existing)', () => {
     // Don't track ids file — it already exists from Phase 1
 
     const r = await cli<BatchResult>(
-      'batch', 'apply', bomPath, '--poll', '--skip-existing', '--chunk-size', '20',
+      'batch', 'apply', bomPath, '--fast', '--skip-existing',
     );
     const data = assertSuccess(r, 'bulk phase 6 skip-existing');
 

@@ -74,7 +74,7 @@ export interface CLIOptions {
  *   expect(r.success).toBe(true);
  *
  * @example
- *   const r = await cli('batch', 'apply', fixturePath('smoke-elements.json'), '--poll');
+ *   const r = await cli('batch', 'apply', fixturePath('smoke-elements.json'));
  */
 export function cli<T = unknown>(...rawArgs: (string | CLIOptions)[]): Promise<CLIResult<T>> {
   // Separate trailing options object from positional args

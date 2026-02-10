@@ -81,8 +81,9 @@ archicli model search --type application-component --strict-types
 archicli model search --name ".*Service.*" --no-relationships
 archicli verify changes.json                     # validate a BOM file
 archicli verify changes.json --semantic          # semantic tempId checks
-archicli batch apply changes.json --poll         # apply and wait for results
-archicli batch apply changes.json --poll --skip-existing
+archicli batch apply changes.json                # apply atomically with polling + validation
+archicli batch apply changes.json --fast          # fast mode: chunk-size 20
+archicli batch apply changes.json --skip-existing
 archicli view create "Application Overview" --viewpoint application_cooperation
 archicli view delete id-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 archicli ops list                                # list recent operation IDs
@@ -90,7 +91,7 @@ archicli ops list                                # list recent operation IDs
 
 ### Bill of Materials (BOM) files
 
-Changes are described in JSON BOM files. The `batch apply` command handles validation, chunking (up to 1000 ops per request), polling, and tempId→realId persistence automatically.
+Changes are described in JSON BOM files. The `batch apply` command handles validation, chunking (default chunk-size 1 for atomic safety), polling, connection cross-validation, and tempId→realId persistence automatically. Use `--fast` for larger chunk sizes when speed matters.
 
 Validation is strict: unknown top-level and operation fields are rejected. For `archicli verify` auto-detection, BOM files should include `version: "1.0"` and either a `changes` array or an `includes` array.
 
@@ -118,14 +119,14 @@ Example:
 }
 ```
 
-After `--poll` completes, `changes.ids.json` is written containing all tempId→realId mappings for use in subsequent BOM files.
+After apply completes, `changes.ids.json` is written containing all tempId→realId mappings for use in subsequent BOM files.
 You can choose a custom output path with `--save-ids <path>`, for example:
 
 ```bash
-archicli batch apply changes.json --poll --save-ids out/my-mappings.ids.json
+archicli batch apply changes.json --save-ids out/my-mappings.ids.json
 ```
 
-If you run `batch apply` without `--poll`, requests are still submitted, but completion is not tracked and ID mappings are not saved. The CLI prints a warning in that mode.
+To skip polling and ID tracking, use `--no-poll` (not recommended for most workflows).
 
 For idempotent re-runs, use `--skip-existing` to skip duplicate create operations and continue processing the rest of the BOM.
 
@@ -134,7 +135,7 @@ For idempotent re-runs, use `--skip-existing` to skip duplicate create operation
 | Concept | Description |
 |---------|-------------|
 | **tempId** | Friendly name assigned at authoring time (e.g. `"my-server"`). Resolved to a real Archi ID at runtime. Later ops in the same batch can reference earlier tempIds. |
-| **Async mutations** | `/model/apply` is async — always use `--poll` or `ops status <id>` to confirm success. |
+| **Async mutations** | `/model/apply` is async — archicli polls automatically (use `--no-poll` to skip). |
 | **Views vs elements** | Elements exist in the model tree independently. Views are diagrams; use `addToView` + `addConnectionToView` to populate them. |
 | **Visual IDs** | `addToView` returns a `visualId` (diagram object) distinct from the element `conceptId`. `addConnectionToView` needs visual IDs. |
 | **Nesting** | For compound elements (parent containing children), use `parentVisualId` on `addToView` to nest children inside a parent visual, or `nestInView` to reparent after placement. |
@@ -147,8 +148,8 @@ archicli verify <file>               Validate BOM JSON before sending
 archicli model query                 Model overview: counts + sample elements (optional relationship sample)
 archicli model search [options]      Search by type, name, or property (--strict-types available)
 archicli model element <id>          Full detail for one element
-archicli model apply <file> --poll   Low-level single-file apply
-archicli batch apply <file> --poll   Apply BOM with auto-chunking + polling (--skip-existing available)
+archicli batch apply <file>           Apply BOM atomically (chunk-size 1, polls, validates connections)
+archicli batch apply <file> --fast   Apply BOM in fast mode (chunk-size 20, no validation)
 archicli batch split <file>          Split large BOM into linked chunk files (--chunk-size, alias --size)
 archicli view list                   List all views
 archicli view get <id>               View detail with visual object IDs
