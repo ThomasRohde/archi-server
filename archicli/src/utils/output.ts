@@ -372,15 +372,3 @@ function formatErrorDetails(details: unknown, indent = '  '): string {
 
   return `${indent}${String(details)}`;
 }
-
-/**
- * Emit arbitrary data without success/error envelope (used by helper commands/tests).
- */
-export function printRaw(data: unknown): void {
-  const config = getConfig();
-  if (config.output === 'yaml') {
-    console.log(toYamlString(data));
-    return;
-  }
-  console.log(JSON.stringify(data, null, 2));
-}

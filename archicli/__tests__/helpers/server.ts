@@ -70,18 +70,6 @@ async function serverPost<T>(path: string, body?: unknown, baseUrl = DEFAULT_BAS
   return res.json() as Promise<T>;
 }
 
-async function serverDelete<T>(path: string, baseUrl = DEFAULT_BASE_URL): Promise<T> {
-  const res = await fetch(`${baseUrl}${path}`, {
-    method: 'DELETE',
-    headers: { 'Content-Type': 'application/json' },
-  });
-  if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    throw new Error(`DELETE ${path} failed: HTTP ${res.status} — ${text.slice(0, 500)}`);
-  }
-  return res.json() as Promise<T>;
-}
-
 // ── Server connectivity ──────────────────────────────────────────────────────
 
 /**
