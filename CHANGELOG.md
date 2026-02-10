@@ -5,6 +5,46 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0](https://github.com/ThomasRohde/archi-server/compare/v1.4.0...v1.5.0) (2026-02-10)
+
+
+### Features
+
+* **apply:** add safe mode option and reduce default chunk size for batch apply command ([aa50f2e](https://github.com/ThomasRohde/archi-server/commit/aa50f2ebce6f38f87cc63ff13ff4a8be9635c5d1))
+* **cli:** implement client-side visual ID cross-validation for addConnectionToView operations ([e978938](https://github.com/ThomasRohde/archi-server/commit/e97893808c5641d06e5ba2aaa4d7477b619df3d5))
+* **cli:** remove --poll option from batch apply commands for default atomic behavior ([e978938](https://github.com/ThomasRohde/archi-server/commit/e97893808c5641d06e5ba2aaa4d7477b619df3d5))
+* **skills:** add skill-creator and consolidate archimate skills ([7c384cd](https://github.com/ThomasRohde/archi-server/commit/7c384cdfe36c4f779dfb5ce466b2a7a7255b3c98))
+* **tests:** add server interaction helpers for model state management ([a85f0a3](https://github.com/ThomasRohde/archi-server/commit/a85f0a36ce6720c2b133fa7c285c5f46a880d5fc))
+* **tests:** add smoke tests for CLI commands against live Archi server ([a85f0a3](https://github.com/ThomasRohde/archi-server/commit/a85f0a36ce6720c2b133fa7c285c5f46a880d5fc))
+* **tests:** create fixture files for valid, invalid, and duplicate tempId BOMs ([a85f0a3](https://github.com/ThomasRohde/archi-server/commit/a85f0a36ce6720c2b133fa7c285c5f46a880d5fc))
+* **tests:** implement CLI test harness for executing commands and parsing responses ([a85f0a3](https://github.com/ThomasRohde/archi-server/commit/a85f0a36ce6720c2b133fa7c285c5f46a880d5fc))
+* **undoableCommands:** implement operation-aligned chunking and post-execution result refresh ([aa50f2e](https://github.com/ThomasRohde/archi-server/commit/aa50f2ebce6f38f87cc63ff13ff4a8be9635c5d1))
+
+
+### Bug Fixes
+
+* **api:** add retry logic for HTTP 429 responses during API requests ([e978938](https://github.com/ThomasRohde/archi-server/commit/e97893808c5641d06e5ba2aaa4d7477b619df3d5))
+* **poll:** add retry logic for HTTP 429 responses during polling ([e978938](https://github.com/ThomasRohde/archi-server/commit/e97893808c5641d06e5ba2aaa4d7477b619df3d5))
+
+
+### Documentation
+
+* add batch execution and rollback recommendations ([aa50f2e](https://github.com/ThomasRohde/archi-server/commit/aa50f2ebce6f38f87cc63ff13ff4a8be9635c5d1))
+* update batch-rollback-recommendations to reflect completion of all recommendations ([e978938](https://github.com/ThomasRohde/archi-server/commit/e97893808c5641d06e5ba2aaa4d7477b619df3d5))
+
+
+### Maintenance
+
+* add ArchiMate model for server ([df97ca4](https://github.com/ThomasRohde/archi-server/commit/df97ca4049ee6ab8d80dee6243f1edd89993e1f9))
+* remove outdated model and integration documentation from README ([8c666a4](https://github.com/ThomasRohde/archi-server/commit/8c666a4103d61632feacfde53fa3f47b3b2f328f))
+* **serverConfig:** lower maxSubCommandsPerBatch to 50 for improved stability ([aa50f2e](https://github.com/ThomasRohde/archi-server/commit/aa50f2ebce6f38f87cc63ff13ff4a8be9635c5d1))
+* **tests:** configure Vitest for testing environment and timeout settings ([a85f0a3](https://github.com/ThomasRohde/archi-server/commit/a85f0a36ce6720c2b133fa7c285c5f46a880d5fc))
+
+
+### Tests
+
+* update tests to reflect changes in batch apply command and validation logic ([e978938](https://github.com/ThomasRohde/archi-server/commit/e97893808c5641d06e5ba2aaa4d7477b619df3d5))
+
 ## [1.4.0](https://github.com/ThomasRohde/archi-server/compare/v1.3.0...v1.4.0) (2026-02-09)
 
 
