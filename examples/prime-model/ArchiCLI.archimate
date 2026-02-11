@@ -1,0 +1,1089 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="ArchiCLI" id="id-26fce89ffde348eea5c1a05808ea63c0" version="5.0.0">
+  <folder name="Strategy" id="id-f79131392b7e48139844f11a17fcd9ee" type="strategy">
+    <element xsi:type="archimate:Capability" name="API Modeling Capability" id="id-51f1341428294bdeb48949fa126933ec">
+      <documentation>API Modeling Capability models automate model authoring in the Strategy layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;API Modeling Capability is represented as a **capability** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:Capability" name="Validation Capability" id="id-cfe86c1320aa47c5a15638deaf1ade00">
+      <documentation>Validation Capability models assure model correctness in the Strategy layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;Validation Capability is represented as a **capability** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:ValueStream" name="Change Automation Stream" id="id-c4d28ab894204cf8ac9ce110758c1766">
+      <documentation>Change Automation Stream models author verify apply flow in the Strategy layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;Change Automation Stream is represented as a **value-stream** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+  </folder>
+  <folder name="Business" id="id-30ac996919b14eeb803b33531609ce60" type="business">
+    <element xsi:type="archimate:BusinessActor" name="Architecture Team" id="id-fcd76e1c1eff4d87a40ee090dd8e3b8e">
+      <documentation>Architecture Team models owns enterprise model in the Business layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;Architecture Team is represented as a **business-actor** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:BusinessRole" name="Model Automation Specialist" id="id-fa215f1f453b4764991083222f67ed88">
+      <documentation>Model Automation Specialist models executes automation workflow in the Business layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;Model Automation Specialist is represented as a **business-role** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:BusinessProcess" name="Author BOM Changes" id="id-81505c8229b848ae9b02daaadd340174">
+      <documentation>Author BOM Changes models define model deltas in the Business layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;Author BOM Changes is represented as a **business-process** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:BusinessProcess" name="Verify BOM Changes" id="id-db52ad40e61244dd9c27b5b267b0c7c5">
+      <documentation>Verify BOM Changes models validate before apply in the Business layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;Verify BOM Changes is represented as a **business-process** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:BusinessProcess" name="Apply and Validate" id="id-6df3549225d542af9ad94b481fd881b4">
+      <documentation>Apply and Validate models execute and confirm changes in the Business layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;Apply and Validate is represented as a **business-process** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:BusinessService" name="Architecture Automation Service" id="id-26981b2fdb8741438bd44364de610f6b">
+      <documentation>Architecture Automation Service models delivers automated modeling in the Business layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;Architecture Automation Service is represented as a **business-service** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:BusinessObject" name="ArchiMate BOM" id="id-103aa2cd321644419508a6b820cbabe0">
+      <documentation>ArchiMate BOM models change specification artifact in the Business layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;ArchiMate BOM is represented as a **business-object** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:BusinessObject" name="ID Mapping File" id="id-9dd22db2c0884606b28ecbe0843118f8">
+      <documentation>ID Mapping File models tempId mapping artifact in the Business layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;ID Mapping File is represented as a **business-object** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:Product" name="Archi Automation Toolkit" id="id-daa86d66f6a042f9bcb458e22f0e8c19">
+      <documentation>Archi Automation Toolkit models combined server and cli offering in the Business layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;Archi Automation Toolkit is represented as a **product** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+  </folder>
+  <folder name="Application" id="id-0768b498add747adb4fb22407be07b0b" type="application">
+    <element xsi:type="archimate:ApplicationComponent" name="Archi Server" id="id-76805612ff9e42059f3529faef790646">
+      <documentation>Archi Server models model api runtime in the Application layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;Archi Server is represented as a **application-component** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:ApplicationComponent" name="ArchiCLI" id="id-b6180439969141fa8dbf929f08e2e6df">
+      <documentation>ArchiCLI models command line automation client in the Application layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;ArchiCLI is represented as a **application-component** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:ApplicationInterface" name="REST API Interface" id="id-7b19779e844d4b6abfc07c494bf9a634">
+      <documentation>REST API Interface models external HTTP contract in the Application layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;REST API Interface is represented as a **application-interface** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:ApplicationService" name="Health Diagnostics Service" id="id-9eaac99616804f9c9324960a787cba2a">
+      <documentation>Health Diagnostics Service models runtime status queries in the Application layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;Health Diagnostics Service is represented as a **application-service** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:ApplicationService" name="Model Query Service" id="id-7750b87e6b9b40f6a169af78bc04c1a4">
+      <documentation>Model Query Service models read model data in the Application layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;Model Query Service is represented as a **application-service** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:ApplicationService" name="Model Apply Service" id="id-749721f4822b4c19bb1b015d70550dbe">
+      <documentation>Model Apply Service models execute model changes in the Application layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;Model Apply Service is represented as a **application-service** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:ApplicationService" name="View Management Service" id="id-12cb96b3f85f49808fe3e5e1dcfb097e">
+      <documentation>View Management Service models create and layout views in the Application layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;View Management Service is represented as a **application-service** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:ApplicationService" name="Script Execution Service" id="id-e99bc27290d54e35a314e9670b0cee00">
+      <documentation>Script Execution Service models run custom scripts in the Application layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;Script Execution Service is represented as a **application-service** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:ApplicationComponent" name="Endpoint Router" id="id-78968b33d9e84c04883df5fc811d7d0e">
+      <documentation>Endpoint Router models route endpoint handlers in the Application layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;Endpoint Router is represented as a **application-component** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:ApplicationComponent" name="Operation Queue" id="id-6df03bf8716148f1a4d87a883145b0bf">
+      <documentation>Operation Queue models serialize apply operations in the Application layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;Operation Queue is represented as a **application-component** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:ApplicationComponent" name="Operation Validation Engine" id="id-27bf4b01a8024d7a93d59b569712da1b">
+      <documentation>Operation Validation Engine models validate change operations in the Application layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;Operation Validation Engine is represented as a **application-component** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:ApplicationComponent" name="Model Snapshot Builder" id="id-c22059df261c4fc49396f8c7735ec4a7">
+      <documentation>Model Snapshot Builder models build query snapshots in the Application layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;Model Snapshot Builder is represented as a **application-component** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:ApplicationComponent" name="Dagre Layout Adapter" id="id-71d5928d976e463ea7f24e432a4dab8f">
+      <documentation>Dagre Layout Adapter models perform auto layout in the Application layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;Dagre Layout Adapter is represented as a **application-component** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:DataObject" name="Operation Record" id="id-7966afdf97ab43dfa347c6ad0cd099bd">
+      <documentation>Operation Record models async operation metadata in the Application layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;Operation Record is represented as a **data-object** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:DataObject" name="Query Result" id="id-a856cb3b09fe4b4e86aa086a0a86193e">
+      <documentation>Query Result models query response payload in the Application layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;Query Result is represented as a **data-object** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:DataObject" name="OpenAPI Contract" id="id-6e8b1b916e5c4d1787ddd19699e92f07">
+      <documentation>OpenAPI Contract models formal api schema in the Application layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;OpenAPI Contract is represented as a **data-object** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:ApplicationComponent" name="BOM Verifier" id="id-933a55c0eff84912a7b2ddc8f055a49f">
+      <documentation>BOM Verifier models schema and semantic checks in the Application layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;BOM Verifier is represented as a **application-component** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:ApplicationComponent" name="Batch Orchestrator" id="id-fe8718d04ca14291b2936e20ec9e92cc">
+      <documentation>Batch Orchestrator models chunk submit poll flow in the Application layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;Batch Orchestrator is represented as a **application-component** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:ApplicationComponent" name="Polling Monitor" id="id-57b798f043ed4cdb97c88e3e7ac9f0ef">
+      <documentation>Polling Monitor models wait for operation status in the Application layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;Polling Monitor is represented as a **application-component** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:ApplicationComponent" name="TempId Resolver" id="id-0c75d566afad4a37ab28fa1a4784ec50">
+      <documentation>TempId Resolver models map temporary references in the Application layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;TempId Resolver is represented as a **application-component** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:ApplicationComponent" name="Output Formatter" id="id-d7e99ebd77b04e3ea9868998d4c85462">
+      <documentation>Output Formatter models json text yaml rendering in the Application layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;Output Formatter is represented as a **application-component** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:ApplicationComponent" name="HTTP Client" id="id-3f401a770b1f4aafbf79823e7d9882da">
+      <documentation>HTTP Client models typed api transport in the Application layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;HTTP Client is represented as a **application-component** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:DataObject" name="BOM File" id="id-dfb5dcc65a354131a299c6eb7a698f17">
+      <documentation>BOM File models cli input file in the Application layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;BOM File is represented as a **data-object** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:DataObject" name="TempId Mapping Store" id="id-f9bb24ffaf8a491393d47e82f2288a71">
+      <documentation>TempId Mapping Store models persisted id mappings in the Application layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;TempId Mapping Store is represented as a **data-object** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:DataObject" name="CLI Report" id="id-2a667661d9604498916e8b9c489d97cd">
+      <documentation>CLI Report models command execution summary in the Application layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;CLI Report is represented as a **data-object** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+  </folder>
+  <folder name="Technology &amp; Physical" id="id-166f24263d264d1b80b482311ab6f337" type="technology">
+    <element xsi:type="archimate:Device" name="EA Workstation" id="id-09b658b6c489487181e4e85d93bcf55b">
+      <documentation>EA Workstation models user execution environment in the Technology layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;EA Workstation is represented as a **device** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:Node" name="Archi Runtime Node" id="id-cecbd8ee7e4b49428ec71d1edaa28dd5">
+      <documentation>Archi Runtime Node models local process host in the Technology layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;Archi Runtime Node is represented as a **node** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:SystemSoftware" name="Archi plus jArchi" id="id-5d918912368f44d894d9a7e3678de135">
+      <documentation>Archi plus jArchi models scripting runtime in the Technology layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;Archi plus jArchi is represented as a **system-software** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:TechnologyService" name="Local HTTP Service" id="id-e7f3981ae34243e3a758806ec5595a2f">
+      <documentation>Local HTTP Service models localhost api transport in the Technology layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;Local HTTP Service is represented as a **technology-service** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:TechnologyService" name="Local File Service" id="id-a2f21fd084cf44b0a96723abbb6e9c31">
+      <documentation>Local File Service models persistent storage in the Technology layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;Local File Service is represented as a **technology-service** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:CommunicationNetwork" name="Loopback Network" id="id-385ec4421cb046b5bde931e747b03290">
+      <documentation>Loopback Network models localhost network path in the Technology layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;Loopback Network is represented as a **communication-network** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:Artifact" name="Model API Server Script" id="id-7502266dc3a54a148d3ffe29502c6ccf">
+      <documentation>Model API Server Script models server implementation artifact in the Technology layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;Model API Server Script is represented as a **artifact** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:Artifact" name="ArchiCLI Distribution" id="id-01f43b2956b241faad7389c9079210dd">
+      <documentation>ArchiCLI Distribution models cli packaged artifact in the Technology layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;ArchiCLI Distribution is represented as a **artifact** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:Artifact" name="archi-server Repository" id="id-013bc541c8514e4c9eaca7123e31c2fe">
+      <documentation>archi-server Repository models source code artifact in the Technology layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;archi-server Repository is represented as a **artifact** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:TechnologyFunction" name="Graph Layout Computation" id="id-3e3a9c3fb43d4572a5a076908154ec79">
+      <documentation>Graph Layout Computation models dagre layout calculation in the Technology layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;Graph Layout Computation is represented as a **technology-function** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+  </folder>
+  <folder name="Motivation" id="id-c35d70e499e64e149b9e98c41983770c" type="motivation">
+    <element xsi:type="archimate:Stakeholder" name="Enterprise Architect" id="id-6e345d4d7199458896f9c58eda08fa44">
+      <documentation>Enterprise Architect models architecture governance expectations in the Motivation layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;Enterprise Architect is represented as a **stakeholder** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:Stakeholder" name="Platform Operator" id="id-205548e9676c459399e7cb7995039a49">
+      <documentation>Platform Operator models operational reliability expectations in the Motivation layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;Platform Operator is represented as a **stakeholder** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:Driver" name="Automation Pressure" id="id-8e7e967508de4414871827fc28a78078">
+      <documentation>Automation Pressure models need for programmable modeling in the Motivation layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;Automation Pressure is represented as a **driver** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:Driver" name="Reliability Pressure" id="id-2149879370d547fc80c644a240399a72">
+      <documentation>Reliability Pressure models need for deterministic operations in the Motivation layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;Reliability Pressure is represented as a **driver** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:Goal" name="Faster Modeling Delivery" id="id-483a96af53434fff9cfab526500e0fc3">
+      <documentation>Faster Modeling Delivery models reduce model turnaround in the Motivation layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;Faster Modeling Delivery is represented as a **goal** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:Goal" name="Trusted Model Integrity" id="id-6d90098dd0e24c34956d5114c424459e">
+      <documentation>Trusted Model Integrity models preserve consistency in the Motivation layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;Trusted Model Integrity is represented as a **goal** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:Requirement" name="Scriptable API Requirement" id="id-29a32cda2cd54f53b23f2f1c27e45e7a">
+      <documentation>Scriptable API Requirement models expose model operations in the Motivation layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;Scriptable API Requirement is represented as a **requirement** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:Requirement" name="Deterministic Batch Requirement" id="id-fcf1e2a7e3a342b4b12cead1bc5de7d8">
+      <documentation>Deterministic Batch Requirement models safe ordered apply in the Motivation layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;Deterministic Batch Requirement is represented as a **requirement** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:Requirement" name="Repeatable CLI Requirement" id="id-e111fe3be67d49da93faf871ba690bf0">
+      <documentation>Repeatable CLI Requirement models scriptable user workflows in the Motivation layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;Repeatable CLI Requirement is represented as a **requirement** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:Principle" name="API First Principle" id="id-c1992e46d5044c36a6c46f8f09bd5a7b">
+      <documentation>API First Principle models design around executable contracts in the Motivation layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;API First Principle is represented as a **principle** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:Outcome" name="Shorter Delivery Cycle" id="id-92fd329e5d7e44f5a865445947317248">
+      <documentation>Shorter Delivery Cycle models faster architecture iteration in the Motivation layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;Shorter Delivery Cycle is represented as a **outcome** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:Outcome" name="Higher Automation Confidence" id="id-a4d6ccd39d44451684da37aefd7d65b9">
+      <documentation>Higher Automation Confidence models trust automation outcomes in the Motivation layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;Higher Automation Confidence is represented as a **outcome** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+  </folder>
+  <folder name="Implementation &amp; Migration" id="id-9c9a35837c7e48559193c96d98c9caf2" type="implementation_migration">
+    <element xsi:type="archimate:WorkPackage" name="Harden Server Surface" id="id-4fc6dfa0845f41cf80675f5495b5ccb0">
+      <documentation>Harden Server Surface models improve server robustness in the Implementation and Migration layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;Harden Server Surface is represented as a **work-package** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:WorkPackage" name="Scale CLI Adoption" id="id-e4bf6507e58f415a98f5f4653ecb03c2">
+      <documentation>Scale CLI Adoption models improve cli usability in the Implementation and Migration layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;Scale CLI Adoption is represented as a **work-package** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:WorkPackage" name="Publish Prime Example" id="id-bc51b8f7e57a4c58b38b6d83d86693d7">
+      <documentation>Publish Prime Example models deliver flagship model in the Implementation and Migration layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;Publish Prime Example is represented as a **work-package** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:Plateau" name="Baseline Capability" id="id-4b788fcdb48b4ca3b5a0a93544b642cf">
+      <documentation>Baseline Capability models initial platform state in the Implementation and Migration layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;Baseline Capability is represented as a **plateau** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:Plateau" name="Current Capability" id="id-e2d5bab73e16404fa2dec87bd365b371">
+      <documentation>Current Capability models mature platform state in the Implementation and Migration layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;Current Capability is represented as a **plateau** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:Gap" name="Example Coverage Gap" id="id-bd4dc8f7b89a484a84726ca80b6ab87f">
+      <documentation>Example Coverage Gap models missing comprehensive sample in the Implementation and Migration layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;Example Coverage Gap is represented as a **gap** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:ImplementationEvent" name="Release 1.5 Event" id="id-0d240d55eafe4722914e4204360a195e">
+      <documentation>Release 1.5 Event models release milestone in the Implementation and Migration layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;Release 1.5 Event is represented as a **implementation-event** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+    <element xsi:type="archimate:Deliverable" name="Prime Example Model" id="id-c91d43cc78e34aa0b408c87e6e3ede41">
+      <documentation>Prime Example Model models final showcase artifact in the Implementation and Migration layer for the Archi Server and ArchiCLI architecture.</documentation>
+      <property key="Markdown" value="### Purpose&#xA;Prime Example Model is represented as a **deliverable** in the Archi Server and ArchiCLI reference model.&#xA;&#xA;### Context&#xA;This element participates in the automated architecture workflow and connects to related concepts across the layered, internal, motivation, and implementation views.&#xA;&#xA;### Notes&#xA;This property is intentionally multi-paragraph Markdown to demonstrate rich in-model documentation for humans, scripts, and AI agents."/>
+    </element>
+  </folder>
+  <folder name="Other" id="id-91f7ebfa89284c79bd96ee83c7b42882" type="other"/>
+  <folder name="Relations" id="id-2bf684063f8d4ba49f6645222e22fa98" type="relations">
+    <element xsi:type="archimate:AssociationRelationship" id="id-bb84208a3f014916a11ce26691746219" source="id-6e345d4d7199458896f9c58eda08fa44" target="id-483a96af53434fff9cfab526500e0fc3">
+      <documentation>Relationship from Enterprise Architect to Faster Modeling Delivery.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-00bd2422fa024bb08222e0d6c39b30d8" source="id-205548e9676c459399e7cb7995039a49" target="id-6d90098dd0e24c34956d5114c424459e">
+      <documentation>Relationship from Platform Operator to Trusted Model Integrity.</documentation>
+    </element>
+    <element xsi:type="archimate:InfluenceRelationship" id="id-11129e5ad3ec4b058343e0f4bb9197c0" source="id-8e7e967508de4414871827fc28a78078" target="id-483a96af53434fff9cfab526500e0fc3">
+      <documentation>Relationship from Automation Pressure to Faster Modeling Delivery.</documentation>
+    </element>
+    <element xsi:type="archimate:InfluenceRelationship" id="id-7ad68558a0464f8998b1f2588eccb191" source="id-2149879370d547fc80c644a240399a72" target="id-6d90098dd0e24c34956d5114c424459e">
+      <documentation>Relationship from Reliability Pressure to Trusted Model Integrity.</documentation>
+    </element>
+    <element xsi:type="archimate:InfluenceRelationship" id="id-304fcd0003944b72b9e7246322a901ef" source="id-29a32cda2cd54f53b23f2f1c27e45e7a" target="id-483a96af53434fff9cfab526500e0fc3">
+      <documentation>Relationship from Scriptable API Requirement to Faster Modeling Delivery.</documentation>
+    </element>
+    <element xsi:type="archimate:InfluenceRelationship" id="id-b4ef38fc7f0142d88e15d475a6830fae" source="id-fcf1e2a7e3a342b4b12cead1bc5de7d8" target="id-6d90098dd0e24c34956d5114c424459e">
+      <documentation>Relationship from Deterministic Batch Requirement to Trusted Model Integrity.</documentation>
+    </element>
+    <element xsi:type="archimate:InfluenceRelationship" id="id-a16fd51a78524dd48a78679dfb9ad2a0" source="id-e111fe3be67d49da93faf871ba690bf0" target="id-483a96af53434fff9cfab526500e0fc3">
+      <documentation>Relationship from Repeatable CLI Requirement to Faster Modeling Delivery.</documentation>
+    </element>
+    <element xsi:type="archimate:InfluenceRelationship" id="id-139ae9a2bba44cb793747ddf162fda86" source="id-c1992e46d5044c36a6c46f8f09bd5a7b" target="id-29a32cda2cd54f53b23f2f1c27e45e7a">
+      <documentation>Relationship from API First Principle to Scriptable API Requirement.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-9789a0d5f0044ab68102ff16e7f0f188" source="id-51f1341428294bdeb48949fa126933ec" target="id-29a32cda2cd54f53b23f2f1c27e45e7a">
+      <documentation>Relationship from API Modeling Capability to Scriptable API Requirement.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-c5daa8003c3a4c84916419ac4499c29c" source="id-cfe86c1320aa47c5a15638deaf1ade00" target="id-fcf1e2a7e3a342b4b12cead1bc5de7d8">
+      <documentation>Relationship from Validation Capability to Deterministic Batch Requirement.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-e281f4d37f384d57b0e420dacdf639db" source="id-c4d28ab894204cf8ac9ce110758c1766" target="id-51f1341428294bdeb48949fa126933ec">
+      <documentation>Relationship from Change Automation Stream to API Modeling Capability.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-4c8e426f594644fa95b22e68d4d22ab0" source="id-c4d28ab894204cf8ac9ce110758c1766" target="id-cfe86c1320aa47c5a15638deaf1ade00">
+      <documentation>Relationship from Change Automation Stream to Validation Capability.</documentation>
+    </element>
+    <element xsi:type="archimate:InfluenceRelationship" id="id-83ef6e3254d446d398e590557e6a4921" source="id-483a96af53434fff9cfab526500e0fc3" target="id-92fd329e5d7e44f5a865445947317248">
+      <documentation>Relationship from Faster Modeling Delivery to Shorter Delivery Cycle.</documentation>
+    </element>
+    <element xsi:type="archimate:InfluenceRelationship" id="id-e5dc359c8a644cce99c74fd7a5a662ff" source="id-6d90098dd0e24c34956d5114c424459e" target="id-a4d6ccd39d44451684da37aefd7d65b9">
+      <documentation>Relationship from Trusted Model Integrity to Higher Automation Confidence.</documentation>
+    </element>
+    <element xsi:type="archimate:AssignmentRelationship" id="id-f2cea83d513f4690894b9ab43c59acc6" source="id-fcd76e1c1eff4d87a40ee090dd8e3b8e" target="id-fa215f1f453b4764991083222f67ed88">
+      <documentation>Relationship from Architecture Team to Model Automation Specialist.</documentation>
+    </element>
+    <element xsi:type="archimate:AssignmentRelationship" id="id-224c9571b84041f989e6e8428a4f4122" source="id-fa215f1f453b4764991083222f67ed88" target="id-81505c8229b848ae9b02daaadd340174">
+      <documentation>Relationship from Model Automation Specialist to Author BOM Changes.</documentation>
+    </element>
+    <element xsi:type="archimate:AssignmentRelationship" id="id-35e29554e4cc4c488f89f165ac9d574c" source="id-fa215f1f453b4764991083222f67ed88" target="id-db52ad40e61244dd9c27b5b267b0c7c5">
+      <documentation>Relationship from Model Automation Specialist to Verify BOM Changes.</documentation>
+    </element>
+    <element xsi:type="archimate:AssignmentRelationship" id="id-bdc98317fdc64e4a9008d2009e1fba04" source="id-fa215f1f453b4764991083222f67ed88" target="id-6df3549225d542af9ad94b481fd881b4">
+      <documentation>Relationship from Model Automation Specialist to Apply and Validate.</documentation>
+    </element>
+    <element xsi:type="archimate:RealizationRelationship" id="id-53b8a0df82f44fd9923329124eb11772" source="id-81505c8229b848ae9b02daaadd340174" target="id-26981b2fdb8741438bd44364de610f6b">
+      <documentation>Relationship from Author BOM Changes to Architecture Automation Service.</documentation>
+    </element>
+    <element xsi:type="archimate:RealizationRelationship" id="id-0b3d3a816ed348068fad97a246b709e7" source="id-db52ad40e61244dd9c27b5b267b0c7c5" target="id-26981b2fdb8741438bd44364de610f6b">
+      <documentation>Relationship from Verify BOM Changes to Architecture Automation Service.</documentation>
+    </element>
+    <element xsi:type="archimate:RealizationRelationship" id="id-791bebda5f224220857e89053ae36339" source="id-6df3549225d542af9ad94b481fd881b4" target="id-26981b2fdb8741438bd44364de610f6b">
+      <documentation>Relationship from Apply and Validate to Architecture Automation Service.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-67281c3b8b8f4c4faa85f283e546cdb5" source="id-81505c8229b848ae9b02daaadd340174" target="id-103aa2cd321644419508a6b820cbabe0">
+      <documentation>Relationship from Author BOM Changes to ArchiMate BOM.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-f4d7ec6026804e47a54467d89d37ed23" source="id-db52ad40e61244dd9c27b5b267b0c7c5" target="id-103aa2cd321644419508a6b820cbabe0">
+      <documentation>Relationship from Verify BOM Changes to ArchiMate BOM.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-71697f11a4b94968ae60e4184c7828d8" source="id-6df3549225d542af9ad94b481fd881b4" target="id-9dd22db2c0884606b28ecbe0843118f8">
+      <documentation>Relationship from Apply and Validate to ID Mapping File.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-60c8045a0fca44b8a1e4abe0a7d0fb3f" source="id-26981b2fdb8741438bd44364de610f6b" target="id-daa86d66f6a042f9bcb458e22f0e8c19">
+      <documentation>Relationship from Architecture Automation Service to Archi Automation Toolkit.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-4cd434e40c934d988d335c9e82a3f570" source="id-daa86d66f6a042f9bcb458e22f0e8c19" target="id-76805612ff9e42059f3529faef790646">
+      <documentation>Relationship from Archi Automation Toolkit to Archi Server.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-e53a6b5cfa4c4b59941233a032178e0f" source="id-daa86d66f6a042f9bcb458e22f0e8c19" target="id-b6180439969141fa8dbf929f08e2e6df">
+      <documentation>Relationship from Archi Automation Toolkit to ArchiCLI.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-fb8c803904214fea9fbf95b5f1a48107" source="id-92fd329e5d7e44f5a865445947317248" target="id-daa86d66f6a042f9bcb458e22f0e8c19">
+      <documentation>Relationship from Shorter Delivery Cycle to Archi Automation Toolkit.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-ec41fb643dec4806a8bc2adc596039fb" source="id-a4d6ccd39d44451684da37aefd7d65b9" target="id-daa86d66f6a042f9bcb458e22f0e8c19">
+      <documentation>Relationship from Higher Automation Confidence to Archi Automation Toolkit.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-13c22f10496642808013ca1aa691ba0e" source="id-51f1341428294bdeb48949fa126933ec" target="id-26981b2fdb8741438bd44364de610f6b">
+      <documentation>Relationship from API Modeling Capability to Architecture Automation Service.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-ef3e9d92c6cd4749bf2d83fb68d83f1f" source="id-cfe86c1320aa47c5a15638deaf1ade00" target="id-26981b2fdb8741438bd44364de610f6b">
+      <documentation>Relationship from Validation Capability to Architecture Automation Service.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-87d06782015f4d74a09e447822000dfd" source="id-c4d28ab894204cf8ac9ce110758c1766" target="id-81505c8229b848ae9b02daaadd340174">
+      <documentation>Relationship from Change Automation Stream to Author BOM Changes.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-87fd9067c5c049d59e852fce0819e119" source="id-c4d28ab894204cf8ac9ce110758c1766" target="id-db52ad40e61244dd9c27b5b267b0c7c5">
+      <documentation>Relationship from Change Automation Stream to Verify BOM Changes.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-f47a8175f0ff4435977028a21710b99d" source="id-c4d28ab894204cf8ac9ce110758c1766" target="id-6df3549225d542af9ad94b481fd881b4">
+      <documentation>Relationship from Change Automation Stream to Apply and Validate.</documentation>
+    </element>
+    <element xsi:type="archimate:RealizationRelationship" id="id-818d92e0d6c745e090a91992c0bdeb19" source="id-78968b33d9e84c04883df5fc811d7d0e" target="id-7b19779e844d4b6abfc07c494bf9a634">
+      <documentation>Relationship from Endpoint Router to REST API Interface.</documentation>
+    </element>
+    <element xsi:type="archimate:RealizationRelationship" id="id-515ef4d8d9b04d379d894c8214c2dbee" source="id-76805612ff9e42059f3529faef790646" target="id-9eaac99616804f9c9324960a787cba2a">
+      <documentation>Relationship from Archi Server to Health Diagnostics Service.</documentation>
+    </element>
+    <element xsi:type="archimate:RealizationRelationship" id="id-22eeba4c0abd4b1b90564183b1831994" source="id-76805612ff9e42059f3529faef790646" target="id-7750b87e6b9b40f6a169af78bc04c1a4">
+      <documentation>Relationship from Archi Server to Model Query Service.</documentation>
+    </element>
+    <element xsi:type="archimate:RealizationRelationship" id="id-95af97ab99104d9083037f1a9905b055" source="id-76805612ff9e42059f3529faef790646" target="id-749721f4822b4c19bb1b015d70550dbe">
+      <documentation>Relationship from Archi Server to Model Apply Service.</documentation>
+    </element>
+    <element xsi:type="archimate:RealizationRelationship" id="id-0f96b578786f47b5b0ef89d7c87b0836" source="id-76805612ff9e42059f3529faef790646" target="id-12cb96b3f85f49808fe3e5e1dcfb097e">
+      <documentation>Relationship from Archi Server to View Management Service.</documentation>
+    </element>
+    <element xsi:type="archimate:RealizationRelationship" id="id-3ca87735149144a88ec5d9326e1c60e6" source="id-76805612ff9e42059f3529faef790646" target="id-e99bc27290d54e35a314e9670b0cee00">
+      <documentation>Relationship from Archi Server to Script Execution Service.</documentation>
+    </element>
+    <element xsi:type="archimate:ServingRelationship" id="id-f2fcd91e2d254ccf93b41ffcefd52a7d" source="id-9eaac99616804f9c9324960a787cba2a" target="id-b6180439969141fa8dbf929f08e2e6df">
+      <documentation>Relationship from Health Diagnostics Service to ArchiCLI.</documentation>
+    </element>
+    <element xsi:type="archimate:ServingRelationship" id="id-0bf7772a2b63450c9a26b0fa7e95d20f" source="id-7750b87e6b9b40f6a169af78bc04c1a4" target="id-b6180439969141fa8dbf929f08e2e6df">
+      <documentation>Relationship from Model Query Service to ArchiCLI.</documentation>
+    </element>
+    <element xsi:type="archimate:ServingRelationship" id="id-b067a89c088446af9a5601c358669bdd" source="id-749721f4822b4c19bb1b015d70550dbe" target="id-b6180439969141fa8dbf929f08e2e6df">
+      <documentation>Relationship from Model Apply Service to ArchiCLI.</documentation>
+    </element>
+    <element xsi:type="archimate:ServingRelationship" id="id-21b4b7ff93474bc58fed5dc8f9654687" source="id-12cb96b3f85f49808fe3e5e1dcfb097e" target="id-b6180439969141fa8dbf929f08e2e6df">
+      <documentation>Relationship from View Management Service to ArchiCLI.</documentation>
+    </element>
+    <element xsi:type="archimate:ServingRelationship" id="id-009baf41bbd04be888ef47e14580ed08" source="id-e99bc27290d54e35a314e9670b0cee00" target="id-b6180439969141fa8dbf929f08e2e6df">
+      <documentation>Relationship from Script Execution Service to ArchiCLI.</documentation>
+    </element>
+    <element xsi:type="archimate:CompositionRelationship" id="id-f7a6556537ad44e499e1feeb29db7cc6" source="id-76805612ff9e42059f3529faef790646" target="id-78968b33d9e84c04883df5fc811d7d0e">
+      <documentation>Relationship from Archi Server to Endpoint Router.</documentation>
+    </element>
+    <element xsi:type="archimate:CompositionRelationship" id="id-c4206b56a0124261b99026809a4618f0" source="id-76805612ff9e42059f3529faef790646" target="id-6df03bf8716148f1a4d87a883145b0bf">
+      <documentation>Relationship from Archi Server to Operation Queue.</documentation>
+    </element>
+    <element xsi:type="archimate:CompositionRelationship" id="id-3da858afca734a7f8ea32a6ca538c2fa" source="id-76805612ff9e42059f3529faef790646" target="id-27bf4b01a8024d7a93d59b569712da1b">
+      <documentation>Relationship from Archi Server to Operation Validation Engine.</documentation>
+    </element>
+    <element xsi:type="archimate:CompositionRelationship" id="id-1dffb93925974ad2b0ae9af40011f694" source="id-76805612ff9e42059f3529faef790646" target="id-c22059df261c4fc49396f8c7735ec4a7">
+      <documentation>Relationship from Archi Server to Model Snapshot Builder.</documentation>
+    </element>
+    <element xsi:type="archimate:CompositionRelationship" id="id-f7c4e6ed6e764d3098e8cea04d8427c9" source="id-76805612ff9e42059f3529faef790646" target="id-71d5928d976e463ea7f24e432a4dab8f">
+      <documentation>Relationship from Archi Server to Dagre Layout Adapter.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-443060626c31433eb237d6f113d29c41" source="id-78968b33d9e84c04883df5fc811d7d0e" target="id-27bf4b01a8024d7a93d59b569712da1b">
+      <documentation>Relationship from Endpoint Router to Operation Validation Engine.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-030f4c48ef9c40849855390ad6a19ebe" source="id-78968b33d9e84c04883df5fc811d7d0e" target="id-6df03bf8716148f1a4d87a883145b0bf">
+      <documentation>Relationship from Endpoint Router to Operation Queue.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-5b548f6712f74c84b8770c4a20a28114" source="id-27bf4b01a8024d7a93d59b569712da1b" target="id-749721f4822b4c19bb1b015d70550dbe">
+      <documentation>Relationship from Operation Validation Engine to Model Apply Service.</documentation>
+    </element>
+    <element xsi:type="archimate:RealizationRelationship" id="id-8b1d3753aad44899b951694e001ac32b" source="id-c22059df261c4fc49396f8c7735ec4a7" target="id-7750b87e6b9b40f6a169af78bc04c1a4">
+      <documentation>Relationship from Model Snapshot Builder to Model Query Service.</documentation>
+    </element>
+    <element xsi:type="archimate:RealizationRelationship" id="id-720efd0126c240cc9efd7a22566280e0" source="id-71d5928d976e463ea7f24e432a4dab8f" target="id-12cb96b3f85f49808fe3e5e1dcfb097e">
+      <documentation>Relationship from Dagre Layout Adapter to View Management Service.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-bf047325b70942bc8bbcfa2071a25aaf" source="id-6df03bf8716148f1a4d87a883145b0bf" target="id-7966afdf97ab43dfa347c6ad0cd099bd">
+      <documentation>Relationship from Operation Queue to Operation Record.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-bf7cfb6ae88447ee9a50bfbacccd7e2a" source="id-7750b87e6b9b40f6a169af78bc04c1a4" target="id-a856cb3b09fe4b4e86aa086a0a86193e">
+      <documentation>Relationship from Model Query Service to Query Result.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-34861ffc54184c838b8acaa406d3301c" source="id-7750b87e6b9b40f6a169af78bc04c1a4" target="id-6e8b1b916e5c4d1787ddd19699e92f07">
+      <documentation>Relationship from Model Query Service to OpenAPI Contract.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-fc11cbf26daf4dd1bd16a6868818cb2a" source="id-749721f4822b4c19bb1b015d70550dbe" target="id-7966afdf97ab43dfa347c6ad0cd099bd">
+      <documentation>Relationship from Model Apply Service to Operation Record.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-7d817aa2e80c4b64b8e770c32a5c5065" source="id-e99bc27290d54e35a314e9670b0cee00" target="id-7966afdf97ab43dfa347c6ad0cd099bd">
+      <documentation>Relationship from Script Execution Service to Operation Record.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-38c8023c906845dc83aa1393b3c17ec6" source="id-71d5928d976e463ea7f24e432a4dab8f" target="id-3e3a9c3fb43d4572a5a076908154ec79">
+      <documentation>Relationship from Dagre Layout Adapter to Graph Layout Computation.</documentation>
+    </element>
+    <element xsi:type="archimate:CompositionRelationship" id="id-df1f3283085746c498c32ca139f1c3b8" source="id-b6180439969141fa8dbf929f08e2e6df" target="id-933a55c0eff84912a7b2ddc8f055a49f">
+      <documentation>Relationship from ArchiCLI to BOM Verifier.</documentation>
+    </element>
+    <element xsi:type="archimate:CompositionRelationship" id="id-9c4f7c78a0694220affe2b699b0adfb3" source="id-b6180439969141fa8dbf929f08e2e6df" target="id-fe8718d04ca14291b2936e20ec9e92cc">
+      <documentation>Relationship from ArchiCLI to Batch Orchestrator.</documentation>
+    </element>
+    <element xsi:type="archimate:CompositionRelationship" id="id-933d43f8283446ac91d9dc6c1e2b9da0" source="id-b6180439969141fa8dbf929f08e2e6df" target="id-57b798f043ed4cdb97c88e3e7ac9f0ef">
+      <documentation>Relationship from ArchiCLI to Polling Monitor.</documentation>
+    </element>
+    <element xsi:type="archimate:CompositionRelationship" id="id-166eb68e9e4b40f2808900538964328a" source="id-b6180439969141fa8dbf929f08e2e6df" target="id-0c75d566afad4a37ab28fa1a4784ec50">
+      <documentation>Relationship from ArchiCLI to TempId Resolver.</documentation>
+    </element>
+    <element xsi:type="archimate:CompositionRelationship" id="id-58b881ba34fe4a1a9bd64428ee8732a7" source="id-b6180439969141fa8dbf929f08e2e6df" target="id-d7e99ebd77b04e3ea9868998d4c85462">
+      <documentation>Relationship from ArchiCLI to Output Formatter.</documentation>
+    </element>
+    <element xsi:type="archimate:CompositionRelationship" id="id-88a5834918ad4839b1646c60017346aa" source="id-b6180439969141fa8dbf929f08e2e6df" target="id-3f401a770b1f4aafbf79823e7d9882da">
+      <documentation>Relationship from ArchiCLI to HTTP Client.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-bb61769f598b44b0905d7feca5e62314" source="id-933a55c0eff84912a7b2ddc8f055a49f" target="id-fe8718d04ca14291b2936e20ec9e92cc">
+      <documentation>Relationship from BOM Verifier to Batch Orchestrator.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-59c447b3630c40b2814232904ead2481" source="id-fe8718d04ca14291b2936e20ec9e92cc" target="id-57b798f043ed4cdb97c88e3e7ac9f0ef">
+      <documentation>Relationship from Batch Orchestrator to Polling Monitor.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-c632ea47f7444012b2364585d95ee197" source="id-fe8718d04ca14291b2936e20ec9e92cc" target="id-0c75d566afad4a37ab28fa1a4784ec50">
+      <documentation>Relationship from Batch Orchestrator to TempId Resolver.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-79b14670f115463cb80849d65cbfedc4" source="id-fe8718d04ca14291b2936e20ec9e92cc" target="id-3f401a770b1f4aafbf79823e7d9882da">
+      <documentation>Relationship from Batch Orchestrator to HTTP Client.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-1cffb083daaf4493814108a871ec7269" source="id-fe8718d04ca14291b2936e20ec9e92cc" target="id-749721f4822b4c19bb1b015d70550dbe">
+      <documentation>Relationship from Batch Orchestrator to Model Apply Service.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-ff4965afbac5436d9bafe08279045c14" source="id-933a55c0eff84912a7b2ddc8f055a49f" target="id-7750b87e6b9b40f6a169af78bc04c1a4">
+      <documentation>Relationship from BOM Verifier to Model Query Service.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-ba8b882b711943618158a36462b92f0a" source="id-57b798f043ed4cdb97c88e3e7ac9f0ef" target="id-9eaac99616804f9c9324960a787cba2a">
+      <documentation>Relationship from Polling Monitor to Health Diagnostics Service.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-f2c66c0d348f48409bfe4e92d1e48692" source="id-d7e99ebd77b04e3ea9868998d4c85462" target="id-2a667661d9604498916e8b9c489d97cd">
+      <documentation>Relationship from Output Formatter to CLI Report.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-56a8019e069f4daca5fdc1d3b92c3ad3" source="id-933a55c0eff84912a7b2ddc8f055a49f" target="id-dfb5dcc65a354131a299c6eb7a698f17">
+      <documentation>Relationship from BOM Verifier to BOM File.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-ca28ecb02524422280dda90d95a6f288" source="id-fe8718d04ca14291b2936e20ec9e92cc" target="id-dfb5dcc65a354131a299c6eb7a698f17">
+      <documentation>Relationship from Batch Orchestrator to BOM File.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-0aa87d02ad984a4c9ca4a5ba3593e6d6" source="id-0c75d566afad4a37ab28fa1a4784ec50" target="id-f9bb24ffaf8a491393d47e82f2288a71">
+      <documentation>Relationship from TempId Resolver to TempId Mapping Store.</documentation>
+    </element>
+    <element xsi:type="archimate:RealizationRelationship" id="id-afb936fb5f894582b6acbd73d37342af" source="id-dfb5dcc65a354131a299c6eb7a698f17" target="id-103aa2cd321644419508a6b820cbabe0">
+      <documentation>Relationship from BOM File to ArchiMate BOM.</documentation>
+    </element>
+    <element xsi:type="archimate:RealizationRelationship" id="id-8a0303e4f73941028f8a401965e58d0f" source="id-f9bb24ffaf8a491393d47e82f2288a71" target="id-9dd22db2c0884606b28ecbe0843118f8">
+      <documentation>Relationship from TempId Mapping Store to ID Mapping File.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-088b1a5648124cf0bd3fc3652ba9e82c" source="id-6e8b1b916e5c4d1787ddd19699e92f07" target="id-3f401a770b1f4aafbf79823e7d9882da">
+      <documentation>Relationship from OpenAPI Contract to HTTP Client.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-f43f6b346bca4b1587270ec804c5e63e" source="id-3f401a770b1f4aafbf79823e7d9882da" target="id-7b19779e844d4b6abfc07c494bf9a634">
+      <documentation>Relationship from HTTP Client to REST API Interface.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-5ed8c9152d89471b964e809bb9b2a559" source="id-09b658b6c489487181e4e85d93bcf55b" target="id-cecbd8ee7e4b49428ec71d1edaa28dd5">
+      <documentation>Relationship from EA Workstation to Archi Runtime Node.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-1b67e3ff68554d4781669e6a00a6380e" source="id-cecbd8ee7e4b49428ec71d1edaa28dd5" target="id-5d918912368f44d894d9a7e3678de135">
+      <documentation>Relationship from Archi Runtime Node to Archi plus jArchi.</documentation>
+    </element>
+    <element xsi:type="archimate:RealizationRelationship" id="id-2cb436600a634d3c81c48b4a9106e9a3" source="id-5d918912368f44d894d9a7e3678de135" target="id-e7f3981ae34243e3a758806ec5595a2f">
+      <documentation>Relationship from Archi plus jArchi to Local HTTP Service.</documentation>
+    </element>
+    <element xsi:type="archimate:RealizationRelationship" id="id-8839ceb697424b9296872d3384cb96b0" source="id-5d918912368f44d894d9a7e3678de135" target="id-a2f21fd084cf44b0a96723abbb6e9c31">
+      <documentation>Relationship from Archi plus jArchi to Local File Service.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-fc0eafac2f6440bbab1ef9455ffece46" source="id-385ec4421cb046b5bde931e747b03290" target="id-e7f3981ae34243e3a758806ec5595a2f">
+      <documentation>Relationship from Loopback Network to Local HTTP Service.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-e1cc26d6735e47d5acd6f889a50d6d2c" source="id-385ec4421cb046b5bde931e747b03290" target="id-7b19779e844d4b6abfc07c494bf9a634">
+      <documentation>Relationship from Loopback Network to REST API Interface.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-358416a6346248d2a1032f2649c3ad17" source="id-7502266dc3a54a148d3ffe29502c6ccf" target="id-5d918912368f44d894d9a7e3678de135">
+      <documentation>Relationship from Model API Server Script to Archi plus jArchi.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-c9ba5b592498479895228ba0af10cf50" source="id-7502266dc3a54a148d3ffe29502c6ccf" target="id-76805612ff9e42059f3529faef790646">
+      <documentation>Relationship from Model API Server Script to Archi Server.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-203e0f9e8c0d408bb74f0c154edb7eb4" source="id-01f43b2956b241faad7389c9079210dd" target="id-09b658b6c489487181e4e85d93bcf55b">
+      <documentation>Relationship from ArchiCLI Distribution to EA Workstation.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-d632019ec49d4361933801f4a0d8588b" source="id-01f43b2956b241faad7389c9079210dd" target="id-b6180439969141fa8dbf929f08e2e6df">
+      <documentation>Relationship from ArchiCLI Distribution to ArchiCLI.</documentation>
+    </element>
+    <element xsi:type="archimate:RealizationRelationship" id="id-b04709a5287f40ab82f3427268b9c460" source="id-013bc541c8514e4c9eaca7123e31c2fe" target="id-7502266dc3a54a148d3ffe29502c6ccf">
+      <documentation>Relationship from archi-server Repository to Model API Server Script.</documentation>
+    </element>
+    <element xsi:type="archimate:RealizationRelationship" id="id-bcc6787b0c4346f78f792a7ece701cfd" source="id-013bc541c8514e4c9eaca7123e31c2fe" target="id-01f43b2956b241faad7389c9079210dd">
+      <documentation>Relationship from archi-server Repository to ArchiCLI Distribution.</documentation>
+    </element>
+    <element xsi:type="archimate:ServingRelationship" id="id-e0316b42b5f143869664c9f86164aad0" source="id-a2f21fd084cf44b0a96723abbb6e9c31" target="id-b6180439969141fa8dbf929f08e2e6df">
+      <documentation>Relationship from Local File Service to ArchiCLI.</documentation>
+    </element>
+    <element xsi:type="archimate:ServingRelationship" id="id-34a5006c865c437d86a9836a5affb0d7" source="id-a2f21fd084cf44b0a96723abbb6e9c31" target="id-76805612ff9e42059f3529faef790646">
+      <documentation>Relationship from Local File Service to Archi Server.</documentation>
+    </element>
+    <element xsi:type="archimate:ServingRelationship" id="id-caf8d6e6fb53466da4ea1c02d0db67c9" source="id-e7f3981ae34243e3a758806ec5595a2f" target="id-9eaac99616804f9c9324960a787cba2a">
+      <documentation>Relationship from Local HTTP Service to Health Diagnostics Service.</documentation>
+    </element>
+    <element xsi:type="archimate:ServingRelationship" id="id-ca9e3b6b9456495e95b5be8db7379fad" source="id-e7f3981ae34243e3a758806ec5595a2f" target="id-7750b87e6b9b40f6a169af78bc04c1a4">
+      <documentation>Relationship from Local HTTP Service to Model Query Service.</documentation>
+    </element>
+    <element xsi:type="archimate:ServingRelationship" id="id-1f94c83042b84f93b174d29299f3de49" source="id-e7f3981ae34243e3a758806ec5595a2f" target="id-749721f4822b4c19bb1b015d70550dbe">
+      <documentation>Relationship from Local HTTP Service to Model Apply Service.</documentation>
+    </element>
+    <element xsi:type="archimate:ServingRelationship" id="id-089f42338e8e406b82292f2fd116c48d" source="id-e7f3981ae34243e3a758806ec5595a2f" target="id-12cb96b3f85f49808fe3e5e1dcfb097e">
+      <documentation>Relationship from Local HTTP Service to View Management Service.</documentation>
+    </element>
+    <element xsi:type="archimate:ServingRelationship" id="id-61b466def511437eb262c0b76c9cbc47" source="id-e7f3981ae34243e3a758806ec5595a2f" target="id-e99bc27290d54e35a314e9670b0cee00">
+      <documentation>Relationship from Local HTTP Service to Script Execution Service.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-5e06743f401c427491f7e83dce5e23ad" source="id-a2f21fd084cf44b0a96723abbb6e9c31" target="id-dfb5dcc65a354131a299c6eb7a698f17">
+      <documentation>Relationship from Local File Service to BOM File.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-59bb8fbea6a24ce9b2f409418c25b5bf" source="id-a2f21fd084cf44b0a96723abbb6e9c31" target="id-f9bb24ffaf8a491393d47e82f2288a71">
+      <documentation>Relationship from Local File Service to TempId Mapping Store.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-99a5e97652504c0ca5e4ff291f4bc5d3" source="id-e7f3981ae34243e3a758806ec5595a2f" target="id-7b19779e844d4b6abfc07c494bf9a634">
+      <documentation>Relationship from Local HTTP Service to REST API Interface.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-adcc3f66cd2f4efcbb1e57e440cb06d6" source="id-013bc541c8514e4c9eaca7123e31c2fe" target="id-daa86d66f6a042f9bcb458e22f0e8c19">
+      <documentation>Relationship from archi-server Repository to Archi Automation Toolkit.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-eeee98b5a90e47ac86ba90bbfc30b78d" source="id-4fc6dfa0845f41cf80675f5495b5ccb0" target="id-76805612ff9e42059f3529faef790646">
+      <documentation>Relationship from Harden Server Surface to Archi Server.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-82b19a2d1f43477a8b2b576854896f1a" source="id-e4bf6507e58f415a98f5f4653ecb03c2" target="id-b6180439969141fa8dbf929f08e2e6df">
+      <documentation>Relationship from Scale CLI Adoption to ArchiCLI.</documentation>
+    </element>
+    <element xsi:type="archimate:RealizationRelationship" id="id-4a9570ab6a5b4ee2bb41d2af3b31abc9" source="id-bc51b8f7e57a4c58b38b6d83d86693d7" target="id-c91d43cc78e34aa0b408c87e6e3ede41">
+      <documentation>Relationship from Publish Prime Example to Prime Example Model.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-08f56955322f4f9e9faf31447fcd0302" source="id-4fc6dfa0845f41cf80675f5495b5ccb0" target="id-e2d5bab73e16404fa2dec87bd365b371">
+      <documentation>Relationship from Harden Server Surface to Current Capability.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-30e2e806fb6440b8b17eaa4bab4b188f" source="id-e4bf6507e58f415a98f5f4653ecb03c2" target="id-e2d5bab73e16404fa2dec87bd365b371">
+      <documentation>Relationship from Scale CLI Adoption to Current Capability.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-e938077484644d3c954fc7f8314868d8" source="id-4b788fcdb48b4ca3b5a0a93544b642cf" target="id-bd4dc8f7b89a484a84726ca80b6ab87f">
+      <documentation>Relationship from Baseline Capability to Example Coverage Gap.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-59a86db6ee764eaa8e127956e95b7350" source="id-bd4dc8f7b89a484a84726ca80b6ab87f" target="id-e2d5bab73e16404fa2dec87bd365b371">
+      <documentation>Relationship from Example Coverage Gap to Current Capability.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-da865011dfc74911884357b794623ccc" source="id-bc51b8f7e57a4c58b38b6d83d86693d7" target="id-0d240d55eafe4722914e4204360a195e">
+      <documentation>Relationship from Publish Prime Example to Release 1.5 Event.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-49f06f0aa42a44b798516b849d74ac93" source="id-0d240d55eafe4722914e4204360a195e" target="id-e2d5bab73e16404fa2dec87bd365b371">
+      <documentation>Relationship from Release 1.5 Event to Current Capability.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-ec022af38f6f42a39f7c26ee9df38c6a" source="id-c91d43cc78e34aa0b408c87e6e3ede41" target="id-daa86d66f6a042f9bcb458e22f0e8c19">
+      <documentation>Relationship from Prime Example Model to Archi Automation Toolkit.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-813f4152b20c415b9e4cabbf6cb5777e" source="id-92fd329e5d7e44f5a865445947317248" target="id-51f1341428294bdeb48949fa126933ec">
+      <documentation>Relationship from Shorter Delivery Cycle to API Modeling Capability.</documentation>
+    </element>
+    <element xsi:type="archimate:AssociationRelationship" id="id-a9b9fd5a4ecb4befa80de1a9fdfe5044" source="id-a4d6ccd39d44451684da37aefd7d65b9" target="id-cfe86c1320aa47c5a15638deaf1ade00">
+      <documentation>Relationship from Higher Automation Confidence to Validation Capability.</documentation>
+    </element>
+  </folder>
+  <folder name="Views" id="id-9d632ad25e0040658a21e24fc8a50ef2" type="diagrams">
+    <element xsi:type="archimate:ArchimateDiagramModel" name="Archi Server and ArchiCLI - Layered Overview" id="id-c38b8071a58b426b811954dcee324377" viewpoint="layered">
+      <child xsi:type="archimate:DiagramObject" id="id-b1e324e67f914128a203e2908993cf98" archimateElement="id-fcd76e1c1eff4d87a40ee090dd8e3b8e">
+        <bounds x="20" y="149" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-1c05dd1541134a57bef1cbe90296410d" source="id-b1e324e67f914128a203e2908993cf98" target="id-6213bab5e349411eb18485e2c265b9bf" archimateRelationship="id-f2cea83d513f4690894b9ab43c59acc6"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-6213bab5e349411eb18485e2c265b9bf" targetConnections="id-1c05dd1541134a57bef1cbe90296410d" archimateElement="id-fa215f1f453b4764991083222f67ed88">
+        <bounds x="220" y="149" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-cc95f24880494698a76d1b28ee2568db" source="id-6213bab5e349411eb18485e2c265b9bf" target="id-c47938e0c7414c16aad8167bcbd047bb" archimateRelationship="id-224c9571b84041f989e6e8428a4f4122"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-1d645ac0e6bd4ff1ba1d83f22856a0bd" source="id-6213bab5e349411eb18485e2c265b9bf" target="id-c0212685313d43b7b2a9dd59b4b1f52b" archimateRelationship="id-35e29554e4cc4c488f89f165ac9d574c"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-287459dc6c8c49d3b2962e7be49cc3df" source="id-6213bab5e349411eb18485e2c265b9bf" target="id-ac495a7a8f544b088864540629835f52" archimateRelationship="id-bdc98317fdc64e4a9008d2009e1fba04"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-c47938e0c7414c16aad8167bcbd047bb" targetConnections="id-cc95f24880494698a76d1b28ee2568db id-ebe945fc5dfb4a20aa46107bbbe95d78" archimateElement="id-81505c8229b848ae9b02daaadd340174">
+        <bounds x="420" y="96" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-7018c58746a24735b116cac5bb53a1c8" source="id-c47938e0c7414c16aad8167bcbd047bb" target="id-58bba7a57a4046aabf96a1d4eb1c3ef9" archimateRelationship="id-53b8a0df82f44fd9923329124eb11772"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-b5c22a41619544fc9a8ce80e71a1f30b" source="id-c47938e0c7414c16aad8167bcbd047bb" target="id-2542fc5b7ca44e91818510aa16dc389f" archimateRelationship="id-67281c3b8b8f4c4faa85f283e546cdb5"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-c0212685313d43b7b2a9dd59b4b1f52b" targetConnections="id-1d645ac0e6bd4ff1ba1d83f22856a0bd id-aceeeb842bea44e7b6f8f526a9fc7089" archimateElement="id-db52ad40e61244dd9c27b5b267b0c7c5">
+        <bounds x="420" y="259" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-1f7f5865ae2444fab0c8ed1168823e22" source="id-c0212685313d43b7b2a9dd59b4b1f52b" target="id-58bba7a57a4046aabf96a1d4eb1c3ef9" archimateRelationship="id-0b3d3a816ed348068fad97a246b709e7"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-c1385dd102b64725a17e0bc6c3370e3b" source="id-c0212685313d43b7b2a9dd59b4b1f52b" target="id-2542fc5b7ca44e91818510aa16dc389f" archimateRelationship="id-f4d7ec6026804e47a54467d89d37ed23"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-ac495a7a8f544b088864540629835f52" targetConnections="id-287459dc6c8c49d3b2962e7be49cc3df id-12a9370ee7814dffa013f9389429a33e" archimateElement="id-6df3549225d542af9ad94b481fd881b4">
+        <bounds x="420" y="575" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-e11981f19fbe42579aa999cc97670073" source="id-ac495a7a8f544b088864540629835f52" target="id-58bba7a57a4046aabf96a1d4eb1c3ef9" archimateRelationship="id-791bebda5f224220857e89053ae36339"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-fa6a76b6fc564156b6288ae709f713ab" source="id-ac495a7a8f544b088864540629835f52" target="id-2648165fa2e44f5fa338b9482304df25" archimateRelationship="id-71697f11a4b94968ae60e4184c7828d8"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-58bba7a57a4046aabf96a1d4eb1c3ef9" targetConnections="id-7018c58746a24735b116cac5bb53a1c8 id-1f7f5865ae2444fab0c8ed1168823e22 id-e11981f19fbe42579aa999cc97670073 id-bda2e37084c14a748e85c5dedbf5859f id-16f3d4b965c340a792465f7dcc828c49" archimateElement="id-26981b2fdb8741438bd44364de610f6b">
+        <bounds x="620" y="675" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-dabe2037ec324e4ba36692aeb2d37fca" source="id-58bba7a57a4046aabf96a1d4eb1c3ef9" target="id-a4830228511c400ca899a2bcf03a4576" archimateRelationship="id-60c8045a0fca44b8a1e4abe0a7d0fb3f"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-2542fc5b7ca44e91818510aa16dc389f" targetConnections="id-b5c22a41619544fc9a8ce80e71a1f30b id-c1385dd102b64725a17e0bc6c3370e3b id-77064f78119b43d3823813004e153e73" archimateElement="id-103aa2cd321644419508a6b820cbabe0">
+        <bounds x="1220" y="20" width="120" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-2648165fa2e44f5fa338b9482304df25" targetConnections="id-fa6a76b6fc564156b6288ae709f713ab id-357f05af3b1443869561a4b8bb732793" archimateElement="id-9dd22db2c0884606b28ecbe0843118f8">
+        <bounds x="1220" y="240" width="120" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-c51f4515d53f4b70ac4fd3decf4fb835" targetConnections="id-f60fa945bd5044fda1c57d397707ae5b id-3651be056ff84b57871bd09f11e8fa10" archimateElement="id-51f1341428294bdeb48949fa126933ec">
+        <bounds x="420" y="776" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-bda2e37084c14a748e85c5dedbf5859f" source="id-c51f4515d53f4b70ac4fd3decf4fb835" target="id-58bba7a57a4046aabf96a1d4eb1c3ef9" archimateRelationship="id-13c22f10496642808013ca1aa691ba0e"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-86dcd92b02f94b00b0a648c7bbadcc92" targetConnections="id-f72269c17dcb45519de7a5d11edef2d5 id-3b77a188387a447291effa8a49e96dd3" archimateElement="id-cfe86c1320aa47c5a15638deaf1ade00">
+        <bounds x="420" y="881" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-16f3d4b965c340a792465f7dcc828c49" source="id-86dcd92b02f94b00b0a648c7bbadcc92" target="id-58bba7a57a4046aabf96a1d4eb1c3ef9" archimateRelationship="id-ef3e9d92c6cd4749bf2d83fb68d83f1f"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-a195144ec8394cbdbde60fce84084167" archimateElement="id-c4d28ab894204cf8ac9ce110758c1766">
+        <bounds x="220" y="590" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-f60fa945bd5044fda1c57d397707ae5b" source="id-a195144ec8394cbdbde60fce84084167" target="id-c51f4515d53f4b70ac4fd3decf4fb835" archimateRelationship="id-e281f4d37f384d57b0e420dacdf639db"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-f72269c17dcb45519de7a5d11edef2d5" source="id-a195144ec8394cbdbde60fce84084167" target="id-86dcd92b02f94b00b0a648c7bbadcc92" archimateRelationship="id-4c8e426f594644fa95b22e68d4d22ab0"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-ebe945fc5dfb4a20aa46107bbbe95d78" source="id-a195144ec8394cbdbde60fce84084167" target="id-c47938e0c7414c16aad8167bcbd047bb" archimateRelationship="id-87d06782015f4d74a09e447822000dfd"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-aceeeb842bea44e7b6f8f526a9fc7089" source="id-a195144ec8394cbdbde60fce84084167" target="id-c0212685313d43b7b2a9dd59b4b1f52b" archimateRelationship="id-87fd9067c5c049d59e852fce0819e119"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-12a9370ee7814dffa013f9389429a33e" source="id-a195144ec8394cbdbde60fce84084167" target="id-ac495a7a8f544b088864540629835f52" archimateRelationship="id-f47a8175f0ff4435977028a21710b99d"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-7ddddfb90a134c379e81b1792e1dfbe1" archimateElement="id-92fd329e5d7e44f5a865445947317248">
+        <bounds x="220" y="876" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-ea4f868bed3d4d578f0c03ca469fc237" source="id-7ddddfb90a134c379e81b1792e1dfbe1" target="id-a4830228511c400ca899a2bcf03a4576" archimateRelationship="id-fb8c803904214fea9fbf95b5f1a48107"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-3651be056ff84b57871bd09f11e8fa10" source="id-7ddddfb90a134c379e81b1792e1dfbe1" target="id-c51f4515d53f4b70ac4fd3decf4fb835" archimateRelationship="id-813f4152b20c415b9e4cabbf6cb5777e"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-b668c806a922406ebe3c09cdddc65e90" archimateElement="id-a4d6ccd39d44451684da37aefd7d65b9">
+        <bounds x="220" y="981" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-b2ea04cdfd234d81af34467378aa3571" source="id-b668c806a922406ebe3c09cdddc65e90" target="id-a4830228511c400ca899a2bcf03a4576" archimateRelationship="id-ec41fb643dec4806a8bc2adc596039fb"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-3b77a188387a447291effa8a49e96dd3" source="id-b668c806a922406ebe3c09cdddc65e90" target="id-86dcd92b02f94b00b0a648c7bbadcc92" archimateRelationship="id-a9b9fd5a4ecb4befa80de1a9fdfe5044"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-a4830228511c400ca899a2bcf03a4576" targetConnections="id-dabe2037ec324e4ba36692aeb2d37fca id-ea4f868bed3d4d578f0c03ca469fc237 id-b2ea04cdfd234d81af34467378aa3571" archimateElement="id-daa86d66f6a042f9bcb458e22f0e8c19">
+        <bounds x="820" y="853" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-a27c6653672c4aad87f623263823c9ba" source="id-a4830228511c400ca899a2bcf03a4576" target="id-526f74a948634f70b13ffc50381d0367" archimateRelationship="id-4cd434e40c934d988d335c9e82a3f570"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-95515e6c9a974a6a88157d0b3bd5bc28" source="id-a4830228511c400ca899a2bcf03a4576" target="id-9308d0c502ac4db8b72c4fc77a2d4ba8" archimateRelationship="id-e53a6b5cfa4c4b59941233a032178e0f"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-9308d0c502ac4db8b72c4fc77a2d4ba8" targetConnections="id-95515e6c9a974a6a88157d0b3bd5bc28 id-4fdb5b5bdd7f45c5bb470a7ccdf2539c id-11572c9f64944a639afce450eb26cba2 id-b14bbbeffb6947c49c1204def1daadfd id-c920f3cfdea14b8da11e4868ce0bfc27" archimateElement="id-b6180439969141fa8dbf929f08e2e6df">
+        <bounds x="1420" y="761" width="120" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-526f74a948634f70b13ffc50381d0367" targetConnections="id-a27c6653672c4aad87f623263823c9ba id-4bd29c2c9a6e4425bc09b784e6129112" archimateElement="id-76805612ff9e42059f3529faef790646">
+        <bounds x="1020" y="863" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-ca49cbf610be456f96d545f5fd120432" source="id-526f74a948634f70b13ffc50381d0367" target="id-cf028b02a39b49ed893f99815288e903" archimateRelationship="id-515ef4d8d9b04d379d894c8214c2dbee"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-75874d96d10e45c89130aeaacf8cca28" source="id-526f74a948634f70b13ffc50381d0367" target="id-0a20680fea6b4cb39b2738e607ff87ab" archimateRelationship="id-22eeba4c0abd4b1b90564183b1831994"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-daa64b58cdc6456080ba90b902a498e4" source="id-526f74a948634f70b13ffc50381d0367" target="id-70e3bb5e733e47a88576f945d215ecc5" archimateRelationship="id-95af97ab99104d9083037f1a9905b055"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-5452d94c6df24ef684ff7c234ec8744a" targetConnections="id-a4e23f74d9304b5c90fe49d5ca3ce59a id-ebdd77c3b87e478099baf56d31344542" archimateElement="id-7b19779e844d4b6abfc07c494bf9a634">
+        <bounds x="1220" y="345" width="120" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-0a20680fea6b4cb39b2738e607ff87ab" targetConnections="id-75874d96d10e45c89130aeaacf8cca28 id-4074ae7c31444f9ca634de9577137126" archimateElement="id-7750b87e6b9b40f6a169af78bc04c1a4">
+        <bounds x="1220" y="484" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-11572c9f64944a639afce450eb26cba2" source="id-0a20680fea6b4cb39b2738e607ff87ab" target="id-9308d0c502ac4db8b72c4fc77a2d4ba8" archimateRelationship="id-0bf7772a2b63450c9a26b0fa7e95d20f"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-70e3bb5e733e47a88576f945d215ecc5" targetConnections="id-daa64b58cdc6456080ba90b902a498e4 id-020a1bc222704842bd18643d40e3e46a" archimateElement="id-749721f4822b4c19bb1b015d70550dbe">
+        <bounds x="1220" y="766" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-b14bbbeffb6947c49c1204def1daadfd" source="id-70e3bb5e733e47a88576f945d215ecc5" target="id-9308d0c502ac4db8b72c4fc77a2d4ba8" archimateRelationship="id-b067a89c088446af9a5601c358669bdd"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-cf028b02a39b49ed893f99815288e903" targetConnections="id-ca49cbf610be456f96d545f5fd120432 id-2192df8a6ae645b899b03028e363e582" archimateElement="id-9eaac99616804f9c9324960a787cba2a">
+        <bounds x="1220" y="871" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-4fdb5b5bdd7f45c5bb470a7ccdf2539c" source="id-cf028b02a39b49ed893f99815288e903" target="id-9308d0c502ac4db8b72c4fc77a2d4ba8" archimateRelationship="id-f2fcd91e2d254ccf93b41ffcefd52a7d"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-c14609c7c68d4e978c32c52f5b421c10" targetConnections="id-d8744ef733bb4d5f9456797cbd08c0a0" archimateElement="id-dfb5dcc65a354131a299c6eb7a698f17">
+        <bounds x="1020" y="101" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-77064f78119b43d3823813004e153e73" source="id-c14609c7c68d4e978c32c52f5b421c10" target="id-2542fc5b7ca44e91818510aa16dc389f" archimateRelationship="id-afb936fb5f894582b6acbd73d37342af"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-919334d08e834cbaa973b32871fa419c" targetConnections="id-6139b8c5b6c74c91ab8c29f2ee5e5ddc" archimateElement="id-f9bb24ffaf8a491393d47e82f2288a71">
+        <bounds x="1020" y="269" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-357f05af3b1443869561a4b8bb732793" source="id-919334d08e834cbaa973b32871fa419c" target="id-2648165fa2e44f5fa338b9482304df25" archimateRelationship="id-8a0303e4f73941028f8a401965e58d0f"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-025882564cae4930b54bff6301a29f45" archimateElement="id-09b658b6c489487181e4e85d93bcf55b">
+        <bounds x="220" y="436" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-7bb0098de92f41958409c0da3067ea38" source="id-025882564cae4930b54bff6301a29f45" target="id-114bd721b64f474a9f17ed9327ce6004" archimateRelationship="id-5ed8c9152d89471b964e809bb9b2a559"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-114bd721b64f474a9f17ed9327ce6004" targetConnections="id-7bb0098de92f41958409c0da3067ea38" archimateElement="id-cecbd8ee7e4b49428ec71d1edaa28dd5">
+        <bounds x="420" y="470" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-5c68d9f3eac2458bac2418e99a580e16" source="id-114bd721b64f474a9f17ed9327ce6004" target="id-2d30f0a942f94744bc8277b64985c433" archimateRelationship="id-1b67e3ff68554d4781669e6a00a6380e"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-2d30f0a942f94744bc8277b64985c433" targetConnections="id-5c68d9f3eac2458bac2418e99a580e16" archimateElement="id-5d918912368f44d894d9a7e3678de135">
+        <bounds x="620" y="436" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-7a03bfeba5fd475e993e2d2d6975ee0a" source="id-2d30f0a942f94744bc8277b64985c433" target="id-f6743c20f45745fb817ddd2472ec60da" archimateRelationship="id-2cb436600a634d3c81c48b4a9106e9a3"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-81ad7c576fab407d9b5a8fcaf1b4138d" source="id-2d30f0a942f94744bc8277b64985c433" target="id-87e3b37655c341fe84d076af3a5e4b14" archimateRelationship="id-8839ceb697424b9296872d3384cb96b0"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-f6743c20f45745fb817ddd2472ec60da" targetConnections="id-7a03bfeba5fd475e993e2d2d6975ee0a id-2c6f6a6ebbb94cd2a021436f9e8a3c49" archimateElement="id-e7f3981ae34243e3a758806ec5595a2f">
+        <bounds x="1020" y="528" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-2192df8a6ae645b899b03028e363e582" source="id-f6743c20f45745fb817ddd2472ec60da" target="id-cf028b02a39b49ed893f99815288e903" archimateRelationship="id-caf8d6e6fb53466da4ea1c02d0db67c9"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-4074ae7c31444f9ca634de9577137126" source="id-f6743c20f45745fb817ddd2472ec60da" target="id-0a20680fea6b4cb39b2738e607ff87ab" archimateRelationship="id-ca9e3b6b9456495e95b5be8db7379fad"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-020a1bc222704842bd18643d40e3e46a" source="id-f6743c20f45745fb817ddd2472ec60da" target="id-70e3bb5e733e47a88576f945d215ecc5" archimateRelationship="id-1f94c83042b84f93b174d29299f3de49"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-ebdd77c3b87e478099baf56d31344542" source="id-f6743c20f45745fb817ddd2472ec60da" target="id-5452d94c6df24ef684ff7c234ec8744a" archimateRelationship="id-99a5e97652504c0ca5e4ff291f4bc5d3"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-87e3b37655c341fe84d076af3a5e4b14" targetConnections="id-81ad7c576fab407d9b5a8fcaf1b4138d" archimateElement="id-a2f21fd084cf44b0a96723abbb6e9c31">
+        <bounds x="820" y="389" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-c920f3cfdea14b8da11e4868ce0bfc27" source="id-87e3b37655c341fe84d076af3a5e4b14" target="id-9308d0c502ac4db8b72c4fc77a2d4ba8" archimateRelationship="id-e0316b42b5f143869664c9f86164aad0"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-4bd29c2c9a6e4425bc09b784e6129112" source="id-87e3b37655c341fe84d076af3a5e4b14" target="id-526f74a948634f70b13ffc50381d0367" archimateRelationship="id-34a5006c865c437d86a9836a5affb0d7"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-d8744ef733bb4d5f9456797cbd08c0a0" source="id-87e3b37655c341fe84d076af3a5e4b14" target="id-c14609c7c68d4e978c32c52f5b421c10" archimateRelationship="id-5e06743f401c427491f7e83dce5e23ad"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-6139b8c5b6c74c91ab8c29f2ee5e5ddc" source="id-87e3b37655c341fe84d076af3a5e4b14" target="id-919334d08e834cbaa973b32871fa419c" archimateRelationship="id-59bb8fbea6a24ce9b2f409418c25b5bf"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-6a4c4451ad904bd08de7cd9d9797667d" archimateElement="id-385ec4421cb046b5bde931e747b03290">
+        <bounds x="820" y="284" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-2c6f6a6ebbb94cd2a021436f9e8a3c49" source="id-6a4c4451ad904bd08de7cd9d9797667d" target="id-f6743c20f45745fb817ddd2472ec60da" archimateRelationship="id-fc0eafac2f6440bbab1ef9455ffece46"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-a4e23f74d9304b5c90fe49d5ca3ce59a" source="id-6a4c4451ad904bd08de7cd9d9797667d" target="id-5452d94c6df24ef684ff7c234ec8744a" archimateRelationship="id-e1cc26d6735e47d5acd6f889a50d6d2c"/>
+      </child>
+      <documentation>Cross-layer view of motivation, business, application, and technology concerns.</documentation>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" name="Archi Server - Internal Application Architecture" id="id-be515acc8f5d438b8db401408cd457ff" viewpoint="application_cooperation">
+      <child xsi:type="archimate:DiagramObject" id="id-196f730e634244578d837853ad1c93d8" targetConnections="id-70105f41de5d475184370f1d146d5083" archimateElement="id-76805612ff9e42059f3529faef790646">
+        <bounds x="220" y="665" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-c7e73ac5068f43bc911ea4ad0e294f81" source="id-196f730e634244578d837853ad1c93d8" target="id-dad94dd172114aa594666bb8f92e8917" archimateRelationship="id-515ef4d8d9b04d379d894c8214c2dbee"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-2ccccbaa41f549dfa099243e0ae239f3" source="id-196f730e634244578d837853ad1c93d8" target="id-203d4f4e7426416d975ced8a74404ac3" archimateRelationship="id-22eeba4c0abd4b1b90564183b1831994"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-42ddc8041fd649cfa119b1e43787f2cb" source="id-196f730e634244578d837853ad1c93d8" target="id-454500a3caa740e8b73a6cdad715e57b" archimateRelationship="id-95af97ab99104d9083037f1a9905b055"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-1852f23a222745429e437506facc8713" source="id-196f730e634244578d837853ad1c93d8" target="id-f99fcc1bb9444fdd869de8d9b4e7c7e5" archimateRelationship="id-0f96b578786f47b5b0ef89d7c87b0836"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-0862c517a8f946918865bbea1a142bbb" source="id-196f730e634244578d837853ad1c93d8" target="id-c90028b829914811825272770c966a09" archimateRelationship="id-3ca87735149144a88ec5d9326e1c60e6"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-4603f6e356b3423fa134608aa1cb5bc5" source="id-196f730e634244578d837853ad1c93d8" target="id-7cfb362e84364d1fbbc54d0eebe1ebd1" archimateRelationship="id-f7a6556537ad44e499e1feeb29db7cc6"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-44e9d5857cf64d3c935b6359f27c3ad6" source="id-196f730e634244578d837853ad1c93d8" target="id-00da49164eb845a4a59cf7d60350fb8c" archimateRelationship="id-c4206b56a0124261b99026809a4618f0"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-4ad2906f145f498ba128b5558686c6fa" source="id-196f730e634244578d837853ad1c93d8" target="id-11206ff733844bc58fb0f9b50939e97e" archimateRelationship="id-3da858afca734a7f8ea32a6ca538c2fa"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-cdfdeec5fc194ae2aa18efbd13bd7f93" source="id-196f730e634244578d837853ad1c93d8" target="id-b478138c1f614deebfaff298f63aa302" archimateRelationship="id-1dffb93925974ad2b0ae9af40011f694"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-b375dddf11744c28b004158c254c0844" source="id-196f730e634244578d837853ad1c93d8" target="id-853d5eb321d34271b49e3647535d73bc" archimateRelationship="id-f7c4e6ed6e764d3098e8cea04d8427c9"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-afe0abc36c004090976983bf8e8cb649" targetConnections="id-11ef94bdcda5430da48a605c5704f17f id-2e7a97c5889d4c54ba377ad812552d38" archimateElement="id-7b19779e844d4b6abfc07c494bf9a634">
+        <bounds x="620" y="298" width="120" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-dad94dd172114aa594666bb8f92e8917" targetConnections="id-c7e73ac5068f43bc911ea4ad0e294f81 id-66a3c4c2010c419b8263227af29f7754" archimateElement="id-9eaac99616804f9c9324960a787cba2a">
+        <bounds x="620" y="88" width="120" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-203d4f4e7426416d975ced8a74404ac3" targetConnections="id-2ccccbaa41f549dfa099243e0ae239f3 id-13ab1a2699c84767967c76c689170924 id-6900d5a8d4c344d297e06f8b3d089612" archimateElement="id-7750b87e6b9b40f6a169af78bc04c1a4">
+        <bounds x="620" y="403" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-8b5c2d6b18b640cbb464e76cd13800aa" source="id-203d4f4e7426416d975ced8a74404ac3" target="id-26854f03f03348aabb5ebba88742e281" archimateRelationship="id-bf7cfb6ae88447ee9a50bfbacccd7e2a"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-16a37b08f7fe49c49eb8e0e223b45ca1" source="id-203d4f4e7426416d975ced8a74404ac3" target="id-1fa9784af2bb4432a81248ced1f0a4d8" archimateRelationship="id-34861ffc54184c838b8acaa406d3301c"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-454500a3caa740e8b73a6cdad715e57b" targetConnections="id-42ddc8041fd649cfa119b1e43787f2cb id-4751076608df4fce8d8b276242517e04 id-64260020ce194b389cb2544f56509f2a" archimateElement="id-749721f4822b4c19bb1b015d70550dbe">
+        <bounds x="820" y="560" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-447b47bfd1154286aea38316e37b6911" source="id-454500a3caa740e8b73a6cdad715e57b" target="id-1ca278949fd044bd82eedf899c4386b4" archimateRelationship="id-fc11cbf26daf4dd1bd16a6868818cb2a"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-f99fcc1bb9444fdd869de8d9b4e7c7e5" targetConnections="id-1852f23a222745429e437506facc8713 id-b7d13ddc99794c05871277d8aeb4c24d id-f30c12ca1d8742c7990516c210586191" archimateElement="id-12cb96b3f85f49808fe3e5e1dcfb097e">
+        <bounds x="620" y="656" width="120" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-c90028b829914811825272770c966a09" targetConnections="id-0862c517a8f946918865bbea1a142bbb id-3e33c60ad0b14609a5e8641aa9ef21df" archimateElement="id-e99bc27290d54e35a314e9670b0cee00">
+        <bounds x="620" y="193" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-e596fcce8e55408cacbb4dde8892fccb" source="id-c90028b829914811825272770c966a09" target="id-1ca278949fd044bd82eedf899c4386b4" archimateRelationship="id-7d817aa2e80c4b64b8e770c32a5c5065"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-7cfb362e84364d1fbbc54d0eebe1ebd1" targetConnections="id-4603f6e356b3423fa134608aa1cb5bc5" archimateElement="id-78968b33d9e84c04883df5fc811d7d0e">
+        <bounds x="420" y="708" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-11ef94bdcda5430da48a605c5704f17f" source="id-7cfb362e84364d1fbbc54d0eebe1ebd1" target="id-afe0abc36c004090976983bf8e8cb649" archimateRelationship="id-818d92e0d6c745e090a91992c0bdeb19"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-ddc5c351fc0549d68c8b06d5e06c02ec" source="id-7cfb362e84364d1fbbc54d0eebe1ebd1" target="id-11206ff733844bc58fb0f9b50939e97e" archimateRelationship="id-443060626c31433eb237d6f113d29c41"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-65487290a4694f49b5984b74272e32ec" source="id-7cfb362e84364d1fbbc54d0eebe1ebd1" target="id-00da49164eb845a4a59cf7d60350fb8c" archimateRelationship="id-030f4c48ef9c40849855390ad6a19ebe"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-00da49164eb845a4a59cf7d60350fb8c" targetConnections="id-44e9d5857cf64d3c935b6359f27c3ad6 id-65487290a4694f49b5984b74272e32ec" archimateElement="id-6df03bf8716148f1a4d87a883145b0bf">
+        <bounds x="620" y="761" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-c7b1b20ab8c7425d8d4183d31d5a67f1" source="id-00da49164eb845a4a59cf7d60350fb8c" target="id-1ca278949fd044bd82eedf899c4386b4" archimateRelationship="id-bf047325b70942bc8bbcfa2071a25aaf"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-11206ff733844bc58fb0f9b50939e97e" targetConnections="id-4ad2906f145f498ba128b5558686c6fa id-ddc5c351fc0549d68c8b06d5e06c02ec" archimateElement="id-27bf4b01a8024d7a93d59b569712da1b">
+        <bounds x="620" y="866" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-4751076608df4fce8d8b276242517e04" source="id-11206ff733844bc58fb0f9b50939e97e" target="id-454500a3caa740e8b73a6cdad715e57b" archimateRelationship="id-5b548f6712f74c84b8770c4a20a28114"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-b478138c1f614deebfaff298f63aa302" targetConnections="id-cdfdeec5fc194ae2aa18efbd13bd7f93" archimateElement="id-c22059df261c4fc49396f8c7735ec4a7">
+        <bounds x="420" y="909" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-13ab1a2699c84767967c76c689170924" source="id-b478138c1f614deebfaff298f63aa302" target="id-203d4f4e7426416d975ced8a74404ac3" archimateRelationship="id-8b1d3753aad44899b951694e001ac32b"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-853d5eb321d34271b49e3647535d73bc" targetConnections="id-b375dddf11744c28b004158c254c0844" archimateElement="id-71d5928d976e463ea7f24e432a4dab8f">
+        <bounds x="420" y="1014" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-b7d13ddc99794c05871277d8aeb4c24d" source="id-853d5eb321d34271b49e3647535d73bc" target="id-f99fcc1bb9444fdd869de8d9b4e7c7e5" archimateRelationship="id-720efd0126c240cc9efd7a22566280e0"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-32c79c19f0b74ba8a68557809006a62a" source="id-853d5eb321d34271b49e3647535d73bc" target="id-d50d86c5e2154e92a1979a3602cfa107" archimateRelationship="id-38c8023c906845dc83aa1393b3c17ec6"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-1ca278949fd044bd82eedf899c4386b4" targetConnections="id-c7b1b20ab8c7425d8d4183d31d5a67f1 id-447b47bfd1154286aea38316e37b6911 id-e596fcce8e55408cacbb4dde8892fccb" archimateElement="id-7966afdf97ab43dfa347c6ad0cd099bd">
+        <bounds x="1020" y="574" width="120" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-26854f03f03348aabb5ebba88742e281" targetConnections="id-8b5c2d6b18b640cbb464e76cd13800aa" archimateElement="id-a856cb3b09fe4b4e86aa086a0a86193e">
+        <bounds x="820" y="326" width="120" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-1fa9784af2bb4432a81248ced1f0a4d8" targetConnections="id-16a37b08f7fe49c49eb8e0e223b45ca1" archimateElement="id-6e8b1b916e5c4d1787ddd19699e92f07">
+        <bounds x="820" y="455" width="120" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-33a5d57ed5a949a99a7decc82ffe9c84" targetConnections="id-c82485b3614c49fca8877debbe145d65" archimateElement="id-5d918912368f44d894d9a7e3678de135">
+        <bounds x="220" y="20" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-2390b30a353240afb905f835b3b8737d" source="id-33a5d57ed5a949a99a7decc82ffe9c84" target="id-50386d33d29844ed90d40d76ab94411a" archimateRelationship="id-2cb436600a634d3c81c48b4a9106e9a3"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-50386d33d29844ed90d40d76ab94411a" targetConnections="id-2390b30a353240afb905f835b3b8737d" archimateElement="id-e7f3981ae34243e3a758806ec5595a2f">
+        <bounds x="420" y="20" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-66a3c4c2010c419b8263227af29f7754" source="id-50386d33d29844ed90d40d76ab94411a" target="id-dad94dd172114aa594666bb8f92e8917" archimateRelationship="id-caf8d6e6fb53466da4ea1c02d0db67c9"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-6900d5a8d4c344d297e06f8b3d089612" source="id-50386d33d29844ed90d40d76ab94411a" target="id-203d4f4e7426416d975ced8a74404ac3" archimateRelationship="id-ca9e3b6b9456495e95b5be8db7379fad"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-64260020ce194b389cb2544f56509f2a" source="id-50386d33d29844ed90d40d76ab94411a" target="id-454500a3caa740e8b73a6cdad715e57b" archimateRelationship="id-1f94c83042b84f93b174d29299f3de49"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-f30c12ca1d8742c7990516c210586191" source="id-50386d33d29844ed90d40d76ab94411a" target="id-f99fcc1bb9444fdd869de8d9b4e7c7e5" archimateRelationship="id-089f42338e8e406b82292f2fd116c48d"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-3e33c60ad0b14609a5e8641aa9ef21df" source="id-50386d33d29844ed90d40d76ab94411a" target="id-c90028b829914811825272770c966a09" archimateRelationship="id-61b466def511437eb262c0b76c9cbc47"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-2e7a97c5889d4c54ba377ad812552d38" source="id-50386d33d29844ed90d40d76ab94411a" target="id-afe0abc36c004090976983bf8e8cb649" archimateRelationship="id-99a5e97652504c0ca5e4ff291f4bc5d3"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-d50d86c5e2154e92a1979a3602cfa107" targetConnections="id-32c79c19f0b74ba8a68557809006a62a" archimateElement="id-3e3a9c3fb43d4572a5a076908154ec79">
+        <bounds x="620" y="1019" width="120" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-3f25ab8af8014d7494ada1df81192d22" archimateElement="id-7502266dc3a54a148d3ffe29502c6ccf">
+        <bounds x="20" y="269" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-c82485b3614c49fca8877debbe145d65" source="id-3f25ab8af8014d7494ada1df81192d22" target="id-33a5d57ed5a949a99a7decc82ffe9c84" archimateRelationship="id-358416a6346248d2a1032f2649c3ad17"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-70105f41de5d475184370f1d146d5083" source="id-3f25ab8af8014d7494ada1df81192d22" target="id-196f730e634244578d837853ad1c93d8" archimateRelationship="id-c9ba5b592498479895228ba0af10cf50"/>
+      </child>
+      <documentation>Decomposition of server services, validation, queueing, and data objects.</documentation>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" name="ArchiCLI - Internal Application Architecture" id="id-634a550f1b334851a6bc0d2cbafc7a74" viewpoint="application_cooperation">
+      <child xsi:type="archimate:DiagramObject" id="id-bc381ce881c944908dbca77dfdfb6492" targetConnections="id-0d8cbda258f34d8ca5458b3fb9503eac id-c5af3cccadac4c80900c4ee634d3448e id-2c7c75e4da25460292ede240885ae280 id-8370bf3d8be348c79f15a0b450fe0d91 id-0a9ed14074434a25ae3362a5d86db743 id-7395e565f0554fe3be10401da8d7413b" archimateElement="id-b6180439969141fa8dbf929f08e2e6df">
+        <bounds x="220" y="360" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-8878969d663e45fa918501c542709195" source="id-bc381ce881c944908dbca77dfdfb6492" target="id-9aadb723b13346c996641b0987278445" archimateRelationship="id-df1f3283085746c498c32ca139f1c3b8"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-e059af30902c40e0a268cf146ea7b1ef" source="id-bc381ce881c944908dbca77dfdfb6492" target="id-554b9375a4a940d8b6c6dc1a59e991ac" archimateRelationship="id-9c4f7c78a0694220affe2b699b0adfb3"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-cc3037505dce4277a42195ed4ec4a961" source="id-bc381ce881c944908dbca77dfdfb6492" target="id-fecb136581844a30ac5491d8ad6082e4" archimateRelationship="id-933d43f8283446ac91d9dc6c1e2b9da0"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-673485f55c16466ca0180295503c3239" source="id-bc381ce881c944908dbca77dfdfb6492" target="id-b40656f4b0894886b6d44cad705c4022" archimateRelationship="id-166eb68e9e4b40f2808900538964328a"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-9c485d84f3a34846ac83754c4ef8636a" source="id-bc381ce881c944908dbca77dfdfb6492" target="id-928b34838a784e0ea4886e0da6741b43" archimateRelationship="id-58b881ba34fe4a1a9bd64428ee8732a7"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-3f894bf73dd14252a7821f6eabcdaa83" source="id-bc381ce881c944908dbca77dfdfb6492" target="id-3b8f22328887403193202fcf2353cc79" archimateRelationship="id-88a5834918ad4839b1646c60017346aa"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-9aadb723b13346c996641b0987278445" targetConnections="id-8878969d663e45fa918501c542709195" archimateElement="id-933a55c0eff84912a7b2ddc8f055a49f">
+        <bounds x="420" y="484" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-7e0e893a3e5b41c0b0ec6b01df7a8042" source="id-9aadb723b13346c996641b0987278445" target="id-554b9375a4a940d8b6c6dc1a59e991ac" archimateRelationship="id-bb61769f598b44b0905d7feca5e62314"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-262895baca4f4e54b137ea6fe74be7b8" source="id-9aadb723b13346c996641b0987278445" target="id-5a6cb09b70cc4845ae7f0ffb8971f9e2" archimateRelationship="id-ff4965afbac5436d9bafe08279045c14"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-c66efcdb5bba453c886863b1210056ad" source="id-9aadb723b13346c996641b0987278445" target="id-3d2bc73b73f24ccda2230ca19e294549" archimateRelationship="id-56a8019e069f4daca5fdc1d3b92c3ad3"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-554b9375a4a940d8b6c6dc1a59e991ac" targetConnections="id-e059af30902c40e0a268cf146ea7b1ef id-7e0e893a3e5b41c0b0ec6b01df7a8042" archimateElement="id-fe8718d04ca14291b2936e20ec9e92cc">
+        <bounds x="620" y="513" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-69244c8ea0c7464eb1af35155847a1ab" source="id-554b9375a4a940d8b6c6dc1a59e991ac" target="id-fecb136581844a30ac5491d8ad6082e4" archimateRelationship="id-59c447b3630c40b2814232904ead2481"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-98b119b01fe04395aa845849c1e2235f" source="id-554b9375a4a940d8b6c6dc1a59e991ac" target="id-b40656f4b0894886b6d44cad705c4022" archimateRelationship="id-c632ea47f7444012b2364585d95ee197"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-98e995ed0611409794ddbe16c683f481" source="id-554b9375a4a940d8b6c6dc1a59e991ac" target="id-3b8f22328887403193202fcf2353cc79" archimateRelationship="id-79b14670f115463cb80849d65cbfedc4"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-2d22c1adb90e425c82067edf58a78abb" source="id-554b9375a4a940d8b6c6dc1a59e991ac" target="id-65af286e3c24493581646989c0323fc9" archimateRelationship="id-1cffb083daaf4493814108a871ec7269"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-9720c9296e5949858836f7af68c0cfd3" source="id-554b9375a4a940d8b6c6dc1a59e991ac" target="id-3d2bc73b73f24ccda2230ca19e294549" archimateRelationship="id-ca28ecb02524422280dda90d95a6f288"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-fecb136581844a30ac5491d8ad6082e4" targetConnections="id-cc3037505dce4277a42195ed4ec4a961 id-69244c8ea0c7464eb1af35155847a1ab" archimateElement="id-57b798f043ed4cdb97c88e3e7ac9f0ef">
+        <bounds x="820" y="556" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-7bece97b8d8d432a986b91ee8327e84d" source="id-fecb136581844a30ac5491d8ad6082e4" target="id-6678d9a9c792415c9198bb91e4bbe579" archimateRelationship="id-ba8b882b711943618158a36462b92f0a"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-b40656f4b0894886b6d44cad705c4022" targetConnections="id-673485f55c16466ca0180295503c3239 id-98b119b01fe04395aa845849c1e2235f" archimateElement="id-0c75d566afad4a37ab28fa1a4784ec50">
+        <bounds x="820" y="188" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-3b4754bf52ba49d4b3c3e286dac118b0" source="id-b40656f4b0894886b6d44cad705c4022" target="id-6c16adae59374963bcfeb8923ec07adb" archimateRelationship="id-0aa87d02ad984a4c9ca4a5ba3593e6d6"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-928b34838a784e0ea4886e0da6741b43" targetConnections="id-9c485d84f3a34846ac83754c4ef8636a" archimateElement="id-d7e99ebd77b04e3ea9868998d4c85462">
+        <bounds x="420" y="73" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-597fda6d89a5435db466341e0081e78d" source="id-928b34838a784e0ea4886e0da6741b43" target="id-bd26c75339464d9c8f366bcb61122e07" archimateRelationship="id-f2c66c0d348f48409bfe4e92d1e48692"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-3b8f22328887403193202fcf2353cc79" targetConnections="id-3f894bf73dd14252a7821f6eabcdaa83 id-98e995ed0611409794ddbe16c683f481" archimateElement="id-3f401a770b1f4aafbf79823e7d9882da">
+        <bounds x="820" y="293" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-ed8163cb1fee41d9898ac8c625f95516" source="id-3b8f22328887403193202fcf2353cc79" target="id-3c6d11579e3e46efa2deb26e6f903b5a" archimateRelationship="id-f43f6b346bca4b1587270ec804c5e63e"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-3d2bc73b73f24ccda2230ca19e294549" targetConnections="id-c66efcdb5bba453c886863b1210056ad id-9720c9296e5949858836f7af68c0cfd3 id-a02038253391437dbda1f0868ccb6ce5" archimateElement="id-dfb5dcc65a354131a299c6eb7a698f17">
+        <bounds x="820" y="666" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-6883151bb11b47d8987cef72c7d5a6ce" source="id-3d2bc73b73f24ccda2230ca19e294549" target="id-866441c0f2f54cf3bcd1a3885e296c5c" archimateRelationship="id-afb936fb5f894582b6acbd73d37342af"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-6c16adae59374963bcfeb8923ec07adb" targetConnections="id-3b4754bf52ba49d4b3c3e286dac118b0 id-c35c8217f09f4ad79b3d8a1d0293dd5d" archimateElement="id-f9bb24ffaf8a491393d47e82f2288a71">
+        <bounds x="1020" y="188" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-54de549a9e4842fcbc76daf3d867ea68" source="id-6c16adae59374963bcfeb8923ec07adb" target="id-804371c3cb2d471699876602b152a57c" archimateRelationship="id-8a0303e4f73941028f8a401965e58d0f"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-bd26c75339464d9c8f366bcb61122e07" targetConnections="id-597fda6d89a5435db466341e0081e78d" archimateElement="id-2a667661d9604498916e8b9c489d97cd">
+        <bounds x="620" y="73" width="120" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-3c6d11579e3e46efa2deb26e6f903b5a" targetConnections="id-ed8163cb1fee41d9898ac8c625f95516" archimateElement="id-7b19779e844d4b6abfc07c494bf9a634">
+        <bounds x="1020" y="293" width="120" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-6678d9a9c792415c9198bb91e4bbe579" targetConnections="id-7bece97b8d8d432a986b91ee8327e84d" archimateElement="id-9eaac99616804f9c9324960a787cba2a">
+        <bounds x="1020" y="556" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-c5af3cccadac4c80900c4ee634d3448e" source="id-6678d9a9c792415c9198bb91e4bbe579" target="id-bc381ce881c944908dbca77dfdfb6492" archimateRelationship="id-f2fcd91e2d254ccf93b41ffcefd52a7d"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-5a6cb09b70cc4845ae7f0ffb8971f9e2" targetConnections="id-262895baca4f4e54b137ea6fe74be7b8" archimateElement="id-7750b87e6b9b40f6a169af78bc04c1a4">
+        <bounds x="620" y="178" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-2c7c75e4da25460292ede240885ae280" source="id-5a6cb09b70cc4845ae7f0ffb8971f9e2" target="id-bc381ce881c944908dbca77dfdfb6492" archimateRelationship="id-0bf7772a2b63450c9a26b0fa7e95d20f"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-65af286e3c24493581646989c0323fc9" targetConnections="id-2d22c1adb90e425c82067edf58a78abb" archimateElement="id-749721f4822b4c19bb1b015d70550dbe">
+        <bounds x="820" y="451" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-8370bf3d8be348c79f15a0b450fe0d91" source="id-65af286e3c24493581646989c0323fc9" target="id-bc381ce881c944908dbca77dfdfb6492" archimateRelationship="id-b067a89c088446af9a5601c358669bdd"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-866441c0f2f54cf3bcd1a3885e296c5c" targetConnections="id-6883151bb11b47d8987cef72c7d5a6ce" archimateElement="id-103aa2cd321644419508a6b820cbabe0">
+        <bounds x="1020" y="666" width="120" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-804371c3cb2d471699876602b152a57c" targetConnections="id-54de549a9e4842fcbc76daf3d867ea68" archimateElement="id-9dd22db2c0884606b28ecbe0843118f8">
+        <bounds x="1220" y="188" width="120" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-ad3f666c6969420b9fa6f6660a18b03a" archimateElement="id-a2f21fd084cf44b0a96723abbb6e9c31">
+        <bounds x="20" y="489" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-7395e565f0554fe3be10401da8d7413b" source="id-ad3f666c6969420b9fa6f6660a18b03a" target="id-bc381ce881c944908dbca77dfdfb6492" archimateRelationship="id-e0316b42b5f143869664c9f86164aad0"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-a02038253391437dbda1f0868ccb6ce5" source="id-ad3f666c6969420b9fa6f6660a18b03a" target="id-3d2bc73b73f24ccda2230ca19e294549" archimateRelationship="id-5e06743f401c427491f7e83dce5e23ad"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-c35c8217f09f4ad79b3d8a1d0293dd5d" source="id-ad3f666c6969420b9fa6f6660a18b03a" target="id-6c16adae59374963bcfeb8923ec07adb" archimateRelationship="id-59bb8fbea6a24ce9b2f409418c25b5bf"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-992193f8278e4b12ae68d3a05f88cf9c" archimateElement="id-01f43b2956b241faad7389c9079210dd">
+        <bounds x="20" y="345" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-0a9ed14074434a25ae3362a5d86db743" source="id-992193f8278e4b12ae68d3a05f88cf9c" target="id-bc381ce881c944908dbca77dfdfb6492" archimateRelationship="id-d632019ec49d4361933801f4a0d8588b"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-61e4113fb4484b4aa09cbeee16640ccb" archimateElement="id-daa86d66f6a042f9bcb458e22f0e8c19">
+        <bounds x="20" y="20" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-0d8cbda258f34d8ca5458b3fb9503eac" source="id-61e4113fb4484b4aa09cbeee16640ccb" target="id-bc381ce881c944908dbca77dfdfb6492" archimateRelationship="id-e53a6b5cfa4c4b59941233a032178e0f"/>
+      </child>
+      <documentation>CLI verification, orchestration, polling, tempId resolution, and transport.</documentation>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" name="Motivation and Strategy - Why This Platform Exists" id="id-04eb13e2bb4d4d08b24f5e7060e647b7" viewpoint="motivation">
+      <child xsi:type="archimate:DiagramObject" id="id-670a6dc23f4b4fa9a18c355323f11e57" archimateElement="id-6e345d4d7199458896f9c58eda08fa44">
+        <bounds x="20" y="298" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-c05204c02bb84e129693fb145a651231" source="id-670a6dc23f4b4fa9a18c355323f11e57" target="id-b85c5151552847a6809ad50ab1ca08bc" archimateRelationship="id-bb84208a3f014916a11ce26691746219"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-2ac1fc715b174934af6d57ba6b8717d6" archimateElement="id-205548e9676c459399e7cb7995039a49">
+        <bounds x="20" y="508" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-f2c4dedcbcbf40109b822c55442ac56e" source="id-2ac1fc715b174934af6d57ba6b8717d6" target="id-c9f00e30dc19467694c42649ad35c5d9" archimateRelationship="id-00bd2422fa024bb08222e0d6c39b30d8"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-af019b27938b4da6a26d7885b8085707" archimateElement="id-8e7e967508de4414871827fc28a78078">
+        <bounds x="20" y="193" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-069043dfdc5f4c25a9d170f5d3477193" source="id-af019b27938b4da6a26d7885b8085707" target="id-b85c5151552847a6809ad50ab1ca08bc" archimateRelationship="id-11129e5ad3ec4b058343e0f4bb9197c0"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-0c38fb15f3fc4630b82ded71e560ffa4" archimateElement="id-2149879370d547fc80c644a240399a72">
+        <bounds x="20" y="403" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-cb4ce71164ff497c99011661c4a4a9de" source="id-0c38fb15f3fc4630b82ded71e560ffa4" target="id-c9f00e30dc19467694c42649ad35c5d9" archimateRelationship="id-7ad68558a0464f8998b1f2588eccb191"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-b85c5151552847a6809ad50ab1ca08bc" targetConnections="id-c05204c02bb84e129693fb145a651231 id-069043dfdc5f4c25a9d170f5d3477193 id-f2ffc3f55667405c8fcdef42384bfa27 id-0ee3cfe65a7a49e78884a381c3f022a1" archimateElement="id-483a96af53434fff9cfab526500e0fc3">
+        <bounds x="220" y="164" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-597ab4c7943b481096147ff5e5a9742f" source="id-b85c5151552847a6809ad50ab1ca08bc" target="id-4c9fc6c7317f409c94fb142e6ad69bb9" archimateRelationship="id-83ef6e3254d446d398e590557e6a4921"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-c9f00e30dc19467694c42649ad35c5d9" targetConnections="id-f2c4dedcbcbf40109b822c55442ac56e id-cb4ce71164ff497c99011661c4a4a9de id-dc315e0d80124dbe8e61854969d4a2ba" archimateElement="id-6d90098dd0e24c34956d5114c424459e">
+        <bounds x="220" y="484" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-77aeeace589541b9aed456babff4f556" source="id-c9f00e30dc19467694c42649ad35c5d9" target="id-3282a24cf9894ad49a507cd1ad06b9e9" archimateRelationship="id-e5dc359c8a644cce99c74fd7a5a662ff"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-1ab0f8a026eb4beab1d3779b230abb65" targetConnections="id-b6229a46748647a5a2500c5f5c5c823f id-0a2974149b314c54ab0cbfe999139f98" archimateElement="id-29a32cda2cd54f53b23f2f1c27e45e7a">
+        <bounds x="820" y="78" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-f2ffc3f55667405c8fcdef42384bfa27" source="id-1ab0f8a026eb4beab1d3779b230abb65" target="id-b85c5151552847a6809ad50ab1ca08bc" archimateRelationship="id-304fcd0003944b72b9e7246322a901ef"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-2fc9aee6ca4146f199a0e4802631c9ea" targetConnections="id-1578ddf38351439392c0e6933def38b4" archimateElement="id-fcf1e2a7e3a342b4b12cead1bc5de7d8">
+        <bounds x="820" y="379" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-dc315e0d80124dbe8e61854969d4a2ba" source="id-2fc9aee6ca4146f199a0e4802631c9ea" target="id-c9f00e30dc19467694c42649ad35c5d9" archimateRelationship="id-b4ef38fc7f0142d88e15d475a6830fae"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-70747d90f7ea48d78cac45968556baf9" archimateElement="id-e111fe3be67d49da93faf871ba690bf0">
+        <bounds x="20" y="88" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-0ee3cfe65a7a49e78884a381c3f022a1" source="id-70747d90f7ea48d78cac45968556baf9" target="id-b85c5151552847a6809ad50ab1ca08bc" archimateRelationship="id-a16fd51a78524dd48a78679dfb9ad2a0"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-a04c547ea7934bb28208c4a895598171" archimateElement="id-c1992e46d5044c36a6c46f8f09bd5a7b">
+        <bounds x="620" y="20" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-b6229a46748647a5a2500c5f5c5c823f" source="id-a04c547ea7934bb28208c4a895598171" target="id-1ab0f8a026eb4beab1d3779b230abb65" archimateRelationship="id-139ae9a2bba44cb793747ddf162fda86"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-ea639ecb5e044e90ad7a935a48e4a9ab" targetConnections="id-3974a5d120594bf2b632fee7afafb61b id-d4695c31b52c4f9fa1f636dfb4557e22" archimateElement="id-51f1341428294bdeb48949fa126933ec">
+        <bounds x="620" y="154" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-0a2974149b314c54ab0cbfe999139f98" source="id-ea639ecb5e044e90ad7a935a48e4a9ab" target="id-1ab0f8a026eb4beab1d3779b230abb65" archimateRelationship="id-9789a0d5f0044ab68102ff16e7f0f188"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-bf59ffe974b5444c95f85998a7307227" source="id-ea639ecb5e044e90ad7a935a48e4a9ab" target="id-f5d1498ceefe4e9fb632b7e1d7fefd97" archimateRelationship="id-13c22f10496642808013ca1aa691ba0e"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-23a478f9e432448595533a79626bff24" targetConnections="id-a076b224496541c78b0d100e13f64085 id-22d29ab09bdd48e283b5b2c6aa3b1b87" archimateElement="id-cfe86c1320aa47c5a15638deaf1ade00">
+        <bounds x="620" y="264" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-1578ddf38351439392c0e6933def38b4" source="id-23a478f9e432448595533a79626bff24" target="id-2fc9aee6ca4146f199a0e4802631c9ea" archimateRelationship="id-c5daa8003c3a4c84916419ac4499c29c"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-569c5bdbf49e41b9b45b998e33e56f78" source="id-23a478f9e432448595533a79626bff24" target="id-f5d1498ceefe4e9fb632b7e1d7fefd97" archimateRelationship="id-ef3e9d92c6cd4749bf2d83fb68d83f1f"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-acf3d02b4aa64798ae70c359baf3a324" archimateElement="id-c4d28ab894204cf8ac9ce110758c1766">
+        <bounds x="420" y="20" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-3974a5d120594bf2b632fee7afafb61b" source="id-acf3d02b4aa64798ae70c359baf3a324" target="id-ea639ecb5e044e90ad7a935a48e4a9ab" archimateRelationship="id-e281f4d37f384d57b0e420dacdf639db"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-a076b224496541c78b0d100e13f64085" source="id-acf3d02b4aa64798ae70c359baf3a324" target="id-23a478f9e432448595533a79626bff24" archimateRelationship="id-4c8e426f594644fa95b22e68d4d22ab0"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-4c9fc6c7317f409c94fb142e6ad69bb9" targetConnections="id-597ab4c7943b481096147ff5e5a9742f" archimateElement="id-92fd329e5d7e44f5a865445947317248">
+        <bounds x="420" y="216" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-d16c0a6a23c3451cb3577688946beb52" source="id-4c9fc6c7317f409c94fb142e6ad69bb9" target="id-064802b431d34f579e51bcc3a9611cfa" archimateRelationship="id-fb8c803904214fea9fbf95b5f1a48107"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-d4695c31b52c4f9fa1f636dfb4557e22" source="id-4c9fc6c7317f409c94fb142e6ad69bb9" target="id-ea639ecb5e044e90ad7a935a48e4a9ab" archimateRelationship="id-813f4152b20c415b9e4cabbf6cb5777e"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-3282a24cf9894ad49a507cd1ad06b9e9" targetConnections="id-77aeeace589541b9aed456babff4f556" archimateElement="id-a4d6ccd39d44451684da37aefd7d65b9">
+        <bounds x="420" y="508" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-9b4134b159d747c6a799b55e629a0a3c" source="id-3282a24cf9894ad49a507cd1ad06b9e9" target="id-064802b431d34f579e51bcc3a9611cfa" archimateRelationship="id-ec41fb643dec4806a8bc2adc596039fb"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-22d29ab09bdd48e283b5b2c6aa3b1b87" source="id-3282a24cf9894ad49a507cd1ad06b9e9" target="id-23a478f9e432448595533a79626bff24" archimateRelationship="id-a9b9fd5a4ecb4befa80de1a9fdfe5044"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-bb44ee58546a4a9ea1b0e76e51d69dbc" archimateElement="id-fcd76e1c1eff4d87a40ee090dd8e3b8e">
+        <bounds x="20" y="613" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-b851b905928e4f39a2741811c797676e" source="id-bb44ee58546a4a9ea1b0e76e51d69dbc" target="id-f0d78a8843494fc0af36b34704506973" archimateRelationship="id-f2cea83d513f4690894b9ab43c59acc6"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-f0d78a8843494fc0af36b34704506973" targetConnections="id-b851b905928e4f39a2741811c797676e" archimateElement="id-fa215f1f453b4764991083222f67ed88">
+        <bounds x="220" y="613" width="120" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-f5d1498ceefe4e9fb632b7e1d7fefd97" targetConnections="id-bf59ffe974b5444c95f85998a7307227 id-569c5bdbf49e41b9b45b998e33e56f78" archimateElement="id-26981b2fdb8741438bd44364de610f6b">
+        <bounds x="820" y="206" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-249cf90afba84b87bd25e84b7748e774" source="id-f5d1498ceefe4e9fb632b7e1d7fefd97" target="id-064802b431d34f579e51bcc3a9611cfa" archimateRelationship="id-60c8045a0fca44b8a1e4abe0a7d0fb3f"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-064802b431d34f579e51bcc3a9611cfa" targetConnections="id-249cf90afba84b87bd25e84b7748e774 id-d16c0a6a23c3451cb3577688946beb52 id-9b4134b159d747c6a799b55e629a0a3c" archimateElement="id-daa86d66f6a042f9bcb458e22f0e8c19">
+        <bounds x="1020" y="298" width="120" height="55"/>
+      </child>
+      <documentation>Stakeholders, drivers, goals, requirements, capabilities, and outcomes.</documentation>
+    </element>
+    <element xsi:type="archimate:ArchimateDiagramModel" name="Implementation and Migration - Delivery Roadmap" id="id-50518e1272cf407593d2ed7daf37e490" viewpoint="implementation_and_migration">
+      <child xsi:type="archimate:DiagramObject" id="id-be9d1b58bb3147088461ad5989f3e5ad" archimateElement="id-4fc6dfa0845f41cf80675f5495b5ccb0">
+        <bounds x="420" y="20" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-4b41495f14f14d6ea1f67f75837f24ee" source="id-be9d1b58bb3147088461ad5989f3e5ad" target="id-0917404f5db94c18956a091200be592a" archimateRelationship="id-eeee98b5a90e47ac86ba90bbfc30b78d"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-848c85c3610449748b02f23be9a6664e" source="id-be9d1b58bb3147088461ad5989f3e5ad" target="id-432f2582312642df8e091eb2c50d7dc8" archimateRelationship="id-08f56955322f4f9e9faf31447fcd0302"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-f2488b7bc8274b068602859e9e592500" archimateElement="id-e4bf6507e58f415a98f5f4653ecb03c2">
+        <bounds x="420" y="240" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-e6617dfb44894059bcc05b68ecb824a4" source="id-f2488b7bc8274b068602859e9e592500" target="id-da7d26b3255046599b36e581d31f140a" archimateRelationship="id-82b19a2d1f43477a8b2b576854896f1a"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-3bc4bc6407984700a8cdf346b6d061d5" source="id-f2488b7bc8274b068602859e9e592500" target="id-432f2582312642df8e091eb2c50d7dc8" archimateRelationship="id-30e2e806fb6440b8b17eaa4bab4b188f"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-bd9c431d93124e04afdd012053beb98a" archimateElement="id-bc51b8f7e57a4c58b38b6d83d86693d7">
+        <bounds x="20" y="288" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-f1b7419b3fb640f3bfbe7126cce2ecfe" source="id-bd9c431d93124e04afdd012053beb98a" target="id-8916fab6d46a42f8b712b7db92c1faaa" archimateRelationship="id-4a9570ab6a5b4ee2bb41d2af3b31abc9"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-fed1da011a85460cb5a72daa71ee011e" source="id-bd9c431d93124e04afdd012053beb98a" target="id-c41066b3685543e6b8aca8eaea335559" archimateRelationship="id-da865011dfc74911884357b794623ccc"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-c527b59412bc41129239eddf975f59e3" archimateElement="id-4b788fcdb48b4ca3b5a0a93544b642cf">
+        <bounds x="220" y="345" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-ccf9795bec084125a47ad6d730497b5c" source="id-c527b59412bc41129239eddf975f59e3" target="id-36d6b63a440f4b22a42956a302326c19" archimateRelationship="id-e938077484644d3c954fc7f8314868d8"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-432f2582312642df8e091eb2c50d7dc8" targetConnections="id-848c85c3610449748b02f23be9a6664e id-3bc4bc6407984700a8cdf346b6d061d5 id-34dd9dd8822f4456ae77f87f7d877d50 id-c031e9d793964f93a2a56adfb2bab363" archimateElement="id-e2d5bab73e16404fa2dec87bd365b371">
+        <bounds x="620" y="383" width="120" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-36d6b63a440f4b22a42956a302326c19" targetConnections="id-ccf9795bec084125a47ad6d730497b5c" archimateElement="id-bd4dc8f7b89a484a84726ca80b6ab87f">
+        <bounds x="420" y="345" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-34dd9dd8822f4456ae77f87f7d877d50" source="id-36d6b63a440f4b22a42956a302326c19" target="id-432f2582312642df8e091eb2c50d7dc8" archimateRelationship="id-59a86db6ee764eaa8e127956e95b7350"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-c41066b3685543e6b8aca8eaea335559" targetConnections="id-fed1da011a85460cb5a72daa71ee011e" archimateElement="id-0d240d55eafe4722914e4204360a195e">
+        <bounds x="420" y="450" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-c031e9d793964f93a2a56adfb2bab363" source="id-c41066b3685543e6b8aca8eaea335559" target="id-432f2582312642df8e091eb2c50d7dc8" archimateRelationship="id-49f06f0aa42a44b798516b849d74ac93"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-8916fab6d46a42f8b712b7db92c1faaa" targetConnections="id-f1b7419b3fb640f3bfbe7126cce2ecfe" archimateElement="id-c91d43cc78e34aa0b408c87e6e3ede41">
+        <bounds x="220" y="25" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-498f8cf8ced443bc88732a5f5668bf1e" source="id-8916fab6d46a42f8b712b7db92c1faaa" target="id-e7a49a898be34faf93713b468f6ee3b6" archimateRelationship="id-ec022af38f6f42a39f7c26ee9df38c6a"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-0917404f5db94c18956a091200be592a" targetConnections="id-1841fa2b4fd546589ee492374453199e id-4b41495f14f14d6ea1f67f75837f24ee" archimateElement="id-76805612ff9e42059f3529faef790646">
+        <bounds x="620" y="20" width="120" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-da7d26b3255046599b36e581d31f140a" targetConnections="id-f4b207087b964ac4bb3aa17099337701 id-e6617dfb44894059bcc05b68ecb824a4" archimateElement="id-b6180439969141fa8dbf929f08e2e6df">
+        <bounds x="620" y="183" width="120" height="55"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-e7a49a898be34faf93713b468f6ee3b6" targetConnections="id-719e2ba846594a80b62438e1f9cb8c22 id-cc1bc14e2b3448dea3072c324a5d99f7 id-498f8cf8ced443bc88732a5f5668bf1e" archimateElement="id-daa86d66f6a042f9bcb458e22f0e8c19">
+        <bounds x="420" y="130" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-1841fa2b4fd546589ee492374453199e" source="id-e7a49a898be34faf93713b468f6ee3b6" target="id-0917404f5db94c18956a091200be592a" archimateRelationship="id-4cd434e40c934d988d335c9e82a3f570"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-f4b207087b964ac4bb3aa17099337701" source="id-e7a49a898be34faf93713b468f6ee3b6" target="id-da7d26b3255046599b36e581d31f140a" archimateRelationship="id-e53a6b5cfa4c4b59941233a032178e0f"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-9afa6e081e98437ba4af8876ced9c881" archimateElement="id-92fd329e5d7e44f5a865445947317248">
+        <bounds x="220" y="130" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-719e2ba846594a80b62438e1f9cb8c22" source="id-9afa6e081e98437ba4af8876ced9c881" target="id-e7a49a898be34faf93713b468f6ee3b6" archimateRelationship="id-fb8c803904214fea9fbf95b5f1a48107"/>
+      </child>
+      <child xsi:type="archimate:DiagramObject" id="id-36809f7449bc444bafc7762a556a4f1d" archimateElement="id-a4d6ccd39d44451684da37aefd7d65b9">
+        <bounds x="220" y="240" width="120" height="55"/>
+        <sourceConnection xsi:type="archimate:Connection" id="id-cc1bc14e2b3448dea3072c324a5d99f7" source="id-36809f7449bc444bafc7762a556a4f1d" target="id-e7a49a898be34faf93713b468f6ee3b6" archimateRelationship="id-ec41fb643dec4806a8bc2adc596039fb"/>
+      </child>
+      <documentation>Work packages, gaps, plateaus, milestones, and deliverables.</documentation>
+    </element>
+  </folder>
+</archimate:model>

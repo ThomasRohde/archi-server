@@ -57,4 +57,4 @@ coverage/
 archimate-plugin/
 
 # Test output artifacts (auto-generated ID mappings)
-**/__tests__/fixtures/*.ids.json
+**/*.ids.json
