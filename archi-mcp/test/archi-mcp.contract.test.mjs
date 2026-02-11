@@ -10,6 +10,11 @@ function extractFirstText(callResult) {
   return first?.type === 'text' ? first.text : '';
 }
 
+function extractPromptText(promptResult) {
+  const first = promptResult.messages?.[0];
+  return first?.content?.type === 'text' ? first.content.text : '';
+}
+
 async function closeServer(server) {
   await new Promise((resolve, reject) => {
     server.close((error) => (error ? reject(error) : resolve()));
@@ -141,6 +146,25 @@ test('tool metadata exposes prompts/resources and aligned schemas', async () => 
     assert.ok(scriptTool);
     assert.equal(scriptTool.annotations.openWorldHint, true);
     assert.equal(scriptTool.annotations.destructiveHint, true);
+
+    const capabilityPrompt = prompts.find((prompt) => prompt.name === 'archi_design_capability_map');
+    assert.ok(capabilityPrompt);
+    assert.equal(capabilityPrompt.arguments, undefined);
+  });
+});
+
+test('workflow prompts enforce mandatory clarification protocol without requiring prompt args', async () => {
+  await withMcpClient('http://127.0.0.1:9999', async (client) => {
+    const prompt = await client.getPrompt({
+      name: 'archi_design_capability_map',
+    });
+
+    const text = extractPromptText(prompt);
+    assert.match(text, /MANDATORY CLARIFICATION PROTOCOL \(NO ASSUMPTIONS\)/);
+    assert.match(text, /Proceeding without resolving uncertainty is a failure/);
+    assert.match(text, /No prompt arguments were provided/);
+    assert.match(text, /Clarification gate is OPEN/);
+    assert.match(text, /Missing required inputs: `businessDomain`, `strategicGoal`/);
   });
 });
 

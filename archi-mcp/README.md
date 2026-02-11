@@ -116,6 +116,9 @@ const { messages } = await client.getPrompt({
 Prompt templates enforce read-first and validation-first modeling flow:
 
 - inspect model state before proposing writes,
+- treat missing/ambiguous inputs as blocking uncertainty and ask the user before planning,
+- use the client question tool (or chat fallback) with 1-4 focused clarification questions,
+- never run `archi_plan_model_changes` or mutation tools until uncertainty is resolved or the user explicitly allows assumptions,
 - confirm intent before destructive actions,
 - preserve ArchiMate semantics and relationship direction,
 - avoid overloaded views and maintain naming discipline.

@@ -684,7 +684,7 @@ export function createArchiMcpServer(config: AppConfig): McpServer {
         tools: {},
       },
       instructions:
-        'Use these tools to inspect and mutate an Archi model through the local Archi Server API. Prefer read tools before write tools, and confirm intent before destructive operations. Workflow prompts are clarification-first: gather live context with read-only tools, then ask targeted user questions with the client question tool (for example AskUserQuestionTool or askQuestions), and only then run mutation tools.',
+        'Use these tools to inspect and mutate an Archi model through the local Archi Server API. Prefer read tools before write tools, and confirm intent before destructive operations. Mandatory clarification protocol: treat ambiguity or missing inputs as blocking uncertainty, stop and ask the user (client question tool such as AskUserQuestionTool/askQuestions, or chat fallback), and do not run `archi_plan_model_changes` or mutation tools until the user answers or explicitly says "make reasonable assumptions."',
     },
   );
 

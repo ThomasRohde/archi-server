@@ -30,9 +30,15 @@ const CommonGuardrails = [
   'Use naming discipline: Title Case for structural elements, verb-led names for processes/behavior.',
 ];
 
+const AmbiguousInputValuePattern = /^(?:tbd|unknown|unsure|unclear|n\/a|na|none|\?+|pending)$/i;
+
 function formatValue(value: string | number | boolean | undefined): string {
   if (value === undefined) {
     return '(not provided)';
+  }
+
+  if (typeof value === 'string' && value.trim().length === 0) {
+    return '(empty string)';
   }
 
   if (typeof value === 'boolean') {
@@ -54,6 +60,22 @@ function section(title: string, lines: string[]): string {
   return [`## ${title}`, ...lines].join('\n');
 }
 
+function isMissingContextValue(value: PromptContext[string]): boolean {
+  if (value === undefined) {
+    return true;
+  }
+
+  return typeof value === 'string' && value.trim().length === 0;
+}
+
+function isAmbiguousContextValue(value: PromptContext[string]): boolean {
+  if (typeof value !== 'string') {
+    return false;
+  }
+
+  return AmbiguousInputValuePattern.test(value.trim());
+}
+
 function getMissingRequiredInputs(
   inputRequirements: PromptInputRequirement[],
   context: PromptContext,
@@ -63,7 +85,24 @@ function getMissingRequiredInputs(
       return false;
     }
 
-    return context[input.key] === undefined;
+    return isMissingContextValue(context[input.key]);
+  });
+}
+
+function getAmbiguousInputs(
+  inputRequirements: PromptInputRequirement[],
+  context: PromptContext,
+): PromptInputRequirement[] {
+  return inputRequirements.filter((input) => isAmbiguousContextValue(context[input.key]));
+}
+
+function buildClarificationQueue(
+  inputRequirements: PromptInputRequirement[],
+  context: PromptContext,
+): PromptInputRequirement[] {
+  return inputRequirements.filter((input) => {
+    const value = context[input.key];
+    return (input.required && isMissingContextValue(value)) || isAmbiguousContextValue(value);
   });
 }
 
@@ -84,10 +123,21 @@ function buildWorkflowPrompt(options: WorkflowPromptOptions): string {
     formatInputRequirementLine(input, options.context[input.key]),
   );
   const missingRequiredInputs = getMissingRequiredInputs(options.inputRequirements, options.context);
-  const clarificationQuestions =
+  const ambiguousInputs = getAmbiguousInputs(options.inputRequirements, options.context);
+  const clarificationNeeded = missingRequiredInputs.length > 0 || ambiguousInputs.length > 0;
+  const clarificationQueue = buildClarificationQueue(options.inputRequirements, options.context);
+  const missingSummary =
     missingRequiredInputs.length > 0
-      ? asBulletedList(missingRequiredInputs.map((input) => input.askWhenMissing))
-      : ['- No required inputs are missing. Ask follow-up questions only for ambiguity.'];
+      ? missingRequiredInputs.map((input) => `\`${input.key}\``).join(', ')
+      : 'none';
+  const ambiguousSummary =
+    ambiguousInputs.length > 0 ? ambiguousInputs.map((input) => `\`${input.key}\``).join(', ') : 'none';
+  const clarificationQuestions =
+    clarificationQueue.length > 0
+      ? asBulletedList(clarificationQueue.map((input) => input.askWhenMissing))
+      : [
+          '- No unresolved required/ambiguous inputs were detected in prompt arguments. Ask follow-up questions only if live tool evidence introduces ambiguity.',
+        ];
 
   const content = [
     '# ArchiMate Modeling Workflow',
@@ -95,11 +145,38 @@ function buildWorkflowPrompt(options: WorkflowPromptOptions): string {
     section('Context', contextLines),
     section('Input Requirements', inputRequirementLines),
     section(
+      'Clarification Status',
+      asBulletedList([
+        `Missing required inputs: ${missingSummary}.`,
+        `Ambiguous placeholder inputs: ${ambiguousSummary}.`,
+        clarificationNeeded
+          ? 'Clarification gate is OPEN: stop and ask user questions before planning or mutation.'
+          : 'Clarification gate is CLOSED: continue, but reopen it immediately if ambiguity appears.',
+      ]),
+    ),
+    section(
+      'MANDATORY CLARIFICATION PROTOCOL (NO ASSUMPTIONS)',
+      asNumberedList([
+        'Before planning or changing anything, use Input Requirements as a checklist and mark each item resolved or unresolved.',
+        'Treat uncertainty broadly: missing inputs, ambiguous placeholders, multiple plausible interpretations, or any default that can materially change design, cost, security, or behavior.',
+        'If ANY uncertainty exists, STOP and ask 1-4 high-impact clarifying questions before proposing a final plan or running change tools.',
+        'Ask one focused question at a time, wait for the user response, then continue.',
+        'Only continue when the user answers or explicitly says "make reasonable assumptions."',
+        'Before `archi_plan_model_changes` or any mutation tool, restate resolved assumptions in 3-6 concise bullets.',
+      ]),
+    ),
+    section(
+      'Compliance Requirement',
+      asBulletedList([
+        'Proceeding without resolving uncertainty is a failure. Do not silently guess, infer, or default without user confirmation.',
+      ]),
+    ),
+    section(
       'Question Tool Usage',
       asBulletedList([
-        'Use the built-in client question tool for clarification (for example AskUserQuestionTool or askQuestions) instead of asking for all parameters upfront.',
+        'When clarification is required, you MUST use the built-in client question tool (for example AskUserQuestionTool or askQuestions). If unavailable, ask in chat and wait for the answer.',
         'When the model context provides candidates, present 2-4 concrete options using real names/IDs from tool results, plus one explicit free-text alternative.',
-        'Ask one focused question at a time, then continue after the user responds.',
+        'Ask at most 4 questions per clarification cycle, prioritized by impact.',
       ]),
     ),
     section(
@@ -107,9 +184,10 @@ function buildWorkflowPrompt(options: WorkflowPromptOptions): string {
       asNumberedList([
         'Start with live model context by calling `archi_get_health` and `archi_query_model` before drafting changes.',
         'Use additional read-only tools (for example `archi_get_model_stats`, `archi_search_model`, and `archi_list_views`) to infer likely input values.',
-        'If required inputs are missing or ambiguous, use the client question tool (for example AskUserQuestionTool or askQuestions) to ask concise follow-up questions and wait for the user response.',
+        'If required inputs are missing or ambiguous, stop planning/mutation and use the client question tool (for example AskUserQuestionTool or askQuestions) to ask concise follow-up questions.',
         'When presenting options, ground them in current model context and include concrete names/IDs from tool output instead of hypothetical values.',
-        'State assumptions explicitly before planning or applying model changes.',
+        'Do not call `archi_plan_model_changes` or mutation tools while clarification gate is OPEN.',
+        'State resolved assumptions explicitly before planning or applying model changes.',
       ]),
     ),
     section('Questions To Ask User (When Needed)', clarificationQuestions),
