@@ -3,6 +3,7 @@ import { Command, CommanderError } from 'commander';
 import { createProgram } from './index';
 import { setConfig } from './utils/config';
 import { failure, print } from './utils/output';
+import { resetWarnings } from './utils/warnings';
 
 // Parse the requested output mode before Commander initialization so usage errors
 // can be emitted in the same format the user asked for.
@@ -45,6 +46,7 @@ function configureCommander(command: Command): void {
  * CLI entrypoint: initialize config, parse args, and normalize usage errors.
  */
 async function main(): Promise<void> {
+  resetWarnings();
   const output = detectRequestedOutput(process.argv);
   setConfig({ output });
 

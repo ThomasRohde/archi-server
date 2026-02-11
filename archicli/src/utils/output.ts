@@ -1,4 +1,5 @@
 import { getConfig } from './config';
+import { consumeWarnings } from './warnings';
 
 /**
  * Standard response envelope emitted by all commands in JSON/YAML modes.
@@ -14,6 +15,7 @@ export interface CLIResponse<T = unknown> {
   metadata?: {
     timestamp: string;
     durationMs?: number;
+    warnings?: string[];
   };
 }
 
@@ -36,37 +38,70 @@ export function failure(code: string, message: string, details?: unknown): CLIRe
   };
 }
 
+function withCapturedWarnings(response: CLIResponse): CLIResponse {
+  const warnings = consumeWarnings();
+  if (warnings.length === 0) return response;
+  const metadata = response.metadata ?? { timestamp: new Date().toISOString() };
+  const existingWarnings = Array.isArray(metadata.warnings) ? metadata.warnings : [];
+  return {
+    ...response,
+    metadata: {
+      ...metadata,
+      warnings: [...existingWarnings, ...warnings],
+    },
+  };
+}
+
 /**
  * Emit CLI output according to global formatting/quiet preferences.
  */
 export function print(response: CLIResponse): void {
+  const normalized = withCapturedWarnings(response);
   const config = getConfig();
-  if (response.success && config.quiet) {
-    printByFormat(pickQuietData(response.data), config.output);
+  if (normalized.success && config.quiet) {
+    const quietData = pickQuietData(normalized.data);
+    const warnings = normalized.metadata?.warnings ?? [];
+    if (warnings.length > 0 && config.output !== 'text') {
+      printByFormat({ data: quietData, warnings }, config.output);
+      return;
+    }
+    printByFormat(quietData, config.output);
     return;
   }
 
   if (config.output === 'text') {
-    if (response.success) {
-      console.log(formatText(response.data));
+    if (normalized.success) {
+      const warnings = normalized.metadata?.warnings ?? [];
+      const rendered =
+        warnings.length > 0
+          ? {
+              ...(isObjectRecord(normalized.data) ? normalized.data : { result: normalized.data }),
+              warnings,
+            }
+          : normalized.data;
+      console.log(formatText(rendered));
       return;
     }
-    const code = response.error?.code ?? 'UNKNOWN';
-    const message = response.error?.message ?? 'Unknown error';
+    const code = normalized.error?.code ?? 'UNKNOWN';
+    const message = normalized.error?.message ?? 'Unknown error';
     console.error(`Error [${code}]: ${message}`);
-    const detailsText = formatErrorDetails(response.error?.details);
+    const detailsText = formatErrorDetails(normalized.error?.details);
     if (detailsText) {
       console.error(detailsText);
+    }
+    const warningLines = normalized.metadata?.warnings;
+    if (Array.isArray(warningLines) && warningLines.length > 0) {
+      console.error(formatText({ warnings: warningLines }));
     }
     return;
   }
 
   if (config.output === 'yaml') {
-    console.log(toYamlString(response));
+    console.log(toYamlString(normalized));
     return;
   }
 
-  console.log(JSON.stringify(response, null, 2).replace(/\n{3,}/g, '\n\n'));
+  console.log(JSON.stringify(normalized, null, 2).replace(/\n{3,}/g, '\n\n'));
 }
 
 /**

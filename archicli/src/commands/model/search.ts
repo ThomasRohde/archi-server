@@ -123,7 +123,7 @@ export function modelSearchCommand(): Command {
         const body: Record<string, unknown> = {
           limit,
         };
-        let warning: string | undefined;
+        const warnings: string[] = [];
         if (options.type) {
           if (!ARCHIMATE_TYPE_SET.has(options.type)) {
             const message = `Unknown type '${options.type}'. See help for valid ArchiMate types.`;
@@ -132,8 +132,7 @@ export function modelSearchCommand(): Command {
               cmd.error('', { exitCode: 1 });
               return;
             }
-            warning = message;
-            process.stderr.write(`warning: ${message}\n`);
+            warnings.push(message);
           }
           body['type'] = options.type;
         }
@@ -147,8 +146,7 @@ export function modelSearchCommand(): Command {
           body['namePattern'] = options.name;
         }
         if (options.propertyValue && !options.propertyKey) {
-          warning = '--property-value is ignored without --property-key';
-          process.stderr.write(`warning: ${warning}\n`);
+          warnings.push('--property-value is ignored without --property-key');
         }
         if (options.propertyKey) body['propertyKey'] = options.propertyKey;
         if (options.propertyValue && options.propertyKey) body['propertyValue'] = options.propertyValue;
@@ -171,7 +169,15 @@ export function modelSearchCommand(): Command {
           data = record;
         }
 
-        print(success(warning ? { ...data as object, warning } : data));
+        if (warnings.length > 0 && typeof data === 'object' && data !== null) {
+          print(success({ ...(data as Record<string, unknown>), warnings }));
+          return;
+        }
+        if (warnings.length > 0) {
+          print(success({ data, warnings }));
+          return;
+        }
+        print(success(data));
       } catch (err) {
         if (isCommanderError(err)) throw err;
         if (err instanceof ArgumentValidationError) {

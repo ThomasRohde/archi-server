@@ -1,4 +1,5 @@
 import { getConfig } from './config';
+import { addWarning } from './warnings';
 
 export class ApiError extends Error {
   constructor(
@@ -49,9 +50,10 @@ async function request<T>(
   const url = `${config.baseUrl}${path}`;
 
   if (config.verbose) {
-    const out = process.stdout.isTTY ? process.stdout : process.stderr;
-    out.write(`[${method}] ${url}\n`);
-    if (body) out.write(JSON.stringify(body, null, 2) + '\n');
+    addWarning(`[${method}] ${url}`);
+    if (body !== undefined) {
+      addWarning(`[${method}] body: ${JSON.stringify(body)}`);
+    }
   }
 
   for (let attempt = 0; attempt <= MAX_429_RETRIES; attempt++) {
@@ -71,8 +73,8 @@ async function request<T>(
     // Auto-retry on 429 with backoff
     if (res.status === 429 && attempt < MAX_429_RETRIES) {
       const retryMs = parseRetryAfter(res.headers.get('Retry-After'));
-      process.stderr.write(
-        `  [429] Rate limited on ${method} ${path}, retrying in ${Math.ceil(retryMs / 1000)}s (attempt ${attempt + 1}/${MAX_429_RETRIES})...\n`
+      addWarning(
+        `[429] Rate limited on ${method} ${path}, retrying in ${Math.ceil(retryMs / 1000)}s (attempt ${attempt + 1}/${MAX_429_RETRIES})`
       );
       await sleep(retryMs);
       continue;

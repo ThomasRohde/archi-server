@@ -19,6 +19,7 @@ export interface CLIResponse<T = unknown> {
   metadata?: {
     timestamp: string;
     durationMs?: number;
+    warnings?: string[];
   };
 }
 

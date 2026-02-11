@@ -2,7 +2,6 @@ import { Command } from 'commander';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { isCommanderError } from '../utils/commander';
-import { getConfig } from '../utils/config';
 import { print, success, failure } from '../utils/output';
 
 /**
@@ -65,24 +64,6 @@ function idsLookupCommand(): Command {
             } catch (err) {
               errors.push({ file, error: String(err) });
             }
-          }
-
-          if (getConfig().output === 'text') {
-            if (results.length === 0) {
-              const searched = files.join(', ');
-              console.error(`Not found: '${tempId}' in ${searched}`);
-              if (errors.length > 0) {
-                for (const e of errors) {
-                  console.error(`  Warning: could not read ${e.file}: ${e.error}`);
-                }
-              }
-              cmd.error('', { exitCode: 1 });
-              return;
-            }
-            for (const r of results) {
-              console.log(`${r.realId}`);
-            }
-            return;
           }
 
           if (results.length === 0) {

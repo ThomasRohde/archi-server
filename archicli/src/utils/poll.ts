@@ -1,4 +1,5 @@
 import { getConfig } from './config';
+import { addWarning } from './warnings';
 
 /**
  * Polling behavior controls for async operation completion.
@@ -69,8 +70,8 @@ export async function pollUntilDone(
       res = await fetch(url);
       if (res.status === 429 && r429 < MAX_POLL_429_RETRIES - 1) {
         const retryMs = parseRetryAfter(res.headers.get('Retry-After'));
-        process.stderr.write(
-          `  [429] Rate limited during poll, retrying in ${Math.ceil(retryMs / 1000)}s...\n`
+        addWarning(
+          `[429] Rate limited during poll, retrying in ${Math.ceil(retryMs / 1000)}s`
         );
         await sleep(retryMs);
         continue;

@@ -2,7 +2,6 @@ import { Command } from 'commander';
 import { post } from '../../utils/api';
 import { ArgumentValidationError, parseNonNegativeInt } from '../../utils/args';
 import { isCommanderError } from '../../utils/commander';
-import { getConfig } from '../../utils/config';
 import { print, success, failure } from '../../utils/output';
 
 /**
@@ -48,13 +47,6 @@ export function viewLayoutCommand(): Command {
           };
 
           const data = await post(`/views/${encodeURIComponent(id)}/layout`, body);
-          if (getConfig().output === 'text') {
-            const result = data as Record<string, unknown>;
-            const positioned = typeof result.nodesPositioned === 'number' ? result.nodesPositioned : 0;
-            const durationMs = typeof result.durationMs === 'number' ? result.durationMs : 0;
-            console.log(`Laid out ${positioned} nodes (${rankdir}, ${durationMs}ms)`);
-            return;
-          }
           print(success(data));
         } catch (err) {
           if (isCommanderError(err)) throw err;

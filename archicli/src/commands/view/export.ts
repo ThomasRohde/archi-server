@@ -4,7 +4,6 @@ import { resolve, join } from 'path';
 import { get, post } from '../../utils/api';
 import { ArgumentValidationError, parseBoundedFloat, parseNonNegativeInt } from '../../utils/args';
 import { isCommanderError } from '../../utils/commander';
-import { getConfig } from '../../utils/config';
 import { print, success, failure } from '../../utils/output';
 
 // Keep generated filenames filesystem-safe across supported platforms.
@@ -135,7 +134,13 @@ export function viewExportCommand(): Command {
             return;
           }
 
-          const results: Array<{ viewId: string; name: string; filePath: string; status: string }> = [];
+          const results: Array<{
+            viewId: string;
+            name: string;
+            filePath: string;
+            status: 'ok' | 'error';
+            error?: string;
+          }> = [];
           for (const view of views) {
             const viewName = typeof view.name === 'string' && view.name.length > 0
               ? sanitizeFilename(view.name)
@@ -148,19 +153,28 @@ export function viewExportCommand(): Command {
               const data = await exportSingleView(view.id, fmt, outputPath, scale, margin) as Record<string, unknown>;
               const savedPath = typeof data.filePath === 'string' ? data.filePath : outputPath;
               results.push({ viewId: view.id, name: view.name, filePath: savedPath, status: 'ok' });
-              process.stderr.write(`Exported: ${savedPath}\n`);
             } catch (err) {
-              results.push({ viewId: view.id, name: view.name, filePath: outputPath, status: `error: ${String(err)}` });
-              process.stderr.write(`Failed: ${view.name} — ${String(err)}\n`);
+              results.push({
+                viewId: view.id,
+                name: view.name,
+                filePath: outputPath,
+                status: 'error',
+                error: String(err),
+              });
             }
           }
 
           const exported = results.filter((r) => r.status === 'ok').length;
-          if (getConfig().output === 'text') {
-            console.log(`Exported ${exported}/${views.length} views to ${outDir}`);
-            return;
-          }
-          print(success({ exported, total: views.length, directory: outDir, results }));
+          const failed = results.length - exported;
+          print(
+            success({
+              exported,
+              total: views.length,
+              directory: outDir,
+              results,
+              ...(failed > 0 ? { warnings: [`${failed} view export(s) failed`] } : {}),
+            })
+          );
           return;
         }
 
@@ -194,20 +208,12 @@ export function viewExportCommand(): Command {
               : id;
             const ext = fmt.toLowerCase() === 'jpeg' ? 'jpg' : fmt.toLowerCase();
             outputPath = join(process.cwd(), `${viewName}.${ext}`);
-            process.stderr.write(`Exporting to: ${outputPath}\n`);
           } catch {
             // If view lookup fails, let the server decide (fallback to temp dir)
           }
         }
 
         const data = await exportSingleView(id, fmt, outputPath, scale, margin);
-        if (getConfig().output === 'text') {
-          const result = data as Record<string, unknown>;
-          if (typeof result.filePath === 'string') {
-            console.log(result.filePath);
-            return;
-          }
-        }
         print(success(data));
       } catch (err) {
         if (isCommanderError(err)) throw err;

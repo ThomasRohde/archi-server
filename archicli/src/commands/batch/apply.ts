@@ -11,7 +11,6 @@ import {
   summarizeIdFileCompleteness,
 } from '../../utils/bom';
 import { isCommanderError } from '../../utils/commander';
-import { getConfig } from '../../utils/config';
 import { print, success, failure } from '../../utils/output';
 import { pollUntilDone, type OperationErrorDetails } from '../../utils/poll';
 import { collectTempIdRefs, REFERENCE_ID_FIELDS, resolveTempIdsByName, substituteIds } from '../../utils/tempIds';
@@ -128,72 +127,6 @@ function buildChunkFailureMessage(results: Array<Record<string, unknown>>): stri
       return `Chunk ${chunkNo}/${chunkOf}: ${context}${message}${ref}${hintText}`;
     })
     .join('\n');
-}
-
-/**
- * Shrink noisy batch output into a text-friendly summary for terminal users.
- */
-function summarizeBatchOutputForText(
-  output: Record<string, unknown>,
-  results: Array<Record<string, unknown>>,
-  skippedOperations: SkippedOperation[]
-): Record<string, unknown> {
-  const complete = results.filter((r) => r.status === 'complete').length;
-  const failed = results.filter((r) => r.status === 'error').length;
-  const skippedChunks = results.filter((r) => r.status === 'skipped').length;
-  const inFlight = results.length - complete - failed - skippedChunks;
-  const idFiles = (output['idFiles'] ?? null) as
-    | {
-        loaded?: number;
-        missing?: unknown[];
-        malformed?: unknown[];
-      }
-    | null;
-
-  const summarizedResults = results.map((result) => {
-    const details = (result.errorDetails ?? null) as OperationErrorDetails | null;
-    const summary: Record<string, unknown> = {
-      chunk: result.chunk,
-      of: result.of,
-      operationId: result.operationId,
-      status: result.status,
-    };
-    if (typeof result.durationMs === 'number') summary['durationMs'] = result.durationMs;
-    if (typeof result.error === 'string') summary['error'] = result.error;
-    if (details && typeof details === 'object') {
-      if (details.path) summary['path'] = details.path;
-      if (details.hint) summary['hint'] = details.hint;
-    }
-    return summary;
-  });
-
-  const summary: Record<string, unknown> = {
-    totalChanges: output['totalChanges'],
-    chunks: output['chunks'],
-    chunkStatus: {
-      complete,
-      error: failed,
-      skipped: skippedChunks,
-      inFlight,
-    },
-    idFiles: {
-      loaded: idFiles?.loaded ?? 0,
-      missing: Array.isArray(idFiles?.missing) ? idFiles?.missing.length : 0,
-      malformed: Array.isArray(idFiles?.malformed) ? idFiles?.malformed.length : 0,
-    },
-    skippedOperations: skippedOperations.length,
-    results: summarizedResults,
-  };
-
-  if (skippedOperations.length > 0) {
-    summary['skippedOperationDetails'] = skippedOperations;
-  }
-
-  if (typeof output['warning'] === 'string') {
-    summary['warning'] = output['warning'];
-  }
-
-  return summary;
 }
 
 /**
@@ -332,23 +265,21 @@ export function batchApplyCommand(): Command {
             return;
           }
 
+          const warnings: string[] = [];
+
           // --fast mode: override to batch-oriented defaults for speed
           if (options.fast) {
             if (options.chunkSize === '1') {
               options.chunkSize = '20';
             }
             options.validateConnections = false;
-            process.stderr.write(
-              `Fast mode: chunk-size ${options.chunkSize}, no connection validation\n`
-            );
+            warnings.push(`Fast mode enabled: chunk-size ${options.chunkSize}, no connection validation`);
           }
 
           const chunkSizeInput = parsePositiveInt(options.chunkSize, '--chunk-size');
           const chunkSize = Math.min(1000, chunkSizeInput);
           if (chunkSizeInput > 1000) {
-            process.stderr.write(
-              `warning: --chunk-size capped at maximum of 1000 (requested ${chunkSizeInput})\n`
-            );
+            warnings.push(`--chunk-size capped at maximum of 1000 (requested ${chunkSizeInput})`);
           }
 
           const pollTimeoutMs = options.poll
@@ -391,6 +322,7 @@ export function batchApplyCommand(): Command {
                   chunk: index + 1,
                   operations: chunk.length,
                 })),
+                ...(warnings.length > 0 ? { warnings } : {}),
               })
             );
             return;
@@ -418,9 +350,7 @@ export function batchApplyCommand(): Command {
             clearRelationshipCache();
             clearElementCache();
             if (!options.poll) {
-              process.stderr.write(
-                'Warning: --validate-connections requires --poll to resolve tempIds. Disabling validation.\n'
-              );
+              warnings.push('--validate-connections requires --poll to resolve tempIds. Validation was disabled.');
               options.validateConnections = false;
             }
           }
@@ -430,13 +360,8 @@ export function batchApplyCommand(): Command {
             ? parseNonNegativeInt(options.throttle, '--throttle')
             : (chunkSize === 1 && !options.fast ? 50 : 0);
 
-          const progressStream = process.stdout.isTTY ? process.stdout : null;
-
           if (!options.poll) {
-            process.stderr.write(
-              'Warning: Running without --poll. Operation results will not be tracked.\n' +
-                '         Use --poll to wait for completion and save ID mappings.\n\n'
-            );
+            warnings.push('Running without --poll: operation results and tempId mappings are not tracked.');
           }
 
           const results: Array<Record<string, unknown>> = [];
@@ -507,11 +432,6 @@ export function batchApplyCommand(): Command {
                 );
                 if (autoResolution.attempted > 0) {
                   autoResolutionSummaries.push(autoResolution);
-                  if (autoResolution.resolved > 0) {
-                    process.stderr.write(
-                      `  [auto-resolve] Chunk ${i + 1}: resolved ${autoResolution.resolved}/${autoResolution.attempted} connection(s) missing visual IDs\n`
-                    );
-                  }
                 }
               }
 
@@ -530,10 +450,9 @@ export function batchApplyCommand(): Command {
                   // Log swap warnings to stderr
                   for (const detail of validation.details) {
                     if (detail.swapped && detail.relationship) {
-                      process.stderr.write(
-                        `  [validate] Chunk ${i + 1}: swapped connection direction for ` +
-                        `relationship "${detail.relationship.name}" ` +
-                        `(${detail.relationship.sourceId} → ${detail.relationship.targetId})\n`
+                      warnings.push(
+                        `Chunk ${i + 1}: swapped connection direction for relationship "${detail.relationship.name}" ` +
+                        `(${detail.relationship.sourceId} -> ${detail.relationship.targetId})`
                       );
                     }
                   }
@@ -551,8 +470,8 @@ export function batchApplyCommand(): Command {
                       );
                     }
 
-                    process.stderr.write(
-                      `  [validate] Chunk ${i + 1}: ${validation.failed} connection(s) failed validation:\n${errors}\n`
+                    warnings.push(
+                      `Chunk ${i + 1}: ${validation.failed} connection(s) failed validation and were skipped due to --continue-on-error.`
                     );
                   }
                 }
@@ -632,11 +551,7 @@ export function batchApplyCommand(): Command {
             if (options.poll) {
               const pollResult = await pollUntilDone(resp.operationId, {
                 timeoutMs: pollTimeoutMs,
-                onProgress: (status, attempt) => {
-                  progressStream?.write(`\r  Chunk ${i + 1}/${chunks.length}: ${status} (${attempt})  `);
-                },
               });
-              progressStream?.write('\n');
               chunkResult = { ...chunkResult, ...pollResult };
 
               if ((pollResult as { status?: string }).status === 'error') {
@@ -721,10 +636,9 @@ export function batchApplyCommand(): Command {
                     nodesep: 50,
                   }) as Record<string, unknown>;
                   layoutResults.push({ viewId, status: 'ok', nodesPositioned: layoutData.nodesPositioned });
-                  process.stderr.write(`Laid out view ${viewId}: ${layoutData.nodesPositioned} nodes\n`);
                 } catch (err) {
                   layoutResults.push({ viewId, status: 'error', error: String(err) });
-                  process.stderr.write(`Layout failed for ${viewId}: ${String(err)}\n`);
+                  warnings.push(`Layout failed for view ${viewId}: ${String(err)}`);
                 }
               }
             }
@@ -754,11 +668,17 @@ export function batchApplyCommand(): Command {
               skipped: totalSkipped,
             };
           }
+          if (autoResolutionSummaries.length > 0) {
+            output['autoResolution'] = {
+              attempted: autoResolutionSummaries.reduce((sum, item) => sum + item.attempted, 0),
+              resolved: autoResolutionSummaries.reduce((sum, item) => sum + item.resolved, 0),
+            };
+          }
           if (idsSavedPath) {
             output['idsSaved'] = { path: idsSavedPath, count: savedIdCount };
           }
           if (allChanges.length === 0) {
-            output['warning'] = 'Empty BOM -- no changes were applied';
+            warnings.push('Empty BOM -- no changes were applied');
             if (!options.allowEmpty) {
               print(
                 failure('EMPTY_BOM', 'Empty BOM -- no changes to apply. Use --allow-empty to permit this.')
@@ -767,24 +687,19 @@ export function batchApplyCommand(): Command {
               return;
             }
           }
+          if (warnings.length > 0) {
+            output['warnings'] = warnings;
+          }
 
           if (hadOperationErrors) {
-            const failureDetails =
-              getConfig().output === 'text'
-                ? summarizeBatchOutputForText(output, results, skippedOperations)
-                : output;
             print(
-              failure('BATCH_APPLY_PARTIAL_FAILURE', buildChunkFailureMessage(results), failureDetails)
+              failure('BATCH_APPLY_PARTIAL_FAILURE', buildChunkFailureMessage(results), output)
             );
             cmd.error('', { exitCode: 1 });
             return;
           }
 
-          const successData =
-            getConfig().output === 'text'
-              ? summarizeBatchOutputForText(output, results, skippedOperations)
-              : output;
-          print(success(successData));
+          print(success(output));
         } catch (err) {
           if (isCommanderError(err)) throw err;
           if (err instanceof ArgumentValidationError) {

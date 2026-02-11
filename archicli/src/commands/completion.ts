@@ -21,7 +21,7 @@ export interface CompletionVocabulary {
 }
 
 const DEFAULT_COMPLETION_VOCABULARY: CompletionVocabulary = {
-  topLevel: ['health', 'verify', 'model', 'batch', 'view', 'ops', 'folder', 'ids', 'completion'],
+  topLevel: ['health', 'verify', 'model', 'batch', 'view', 'ops', 'folder', 'ids', 'doctor', 'init', 'completion'],
   model: ['query', 'apply', 'search', 'element', 'save', 'stats'],
   batch: ['apply', 'split'],
   view: ['list', 'get', 'create', 'export', 'delete', 'layout'],

@@ -12,6 +12,8 @@ import { opsCommand } from './commands/ops/index';
 import { completionCommand } from './commands/completion';
 import { folderCommand } from './commands/folder/index';
 import { idsCommand } from './commands/ids';
+import { doctorCommand } from './commands/doctor';
+import { initCommand } from './commands/init';
 
 /**
  * Build the root Commander program with global options and all subcommands.
@@ -30,10 +32,11 @@ export function createProgram(): Command {
         '  4. Server listens on http://127.0.0.1:8765 by default\n\n' +
         'TYPICAL WORKFLOW:\n' +
         '  archicli health                               # 1. verify server is running\n' +
-        '  archicli model query                          # 2. inspect current model state\n' +
-        '  archicli model search --type application-component  # 3. find elements\n' +
-        '  archicli verify changes.json                  # 4. validate BOM before sending\n' +
-        '  archicli batch apply changes.json --poll      # 5. apply and wait for completion\n\n' +
+        '  archicli doctor                               # 2. preflight checks\n' +
+        '  archicli model query                          # 3. inspect current model state\n' +
+        '  archicli model search --type application-component  # 4. find elements\n' +
+        '  archicli verify changes.json                  # 5. validate BOM before sending\n' +
+        '  archicli batch apply changes.json --poll      # 6. apply and wait for completion\n\n' +
         'KEY CONCEPTS:\n' +
         'ASYNC MUTATIONS: /model/apply is async -- returns operationId immediately.\n' +
         '    Always use --poll or "ops status <id>" to confirm success before proceeding.\n' +
@@ -94,6 +97,8 @@ export function createProgram(): Command {
     .addCommand(opsCommand())
     .addCommand(folderCommand())
     .addCommand(idsCommand())
+    .addCommand(doctorCommand())
+    .addCommand(initCommand())
     .addCommand(completionCommand());
 
   return program;

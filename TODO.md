@@ -1,1 +1,1 @@
-[] The command `archicli health --output text` shows wrong uptime
+[x] The command `archicli health --output text` shows wrong uptime

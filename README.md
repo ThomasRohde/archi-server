@@ -89,6 +89,20 @@ archicli view delete id-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 archicli ops list                                # list recent operation IDs
 ```
 
+### First-run onboarding
+
+Use these commands when starting from an empty directory/model:
+
+```bash
+archicli init ./starter-bom
+cd starter-bom
+archicli doctor
+archicli verify 01-elements.json --semantic
+archicli batch apply 01-elements.json --poll
+archicli batch apply 02-view.json --poll --layout
+archicli view export --all --dir exports
+```
+
 ### Bill of Materials (BOM) files
 
 Changes are described in JSON BOM files. The `batch apply` command handles validation, chunking (default chunk-size 1 for atomic safety), polling, connection cross-validation, and tempId→realId persistence automatically. Use `--fast` for larger chunk sizes when speed matters.
@@ -143,22 +157,30 @@ For idempotent re-runs, use `--skip-existing` to skip duplicate create operation
 ### All commands
 
 ```
-archicli health                      Check server connectivity and model stats
-archicli verify <file>               Validate BOM JSON before sending
-archicli model query                 Model overview: counts + sample elements (optional relationship sample)
-archicli model search [options]      Search by type, name, or property (--strict-types available)
-archicli model element <id>          Full detail for one element
+archicli health                       Check server connectivity and model stats
+archicli doctor                       Run preflight diagnostics (server/model/view readiness)
+archicli init [dir]                   Bootstrap starter BOM templates in a target directory
+archicli verify <file>                Validate BOM JSON before sending
+archicli model query                  Model overview: counts + sample elements (optional relationship sample)
+archicli model apply <file>           Submit a single apply payload (optionally poll)
+archicli model search [options]       Search by type, name, or property (--strict-types available)
+archicli model element <id>           Full detail for one element
+archicli model save [--path <file>]   Save the current model to disk
+archicli model stats                  Get model statistics by type
 archicli batch apply <file>           Apply BOM atomically (chunk-size 1, polls, validates connections)
-archicli batch apply <file> --fast   Apply BOM in fast mode (chunk-size 20, no validation)
-archicli batch split <file>          Split large BOM into linked chunk files (--chunk-size, alias --size)
-archicli view list                   List all views
-archicli view get <id>               View detail with visual object IDs
+archicli batch apply <file> --fast    Apply BOM in fast mode (chunk-size 20, no validation)
+archicli batch split <file>           Split large BOM into linked chunk files (--chunk-size, alias --size)
+archicli view list                    List all views
+archicli view get <id>                View detail with visual object IDs
 archicli view create <name> [options] Create view synchronously (invalid --viewpoint values are rejected)
-archicli view delete <id>            Delete a view
-archicli view export <id>            Export view as PNG/JPEG (--file or --output-file)
-archicli ops list                    List recent async operations
-archicli ops status <opId> --poll    Poll async operation to completion
-archicli completion <shell>          Generate completion script (bash|zsh|fish|pwsh)
+archicli view export <id>             Export view as PNG/JPEG (--file or --output-file)
+archicli view layout <id>             Auto-layout a view
+archicli view delete <id>             Delete a view
+archicli ops list                     List recent async operations
+archicli ops status <opId> --poll     Poll async operation to completion
+archicli folder list                  List model folders
+archicli ids lookup <tempId>          Resolve tempId values from .ids.json files
+archicli completion <shell>           Generate completion script (bash|zsh|fish|pwsh)
 ```
 
 Use `archicli view create --help` for the full valid viewpoint list and examples.

@@ -53,10 +53,9 @@ export function batchSplitCommand(): Command {
         }
 
         const sizeRaw = options.chunkSize ?? options.size ?? '20';
+        const warnings: string[] = [];
         if (options.size !== undefined && options.chunkSize === undefined) {
-          process.stderr.write(
-            'warning: --size is deprecated and will be removed in a future release; use --chunk-size instead\n'
-          );
+          warnings.push('--size is deprecated and will be removed in a future release; use --chunk-size instead');
         }
         const size = parsePositiveInt(sizeRaw, '--chunk-size');
 
@@ -114,6 +113,7 @@ export function batchSplitCommand(): Command {
             outputDir,
             indexFile: indexPath,
             chunkFiles,
+            ...(warnings.length > 0 ? { warnings } : {}),
           })
         );
       } catch (err) {

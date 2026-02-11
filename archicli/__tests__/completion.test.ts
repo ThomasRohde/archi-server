@@ -8,7 +8,19 @@ describe('completion vocabulary', () => {
     const vocabulary = deriveCompletionVocabulary(program);
 
     expect(vocabulary.topLevel).toEqual(
-      expect.arrayContaining(['health', 'verify', 'model', 'batch', 'view', 'ops', 'folder', 'ids', 'completion'])
+      expect.arrayContaining([
+        'health',
+        'verify',
+        'model',
+        'batch',
+        'view',
+        'ops',
+        'folder',
+        'ids',
+        'doctor',
+        'init',
+        'completion',
+      ])
     );
     expect(vocabulary.model).toEqual(expect.arrayContaining(['query', 'apply', 'search', 'element', 'save', 'stats']));
     expect(vocabulary.view).toEqual(expect.arrayContaining(['list', 'get', 'create', 'export', 'delete', 'layout']));

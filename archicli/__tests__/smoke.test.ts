@@ -8,7 +8,9 @@
  * created by earlier tests.
  */
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
-import { existsSync, unlinkSync } from 'node:fs';
+import { existsSync, mkdtempSync, readdirSync, rmSync, unlinkSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import {
   cli,
   assertSuccess,
@@ -376,9 +378,34 @@ describe('Smoke tests', () => {
     }
   });
 
-  // ── 19. view layout ──────────────────────────────────────────────────────
+  // ── 19. view export --all ───────────────────────────────────────────────
 
-  test('19. archicli view layout — re-layouts view', async () => {
+  test('19. archicli view export --all — supports /views envelope response', async () => {
+    const exportDir = mkdtempSync(join(tmpdir(), 'archicli-export-all-'));
+    try {
+      const r = await cli<{
+        exported: number;
+        total: number;
+        directory: string;
+        results: Array<{ viewId: string; filePath: string; status: string }>;
+      }>('view', 'export', '--all', '--dir', exportDir);
+      const data = assertSuccess(r, 'view export --all');
+
+      expect(data.total).toBeGreaterThan(0);
+      expect(data.exported).toBeGreaterThan(0);
+      expect(Array.isArray(data.results)).toBe(true);
+      expect(data.results.length).toBe(data.total);
+
+      const exportedFiles = readdirSync(exportDir);
+      expect(exportedFiles.length).toBeGreaterThan(0);
+    } finally {
+      rmSync(exportDir, { recursive: true, force: true });
+    }
+  });
+
+  // ── 20. view layout ──────────────────────────────────────────────────────
+
+  test('20. archicli view layout — re-layouts view', async () => {
     expect(smokeViewId).toBeTruthy();
 
     const r = await cli<{
@@ -394,9 +421,9 @@ describe('Smoke tests', () => {
     }
   });
 
-  // ── 20. view delete ──────────────────────────────────────────────────────
+  // ── 21. view delete ──────────────────────────────────────────────────────
 
-  test('20. archicli view delete — deletes view', async () => {
+  test('21. archicli view delete — deletes view', async () => {
     expect(smokeViewId).toBeTruthy();
 
     const r = await cli('view', 'delete', smokeViewId);
@@ -409,23 +436,18 @@ describe('Smoke tests', () => {
     expect(found).toBeUndefined();
   });
 
-  // ── 21. model save ───────────────────────────────────────────────────────
+  // ── 22. model save ───────────────────────────────────────────────────────
 
-  test('21. archicli model save — saves model', async () => {
+  test('22. archicli model save — saves model without requiring UI-selected global model', async () => {
     const r = await cli<{
       modelName?: string;
       modelId?: string;
+      path?: string;
     }>('model', 'save');
 
-    // Model save may fail if the model isn't "selected" in Archi's UI.
-    // When running in a test context, treat both success and this known error as acceptable.
-    if (!r.success && r.error?.code === 'MODEL_SAVE_FAILED' &&
-        r.error.message?.includes('currently selected model')) {
-      // Known limitation — Archi requires the model to be selected in the UI
-      console.warn('  ⚠ Model save skipped: model not selected in Archi UI');
-      return;
-    }
     const data = assertSuccess(r, 'model save');
-    expect(data).toBeTruthy();
+    expect(data.modelName).toBeTruthy();
+    expect(data.modelId).toBeTruthy();
+    expect(data.path).toBeTruthy();
   });
 });
