@@ -1,0 +1,39 @@
+{
+  "name": "archi-mcp-server",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MCP server for the Archi Server API",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "archi-mcp-server": "dist/index.js",
+    "archi-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "openapi.yaml",
+    "README.md"
+  ],
+  "scripts": {
+    "codegen": "openapi-ts",
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "start": "node dist/index.js",
+    "test": "npm run build && node --test \"test/**/*.test.mjs\"",
+    "clean": "node -e \"const fs=require('fs');for(const p of ['dist']){if(fs.existsSync(p))fs.rmSync(p,{recursive:true,force:true});}\""
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@hey-api/client-fetch": "^0.13.1",
+    "@modelcontextprotocol/sdk": "^1.26.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@hey-api/openapi-ts": "^0.92.3",
+    "@types/node": "^22.0.0",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.3"
+  }
+}

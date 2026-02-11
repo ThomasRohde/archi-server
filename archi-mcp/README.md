@@ -1,0 +1,130 @@
+# archi-mcp
+
+TypeScript MCP server for the Archi Server API, generated from the local `openapi.yaml` using `@hey-api/openapi-ts`.
+
+## What this includes
+
+- Fully self-contained codebase in this folder (`openapi.yaml`, generated client, MCP server).
+- MCP tools covering health, model, operations, scripts, folders, and views endpoints.
+- `stdio` MCP transport for local agent integration.
+
+## Install
+
+```bash
+cd archi-mcp
+npm install
+npm run codegen
+npm run build
+```
+
+## Global install on your laptop
+
+From this repo:
+
+```bash
+cd archi-mcp
+npm install
+npm run build
+npm install -g .
+```
+
+This installs two global commands:
+
+- `archi-mcp-server`
+- `archi-mcp`
+
+For local development, you can also use:
+
+```bash
+cd archi-mcp
+npm link
+```
+
+## Run
+
+### stdio (default)
+
+```bash
+npm start
+```
+
+Global command:
+
+```bash
+archi-mcp-server
+```
+
+## Environment variables
+
+- `ARCHI_API_BASE_URL` (default: `http://127.0.0.1:8765`)
+- `ARCHI_API_TIMEOUT_MS` (default: `30000`)
+
+## Key tool groups
+
+Read-only tools:
+
+- `archi_get_health`, `archi_get_test`, `archi_get_model_diagnostics`
+- `archi_query_model`, `archi_plan_model_changes`, `archi_search_model`
+- `archi_get_model_stats`, `archi_get_element`, `archi_list_folders`
+- `archi_list_views`, `archi_get_view`, `archi_validate_view`
+- `archi_get_operation_status`, `archi_list_operations`
+
+Mutation tools:
+
+- `archi_save_model`, `archi_apply_model_changes`, `archi_run_script`
+- `archi_create_view`, `archi_delete_view`, `archi_export_view`
+- `archi_duplicate_view`, `archi_set_view_router`, `archi_layout_view`
+- `archi_shutdown_server`
+
+## Prompt Templates (Modeling Activities)
+
+The server also exposes reusable MCP prompts for common ArchiMate modeling workflows.
+These prompts are guidance templates only; model mutations still happen through explicit tool calls.
+
+- `archi_assess_current_state`: Baseline health, structure, diagnostics, and scoped findings before any changes.
+- `archi_design_capability_map`: Design or refine capability maps with strategy traceability and optional heatmap guidance.
+- `archi_model_business_application_alignment`: Build service-mediated alignment between business processes and applications.
+- `archi_model_application_integration`: Model application integration with simple, service-based, or full-detail patterns.
+- `archi_map_technology_deployment`: Map application components to artifacts, runtime platforms, nodes, and network context.
+- `archi_plan_gap_analysis_roadmap`: Model baseline-target transitions with plateaus, gaps, work packages, and deliverables.
+- `archi_run_model_quality_audit`: Run a read-only quality audit across naming, layering, relationships, and view hygiene.
+- `archi_curate_and_export_view`: Validate, layout, route, and export a view for communication.
+
+### Client flow
+
+Use standard prompt calls from MCP clients:
+
+1. `listPrompts`
+2. `getPrompt({ name, arguments })`
+
+Example (conceptual):
+
+```ts
+const { prompts } = await client.listPrompts();
+const { messages } = await client.getPrompt({
+  name: 'archi_assess_current_state',
+  arguments: {
+    scope: 'Customer Domain',
+    focus: 'application',
+    detailLevel: 'coherence',
+  },
+});
+```
+
+### Safety behavior
+
+Prompt templates enforce read-first and validation-first modeling flow:
+
+- inspect model state before proposing writes,
+- confirm intent before destructive actions,
+- preserve ArchiMate semantics and relationship direction,
+- avoid overloaded views and maintain naming discipline.
+
+## Regenerate client
+
+When API spec changes:
+
+```bash
+npm run codegen
+npm run build
+```

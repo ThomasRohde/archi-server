@@ -14,6 +14,7 @@
 - [Project Structure](#project-structure)
 - [Usage](#usage)
 - [CLI (archicli)](#cli-archicli)
+- [MCP Server (archi-mcp)](#mcp-server-archi-mcp)
 - [API Reference](#api-reference)
 - [Configuration](#configuration)
 - [Security](#security)
@@ -28,6 +29,7 @@
 ## Features
 
 - 🖥️ **CLI (archicli)** - TypeScript command-line tool for scripted and agent-driven workflows
+- 🧠 **MCP Server (archi-mcp)** - TypeScript Model Context Protocol server for AI agent integration
 - 🔄 **Model Automation** - Create, query, and modify elements programmatically
 - 🔌 **External Integration** - Connect with Python, Node.js, or any HTTP client
 - 📊 **View Generation** - Dynamically create and layout ArchiMate views
@@ -214,6 +216,84 @@ Representative `--output json --quiet` shapes:
 - `archicli batch apply <file>` -> `{ "operationIds": ["op_..."] }`
 - `archicli ops status <opId>` -> `{ "operationId": "op_...", "status": "complete" }`
 
+## MCP Server (archi-mcp)
+
+`archi-mcp` is a TypeScript MCP server in the `archi-mcp/` directory. It uses the local `openapi.yaml` with `@hey-api/openapi-ts` generated client code and exposes the Archi API as MCP tools for agent clients (including Codex).
+
+### Install globally
+
+```bash
+cd archi-mcp
+npm install
+npm run build
+npm install -g .
+```
+
+This installs:
+
+- `archi-mcp-server`
+- `archi-mcp`
+
+### Configure Codex
+
+Add this to `~/.codex/config.toml` (Windows: `C:\Users\<you>\.codex\config.toml`):
+
+```toml
+[mcp_servers.archi]
+command = "archi-mcp-server"
+```
+
+Then restart Codex.
+
+### Implemented MCP capabilities
+
+- **Transport**: `stdio` (default).
+- **Input validation**: Zod schemas for all tool inputs.
+- **Tool annotations**: Uses `readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint`.
+- **Structured responses**: Tools return both text content and structured content payloads.
+- **Response safety**: Large responses are truncated with guidance to narrow filters.
+- **Error handling**: Consistent API error envelopes with HTTP status/code context when available.
+
+### Implemented MCP tools
+
+Read-only tools:
+
+- `archi_get_health`
+- `archi_get_test`
+- `archi_get_model_diagnostics`
+- `archi_query_model`
+- `archi_plan_model_changes`
+- `archi_search_model`
+- `archi_get_element`
+- `archi_get_model_stats`
+- `archi_list_folders`
+- `archi_get_operation_status`
+- `archi_list_operations`
+- `archi_list_views`
+- `archi_get_view`
+- `archi_validate_view`
+
+Mutation/destructive tools:
+
+- `archi_save_model`
+- `archi_apply_model_changes`
+- `archi_run_script`
+- `archi_create_view`
+- `archi_delete_view`
+- `archi_export_view`
+- `archi_duplicate_view`
+- `archi_set_view_router`
+- `archi_layout_view`
+- `archi_shutdown_server`
+
+### Implemented MCP resources
+
+- `archi_server_defaults` (`archi://server/defaults`) - Serves runtime defaults (API base URL and timeout).
+
+### Implemented MCP prompts
+
+- No MCP prompts are currently registered (`registerPrompt` is not yet used in `archi-mcp`).
+
 ## Project Structure
 
 The server is organized as follows:
@@ -255,6 +335,13 @@ archi-server/
 │   │   └── utils/                 # api, config, output, poll helpers
 │   ├── package.json
 │   └── tsconfig.json
+├── archi-mcp/                     # TypeScript MCP server (stdio)
+│   ├── src/
+│   │   ├── index.ts               # MCP stdio bootstrap
+│   │   ├── server.ts              # MCP tool/resource registration
+│   │   └── client/                # Generated OpenAPI client
+│   ├── package.json
+│   └── README.md
 ├── openapi.yaml                   # API specification
 └── README.md
 ```
