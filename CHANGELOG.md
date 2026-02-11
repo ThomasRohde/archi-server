@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.1](https://github.com/ThomasRohde/archi-server/compare/v1.6.0...v1.6.1) (2026-02-11)
+
+
+### Maintenance
+
+* remove empty code change entries from changes log ([38e45ac](https://github.com/ThomasRohde/archi-server/commit/38e45ac086c5999fca9832a74f967c43c403a27a))
+
 ## [1.6.0](https://github.com/ThomasRohde/archi-server/compare/v1.5.0...v1.6.0) (2026-02-10)
 
 
