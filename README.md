@@ -487,43 +487,6 @@ Install skills from `.agent/skills/` (including `archimate-modeling`) with:
 npx skills add ThomasRohde/archi-server
 ```
 
-### Skills (shared)
-
-Skills in `.claude/skills/` are auto-discovered by both Claude Code and GitHub Copilot:
-
-| Skill | Description |
-|-------|-------------|
-| **archi-server-api** | Central API execution reference with CURL templates and workflows |
-| **archimate-modeling** | Element selection with API type mapping |
-| **archimate-relationships** | Relationship creation with direction conventions |
-| **archimate-patterns** | Executable pattern templates (microservices, CQRS, etc.) |
-| **archimate-quality** | Automated audit queries and fixes |
-
-### Commands / Prompts
-
-| Command | Claude Code | Copilot | Description |
-|---------|-------------|---------|-------------|
-| `/element` | `.claude/commands/element.md` | `.github/prompts/element.prompt.md` | Select and create an ArchiMate element |
-| `/pattern` | `.claude/commands/pattern.md` | `.github/prompts/pattern.prompt.md` | Instantiate an architecture pattern with view |
-| `/view` | `.claude/commands/view.md` | `.github/prompts/view.prompt.md` | Create a view from existing or new elements |
-| `/audit` | `.claude/commands/audit.md` | `.github/prompts/audit.prompt.md` | Model quality audit with optional fixes |
-
-### Agents
-
-| Agent | Claude Code | Copilot | Description |
-|-------|-------------|---------|-------------|
-| **archimate-modeler** | `.claude/agents/archimate-modeler.md` | `.github/agents/archimate-modeler.agent.md` | Full modeling agent: analyze descriptions → create elements → build views |
-
-### Quick Example
-
-With the server running, use any supported AI agent:
-
-```
-> /pattern microservices order processing with inventory and payment services
-```
-
-The agent will create all elements, relationships, a populated view with auto-layout, and save the model — all via CURL commands to the API.
-
 ## Development
 
 ### Architecture
