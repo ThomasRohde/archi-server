@@ -9,6 +9,7 @@ const RESULT_TEXT_LIMIT = 25000;
 const STRUCTURED_DATA_PREVIEW_LIMIT = 4000;
 const ERROR_DETAILS_LIMIT = 4000;
 const TRUNCATION_NOTICE = 'Use narrower filters or smaller limits for complete output.';
+const CASE_INSENSITIVE_PREFIX = /^\(\?i\)/i;
 
 const TruncatedStructuredDataSchema = z
   .object({
@@ -102,6 +103,12 @@ const SearchSchema = z
   .object({
     type: z.string().max(200).optional().describe('Filter by element or relationship type.'),
     namePattern: z.string().max(500).optional().describe('Regex pattern applied to names.'),
+    caseSensitive: z
+      .boolean()
+      .optional()
+      .describe(
+        'When false (default when namePattern is set), converts regex to a case-insensitive pattern compatible with the Archi API.',
+      ),
     propertyKey: z.string().max(200).optional().describe('Property key to match.'),
     propertyValue: z.string().max(500).optional().describe('Property value used with propertyKey.'),
     includeRelationships: z
@@ -176,9 +183,35 @@ const OpsStatusSchema = z
     opId: z
       .string()
       .min(1)
-      .describe('Operation ID returned by archi_apply_model_changes (operationId in response).'),
+      .optional()
+      .describe(
+        'Operation ID returned by archi_apply_model_changes. Alias of operationId for compatibility with existing clients.',
+      ),
+    operationId: z
+      .string()
+      .min(1)
+      .optional()
+      .describe(
+        'Operation ID returned by archi_apply_model_changes. Preferred field name because tool responses use operationId.',
+      ),
   })
-  .strict();
+  .strict()
+  .superRefine((value, ctx) => {
+    if (!value.opId && !value.operationId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Provide either opId or operationId.',
+      });
+      return;
+    }
+
+    if (value.opId && value.operationId && value.opId !== value.operationId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'opId and operationId must match when both are provided.',
+      });
+    }
+  });
 
 const OpsListSchema = z
   .object({
@@ -189,6 +222,126 @@ const OpsListSchema = z
       .describe('Optional operation status filter.'),
   })
   .strict();
+
+const WaitForOperationSchema = z
+  .object({
+    opId: z
+      .string()
+      .min(1)
+      .optional()
+      .describe(
+        'Operation ID returned by archi_apply_model_changes. Alias of operationId for compatibility with existing clients.',
+      ),
+    operationId: z
+      .string()
+      .min(1)
+      .optional()
+      .describe(
+        'Operation ID returned by archi_apply_model_changes. Preferred field name because tool responses use operationId.',
+      ),
+    timeoutMs: z
+      .number()
+      .int()
+      .min(1000)
+      .max(600000)
+      .optional()
+      .describe('Maximum time to wait for terminal status (default: 120000).'),
+    pollIntervalMs: z
+      .number()
+      .int()
+      .min(200)
+      .max(10000)
+      .optional()
+      .describe('Delay between status polls in milliseconds (default: 1000).'),
+  })
+  .strict()
+  .superRefine((value, ctx) => {
+    if (!value.opId && !value.operationId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Provide either opId or operationId.',
+      });
+      return;
+    }
+
+    if (value.opId && value.operationId && value.opId !== value.operationId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'opId and operationId must match when both are provided.',
+      });
+    }
+
+    if (value.timeoutMs !== undefined && value.pollIntervalMs !== undefined && value.pollIntervalMs > value.timeoutMs) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'pollIntervalMs must be less than or equal to timeoutMs.',
+      });
+    }
+  });
+
+const ViewTypeSchema = z.enum(['archimate-diagram-model', 'sketch-model', 'canvas-model']);
+
+const ListViewsSchema = z
+  .object({
+    nameContains: z
+      .string()
+      .max(500)
+      .optional()
+      .describe('Optional substring filter for view names.'),
+    exactName: z
+      .string()
+      .max(500)
+      .optional()
+      .describe('Optional exact view name match.'),
+    caseSensitive: z
+      .boolean()
+      .optional()
+      .describe('When false (default), name filters are case-insensitive.'),
+    type: ViewTypeSchema.optional().describe('Optional view type filter.'),
+    viewpoint: z
+      .string()
+      .max(200)
+      .optional()
+      .describe('Optional exact viewpoint filter (case-insensitive by default).'),
+    limit: z
+      .number()
+      .int()
+      .min(1)
+      .max(500)
+      .optional()
+      .describe('Maximum number of views to return after filtering.'),
+    offset: z
+      .number()
+      .int()
+      .min(0)
+      .max(5000)
+      .optional()
+      .describe('Number of filtered views to skip before returning results.'),
+    sortBy: z
+      .enum(['name', 'objectCount', 'connectionCount'])
+      .optional()
+      .describe('Sort key for filtered view list (default: name).'),
+    sortDirection: z
+      .enum(['asc', 'desc'])
+      .optional()
+      .describe('Sort direction for filtered view list (default: asc).'),
+  })
+  .strict()
+  .superRefine((value, ctx) => {
+    if (value.nameContains !== undefined && value.nameContains.trim().length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'nameContains cannot be empty when provided.',
+      });
+    }
+
+    if (value.exactName !== undefined && value.exactName.trim().length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'exactName cannot be empty when provided.',
+      });
+    }
+  });
 
 const ScriptSchema = z
   .object({
@@ -212,6 +365,66 @@ const CreateViewSchema = z
 const ViewIdSchema = z
   .object({
     viewId: z.string().min(1).describe('View identifier.'),
+  })
+  .strict();
+
+const ViewSummarySchema = z
+  .object({
+    viewId: z.string().min(1).describe('View identifier.'),
+    includeConnections: z
+      .boolean()
+      .optional()
+      .describe('Include connection summary rows. Defaults to true.'),
+  })
+  .strict();
+
+const RelationshipsBetweenElementsSchema = z
+  .object({
+    elementIds: z
+      .array(z.string().min(1))
+      .min(2)
+      .max(200)
+      .describe('Element IDs to analyze. Returns relationships where both endpoints are in this set.'),
+    relationshipTypes: z
+      .array(z.string().min(1).max(200))
+      .min(1)
+      .max(50)
+      .optional()
+      .describe('Optional relationship type allowlist (for example serving-relationship).'),
+    limit: z
+      .number()
+      .int()
+      .min(1)
+      .max(2000)
+      .optional()
+      .describe('Maximum relationship rows to return after filtering.'),
+  })
+  .strict();
+
+const PopulateViewSchema = z
+  .object({
+    viewId: z.string().min(1).describe('Target view ID.'),
+    elementIds: z.array(z.string().min(1)).min(1).max(200).describe('Element concept IDs to place on the view.'),
+    autoConnect: z
+      .boolean()
+      .optional()
+      .describe('When true (default), add missing relationship connections between provided elements.'),
+    relationshipTypes: z
+      .array(z.string().min(1).max(200))
+      .min(1)
+      .max(50)
+      .optional()
+      .describe('Optional relationship type allowlist used when autoConnect=true.'),
+    skipExistingVisuals: z
+      .boolean()
+      .optional()
+      .describe('When true (default), skip addToView for elements already visualized on the target view.'),
+    skipExistingConnections: z
+      .boolean()
+      .optional()
+      .describe(
+        'When true (default), skip addConnectionToView for relationships already visualized on the target view.',
+      ),
   })
   .strict();
 
@@ -377,6 +590,22 @@ const OperationListDataSchema = z
   })
   .passthrough();
 
+const WaitForOperationDataSchema = z
+  .object({
+    operationId: z.string(),
+    status: z.string().optional(),
+    terminal: z.boolean(),
+    timedOut: z.boolean(),
+    polls: z.number().int().nonnegative(),
+    elapsedMs: z.number().int().nonnegative(),
+    statusHistory: z.array(z.string()),
+    result: z.array(z.unknown()).optional(),
+    error: z.string().optional(),
+    errorDetails: LooseObjectSchema.optional(),
+    requestId: z.string().optional(),
+  })
+  .strict();
+
 const ViewListDataSchema = z
   .object({
     views: LooseObjectArraySchema.optional(),
@@ -395,6 +624,71 @@ const ViewDetailDataSchema = z
     requestId: z.string().optional(),
   })
   .passthrough();
+
+const ViewSummaryElementDataSchema = z
+  .object({
+    visualId: z.string(),
+    conceptId: z.string().optional(),
+    conceptType: z.string().optional(),
+    name: z.string().optional(),
+    parentVisualId: z.string().optional(),
+  })
+  .strict();
+
+const ViewSummaryConnectionDataSchema = z
+  .object({
+    visualId: z.string(),
+    conceptId: z.string().optional(),
+    conceptType: z.string().optional(),
+    sourceVisualId: z.string().optional(),
+    targetVisualId: z.string().optional(),
+    name: z.string().optional(),
+  })
+  .strict();
+
+const ViewSummaryDataSchema = z
+  .object({
+    id: z.string().optional(),
+    name: z.string().optional(),
+    type: z.string().optional(),
+    viewpoint: z.string().optional(),
+    connectionRouter: z.string().optional(),
+    elementCount: z.number().int(),
+    connectionCount: z.number().int(),
+    elements: z.array(ViewSummaryElementDataSchema),
+    connections: z.array(ViewSummaryConnectionDataSchema).optional(),
+    requestId: z.string().optional(),
+  })
+  .strict();
+
+const RelationshipsBetweenElementsDataSchema = z
+  .object({
+    elementIds: z.array(z.string()),
+    relationshipTypes: z.array(z.string()).optional(),
+    relationships: LooseObjectArraySchema,
+    total: z.number().int(),
+    limit: z.number().int(),
+    truncated: z.boolean(),
+  })
+  .strict();
+
+const PopulateViewDataSchema = z
+  .object({
+    operationId: z.string().nullable().optional(),
+    opId: z.string().nullable().optional(),
+    status: z.string().optional(),
+    viewId: z.string(),
+    requestedElementCount: z.number().int(),
+    elementOpsQueued: z.number().int(),
+    connectionOpsQueued: z.number().int(),
+    relationshipsConsidered: z.number().int(),
+    skippedElementIds: z.array(z.string()),
+    skippedRelationshipIds: z.array(z.string()),
+    changesQueued: z.number().int(),
+    message: z.string().optional(),
+    requestId: z.string().optional(),
+  })
+  .strict();
 
 const ValidateViewDataSchema = z
   .object({
@@ -554,21 +848,708 @@ function truncateErrorDetails(details: unknown): string {
   return `${rendered.slice(0, ERROR_DETAILS_LIMIT)}\n...[details truncated]`;
 }
 
+function getNonEmptyString(value: unknown): string | undefined {
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
+function asLooseObject(value: unknown): Record<string, unknown> | undefined {
+  if (!value || typeof value !== 'object') {
+    return undefined;
+  }
+
+  return value as Record<string, unknown>;
+}
+
+type OperationIdentifierInput = {
+  opId?: string;
+  operationId?: string;
+};
+
+function resolveOperationIdentifier(input: OperationIdentifierInput, operation: string): string {
+  const opId = getNonEmptyString(input.opId);
+  const operationId = getNonEmptyString(input.operationId);
+
+  if (!opId && !operationId) {
+    throw new ArchiApiError(`${operation} requires opId or operationId.`, undefined, 'INVALID_OPERATION_ID');
+  }
+
+  if (opId && operationId && opId !== operationId) {
+    throw new ArchiApiError(
+      `${operation} received conflicting identifiers. opId and operationId must match.`,
+      undefined,
+      'INVALID_OPERATION_ID',
+    );
+  }
+
+  return operationId ?? opId!;
+}
+
+function normalizeTextForCompare(value: unknown, caseSensitive: boolean): string | undefined {
+  const text = getNonEmptyString(value);
+  if (!text) {
+    return undefined;
+  }
+
+  return caseSensitive ? text : text.toLowerCase();
+}
+
+function toFiniteNumberOrZero(value: unknown): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : 0;
+}
+
+function uniqueStrings(values: string[]): string[] {
+  const seen = new Set<string>();
+  const unique: string[] = [];
+
+  for (const value of values) {
+    const normalized = value.trim();
+    if (normalized.length === 0 || seen.has(normalized)) {
+      continue;
+    }
+
+    seen.add(normalized);
+    unique.push(normalized);
+  }
+
+  return unique;
+}
+
+function filterAndPaginateViews(
+  listResponse: Awaited<ReturnType<ArchiApiClient['getViews']>>,
+  args: z.infer<typeof ListViewsSchema>,
+) {
+  const caseSensitive = args.caseSensitive ?? false;
+  const exactName = normalizeTextForCompare(args.exactName, caseSensitive);
+  const nameContains = normalizeTextForCompare(args.nameContains, caseSensitive);
+  const viewType = normalizeTextForCompare(args.type, caseSensitive);
+  const viewpoint = normalizeTextForCompare(args.viewpoint, caseSensitive);
+  const sortBy = args.sortBy ?? 'name';
+  const sortDirection = args.sortDirection ?? 'asc';
+  const directionMultiplier = sortDirection === 'desc' ? -1 : 1;
+  const views = Array.isArray(listResponse.views) ? [...listResponse.views] : [];
+
+  const filteredViews = views.filter((view) => {
+    const normalizedName = normalizeTextForCompare(view.name, caseSensitive) ?? '';
+    if (exactName && normalizedName !== exactName) {
+      return false;
+    }
+
+    if (nameContains && !normalizedName.includes(nameContains)) {
+      return false;
+    }
+
+    const normalizedType = normalizeTextForCompare(view.type, caseSensitive);
+    if (viewType && normalizedType !== viewType) {
+      return false;
+    }
+
+    const normalizedViewpoint = normalizeTextForCompare(view.viewpoint, caseSensitive);
+    if (viewpoint && normalizedViewpoint !== viewpoint) {
+      return false;
+    }
+
+    return true;
+  });
+
+  filteredViews.sort((left, right) => {
+    let compare = 0;
+    if (sortBy === 'name') {
+      compare = (left.name ?? '').localeCompare(right.name ?? '', undefined, { sensitivity: 'base' });
+    } else if (sortBy === 'objectCount') {
+      compare = toFiniteNumberOrZero(left.objectCount) - toFiniteNumberOrZero(right.objectCount);
+    } else {
+      compare = toFiniteNumberOrZero(left.connectionCount) - toFiniteNumberOrZero(right.connectionCount);
+    }
+
+    if (compare === 0) {
+      compare = (left.id ?? '').localeCompare(right.id ?? '', undefined, { sensitivity: 'base' });
+    }
+
+    return compare * directionMultiplier;
+  });
+
+  const offset = args.offset ?? 0;
+  const effectiveLimit = args.limit ?? filteredViews.length;
+  const pagedViews = filteredViews.slice(offset, offset + effectiveLimit);
+  const total = filteredViews.length;
+  const returned = pagedViews.length;
+
+  return {
+    ...listResponse,
+    views: pagedViews,
+    total,
+    mcp: {
+      filters: {
+        exactName: args.exactName,
+        nameContains: args.nameContains,
+        caseSensitive,
+        type: args.type,
+        viewpoint: args.viewpoint,
+      },
+      sort: {
+        by: sortBy,
+        direction: sortDirection,
+      },
+      pagination: {
+        offset,
+        limit: effectiveLimit,
+        returned,
+        hasMore: offset + returned < total,
+      },
+    },
+  };
+}
+
+function normalizeArchiTypeForCompare(value: string): string {
+  return value
+    .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+    .replace(/[_\s]+/g, '-')
+    .toLowerCase();
+}
+
+function isRelationshipTypeAllowed(
+  relationshipType: string | undefined,
+  allowedTypes: Set<string> | undefined,
+): boolean {
+  if (!allowedTypes || allowedTypes.size === 0) {
+    return true;
+  }
+
+  if (!relationshipType) {
+    return false;
+  }
+
+  return allowedTypes.has(normalizeArchiTypeForCompare(relationshipType));
+}
+
+function makeCaseInsensitivePattern(pattern: string): string {
+  let transformed = '';
+  let escaped = false;
+  let inCharacterClass = false;
+
+  for (const character of pattern) {
+    if (escaped) {
+      transformed += character;
+      escaped = false;
+      continue;
+    }
+
+    if (character === '\\') {
+      transformed += character;
+      escaped = true;
+      continue;
+    }
+
+    if (character === '[' && !inCharacterClass) {
+      inCharacterClass = true;
+      transformed += character;
+      continue;
+    }
+
+    if (character === ']' && inCharacterClass) {
+      inCharacterClass = false;
+      transformed += character;
+      continue;
+    }
+
+    if (!inCharacterClass && /[A-Za-z]/.test(character)) {
+      const lower = character.toLowerCase();
+      const upper = character.toUpperCase();
+      transformed += `[${lower}${upper}]`;
+      continue;
+    }
+
+    transformed += character;
+  }
+
+  return transformed;
+}
+
+function prepareSearchRequest(args: z.infer<typeof SearchSchema>): {
+  request: {
+    type?: string;
+    namePattern?: string;
+    propertyKey?: string;
+    propertyValue?: string;
+    includeRelationships?: boolean;
+    limit?: number;
+  };
+  metadata?: Record<string, unknown>;
+} {
+  const { caseSensitive, ...request } = args;
+  const rawPattern = request.namePattern;
+  if (!rawPattern) {
+    return { request };
+  }
+
+  const hasInlineInsensitivePrefix = CASE_INSENSITIVE_PREFIX.test(rawPattern);
+  const shouldUseCaseInsensitivePattern =
+    hasInlineInsensitivePrefix || caseSensitive === false || caseSensitive === undefined;
+  if (!shouldUseCaseInsensitivePattern) {
+    return { request };
+  }
+
+  const strippedPattern = rawPattern.replace(CASE_INSENSITIVE_PREFIX, '');
+  if (strippedPattern.trim().length === 0) {
+    throw new ArchiApiError(
+      'namePattern cannot be empty when using case-insensitive mode.',
+      undefined,
+      'INVALID_SEARCH_REQUEST',
+    );
+  }
+
+  const expandedPattern = makeCaseInsensitivePattern(strippedPattern);
+  return {
+    request: {
+      ...request,
+      namePattern: expandedPattern,
+    },
+    metadata: {
+      originalNamePattern: rawPattern,
+      effectiveNamePattern: expandedPattern,
+      caseSensitive: false,
+      regexMode: 'expanded-case-insensitive',
+    },
+  };
+}
+
+function normalizeApplyChanges(changes: Array<Record<string, unknown>>): {
+  changes: Array<Record<string, unknown>>;
+  aliasesResolved: number;
+} {
+  let aliasesResolved = 0;
+
+  const normalized = changes.map((change, index) => {
+    if (change.op !== 'setProperty') {
+      return change;
+    }
+
+    const id = getNonEmptyString(change.id);
+    const elementId = getNonEmptyString(change.elementId);
+    const relationshipId = getNonEmptyString(change.relationshipId);
+    const aliases = [elementId, relationshipId].filter((value): value is string => value !== undefined);
+
+    if (id && aliases.some((alias) => alias !== id)) {
+      throw new ArchiApiError(
+        `Invalid setProperty change at index ${index}: "id" conflicts with alias field values.`,
+        undefined,
+        'INVALID_APPLY_REQUEST',
+        {
+          index,
+          op: change.op,
+          id,
+          elementId,
+          relationshipId,
+        },
+      );
+    }
+
+    if (!id && aliases.length > 1 && aliases.some((alias) => alias !== aliases[0])) {
+      throw new ArchiApiError(
+        `Invalid setProperty change at index ${index}: alias fields disagree.`,
+        undefined,
+        'INVALID_APPLY_REQUEST',
+        {
+          index,
+          op: change.op,
+          elementId,
+          relationshipId,
+        },
+      );
+    }
+
+    const resolvedId = id ?? aliases[0];
+    if (!resolvedId) {
+      return change;
+    }
+
+    const hadAlias = elementId !== undefined || relationshipId !== undefined;
+    if (hadAlias) {
+      aliasesResolved += 1;
+    }
+
+    const normalizedChange: Record<string, unknown> = {
+      ...change,
+      id: resolvedId,
+    };
+    delete normalizedChange.elementId;
+    delete normalizedChange.relationshipId;
+    return normalizedChange;
+  });
+
+  return {
+    changes: normalized,
+    aliasesResolved,
+  };
+}
+
+type RelationshipBetweenElements = {
+  id: string;
+  name?: string;
+  type?: string;
+  sourceId: string;
+  targetId: string;
+  sourceName?: string;
+  targetName?: string;
+};
+
+async function collectRelationshipsBetweenElements(
+  api: ArchiApiClient,
+  elementIds: string[],
+  relationshipTypes?: string[],
+): Promise<{
+  relationships: RelationshipBetweenElements[];
+  elementNameById: Map<string, string>;
+}> {
+  const uniqueElementIds = uniqueStrings(elementIds);
+  const uniqueElementIdSet = new Set(uniqueElementIds);
+  const allowedTypes =
+    relationshipTypes && relationshipTypes.length > 0
+      ? new Set(relationshipTypes.map((value) => normalizeArchiTypeForCompare(value)))
+      : undefined;
+
+  const details = await Promise.all(uniqueElementIds.map((elementId) => api.getElementById(elementId)));
+  const elementNameById = new Map<string, string>();
+  const relationshipsById = new Map<string, RelationshipBetweenElements>();
+
+  for (const [index, detail] of details.entries()) {
+    const currentElementId = uniqueElementIds[index];
+    if (detail.name && detail.name.trim().length > 0) {
+      elementNameById.set(currentElementId, detail.name.trim());
+    }
+
+    const outgoing = Array.isArray(detail.relationships?.outgoing) ? detail.relationships.outgoing : [];
+    for (const relationship of outgoing) {
+      const relationshipId = getNonEmptyString(relationship.id);
+      const otherEndId = getNonEmptyString(relationship.otherEndId);
+      if (!relationshipId || !otherEndId || !uniqueElementIdSet.has(otherEndId)) {
+        continue;
+      }
+      if (!isRelationshipTypeAllowed(relationship.type, allowedTypes)) {
+        continue;
+      }
+
+      if (!relationshipsById.has(relationshipId)) {
+        relationshipsById.set(relationshipId, {
+          id: relationshipId,
+          name: getNonEmptyString(relationship.name),
+          type: getNonEmptyString(relationship.type),
+          sourceId: currentElementId,
+          targetId: otherEndId,
+        });
+      }
+    }
+
+    const incoming = Array.isArray(detail.relationships?.incoming) ? detail.relationships.incoming : [];
+    for (const relationship of incoming) {
+      const relationshipId = getNonEmptyString(relationship.id);
+      const otherEndId = getNonEmptyString(relationship.otherEndId);
+      if (!relationshipId || !otherEndId || !uniqueElementIdSet.has(otherEndId)) {
+        continue;
+      }
+      if (!isRelationshipTypeAllowed(relationship.type, allowedTypes)) {
+        continue;
+      }
+
+      if (!relationshipsById.has(relationshipId)) {
+        relationshipsById.set(relationshipId, {
+          id: relationshipId,
+          name: getNonEmptyString(relationship.name),
+          type: getNonEmptyString(relationship.type),
+          sourceId: otherEndId,
+          targetId: currentElementId,
+        });
+      }
+    }
+  }
+
+  const relationships = Array.from(relationshipsById.values())
+    .map((relationship) => ({
+      ...relationship,
+      sourceName: elementNameById.get(relationship.sourceId),
+      targetName: elementNameById.get(relationship.targetId),
+    }))
+    .sort((left, right) => {
+      if (left.sourceId !== right.sourceId) {
+        return left.sourceId.localeCompare(right.sourceId);
+      }
+      if (left.targetId !== right.targetId) {
+        return left.targetId.localeCompare(right.targetId);
+      }
+      return left.id.localeCompare(right.id);
+    });
+
+  return {
+    relationships,
+    elementNameById,
+  };
+}
+
+function buildViewSummary(view: Awaited<ReturnType<ArchiApiClient['getViewById']>>, includeConnections: boolean) {
+  const elements = Array.isArray(view.elements) ? view.elements : [];
+  const connections = Array.isArray(view.connections) ? view.connections : [];
+
+  const summarizedElements = elements
+    .map((element) => {
+      const visualId = getNonEmptyString(element.id);
+      if (!visualId) {
+        return undefined;
+      }
+
+      return {
+        visualId,
+        conceptId: getNonEmptyString(element.conceptId),
+        conceptType: getNonEmptyString(element.conceptType),
+        name: getNonEmptyString(element.name),
+        parentVisualId: getNonEmptyString(element.parentId),
+      };
+    })
+    .filter((element): element is NonNullable<typeof element> => element !== undefined);
+
+  const summarizedConnections = connections
+    .map((connection) => {
+      const visualId = getNonEmptyString(connection.id);
+      if (!visualId) {
+        return undefined;
+      }
+
+      return {
+        visualId,
+        conceptId: getNonEmptyString(connection.conceptId),
+        conceptType: getNonEmptyString(connection.conceptType),
+        sourceVisualId: getNonEmptyString(connection.sourceId),
+        targetVisualId: getNonEmptyString(connection.targetId),
+        name: getNonEmptyString(connection.name),
+      };
+    })
+    .filter((connection): connection is NonNullable<typeof connection> => connection !== undefined);
+
+  return {
+    id: getNonEmptyString(view.id),
+    name: getNonEmptyString(view.name),
+    type: getNonEmptyString(view.type),
+    viewpoint: getNonEmptyString(view.viewpoint),
+    connectionRouter: getNonEmptyString(view.connectionRouter),
+    elementCount: summarizedElements.length,
+    connectionCount: summarizedConnections.length,
+    elements: summarizedElements,
+    ...(includeConnections ? { connections: summarizedConnections } : {}),
+    requestId: getNonEmptyString((view as { requestId?: unknown }).requestId),
+  };
+}
+
+async function populateViewWithRelationships(
+  api: ArchiApiClient,
+  args: z.infer<typeof PopulateViewSchema>,
+): Promise<z.infer<typeof PopulateViewDataSchema>> {
+  const uniqueElementIds = uniqueStrings(args.elementIds);
+  const autoConnect = args.autoConnect ?? true;
+  const skipExistingVisuals = args.skipExistingVisuals ?? true;
+  const skipExistingConnections = args.skipExistingConnections ?? true;
+
+  const view = await api.getViewById(args.viewId);
+  const existingVisualizedElementIds = new Set<string>();
+  const existingVisualizedRelationshipIds = new Set<string>();
+
+  for (const element of view.elements ?? []) {
+    const conceptId = getNonEmptyString(element.conceptId);
+    if (conceptId) {
+      existingVisualizedElementIds.add(conceptId);
+    }
+  }
+
+  for (const connection of view.connections ?? []) {
+    const conceptId = getNonEmptyString(connection.conceptId);
+    if (conceptId) {
+      existingVisualizedRelationshipIds.add(conceptId);
+    }
+  }
+
+  const skippedElementIds: string[] = [];
+  const elementIdsToAdd: string[] = [];
+  for (const elementId of uniqueElementIds) {
+    if (skipExistingVisuals && existingVisualizedElementIds.has(elementId)) {
+      skippedElementIds.push(elementId);
+      continue;
+    }
+
+    elementIdsToAdd.push(elementId);
+  }
+
+  const changes: Array<Record<string, unknown>> = elementIdsToAdd.map((elementId) => ({
+    op: 'addToView',
+    viewId: args.viewId,
+    elementId,
+  }));
+
+  const skippedRelationshipIds: string[] = [];
+  let relationshipsConsidered = 0;
+  let connectionOpsQueued = 0;
+
+  if (autoConnect && uniqueElementIds.length >= 2) {
+    const { relationships } = await collectRelationshipsBetweenElements(api, uniqueElementIds, args.relationshipTypes);
+    relationshipsConsidered = relationships.length;
+
+    for (const relationship of relationships) {
+      if (skipExistingConnections && existingVisualizedRelationshipIds.has(relationship.id)) {
+        skippedRelationshipIds.push(relationship.id);
+        continue;
+      }
+
+      changes.push({
+        op: 'addConnectionToView',
+        viewId: args.viewId,
+        relationshipId: relationship.id,
+        autoResolveVisuals: true,
+      });
+      connectionOpsQueued += 1;
+    }
+  }
+
+  if (changes.length === 0) {
+    return {
+      operationId: null,
+      opId: null,
+      status: 'no-op',
+      viewId: args.viewId,
+      requestedElementCount: uniqueElementIds.length,
+      elementOpsQueued: 0,
+      connectionOpsQueued: 0,
+      relationshipsConsidered,
+      skippedElementIds,
+      skippedRelationshipIds,
+      changesQueued: 0,
+      message: 'No changes queued. Requested elements/connections are already visualized on the target view.',
+    };
+  }
+
+  const applyResponse = await api.postModelApply({ changes });
+  const applyResponseRecord = applyResponse as Record<string, unknown>;
+  return {
+    operationId: getNonEmptyString(applyResponse.operationId) ?? undefined,
+    opId: getNonEmptyString(applyResponseRecord.opId) ?? undefined,
+    status: getNonEmptyString(applyResponse.status),
+    viewId: args.viewId,
+    requestedElementCount: uniqueElementIds.length,
+    elementOpsQueued: elementIdsToAdd.length,
+    connectionOpsQueued,
+    relationshipsConsidered,
+    skippedElementIds,
+    skippedRelationshipIds,
+    changesQueued: changes.length,
+    message: getNonEmptyString(applyResponse.message),
+    requestId: getNonEmptyString(applyResponseRecord.requestId),
+  };
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+async function waitForOperationCompletion(
+  api: ArchiApiClient,
+  args: z.infer<typeof WaitForOperationSchema>,
+): Promise<z.infer<typeof WaitForOperationDataSchema>> {
+  const operationId = resolveOperationIdentifier(args, 'archi_wait_for_operation');
+  const timeoutMs = args.timeoutMs ?? 120000;
+  const pollIntervalMs = args.pollIntervalMs ?? 1000;
+  const statusHistory: string[] = [];
+  const startedAt = Date.now();
+  let polls = 0;
+
+  while (true) {
+    const latest = await api.getOpsStatus(operationId);
+    polls += 1;
+
+    const status = getNonEmptyString(latest.status) ?? 'unknown';
+    statusHistory.push(status);
+
+    const latestRecord = latest as Record<string, unknown>;
+    const elapsedMs = Date.now() - startedAt;
+    const resolvedOperationId = getNonEmptyString(latestRecord.operationId) ?? operationId;
+    const errorDetails = asLooseObject(latest.errorDetails);
+
+    if (status === 'complete' || status === 'error') {
+      return {
+        operationId: resolvedOperationId,
+        status,
+        terminal: true,
+        timedOut: false,
+        polls,
+        elapsedMs,
+        statusHistory,
+        result: Array.isArray(latest.result) ? latest.result : undefined,
+        error: getNonEmptyString(latest.error),
+        errorDetails,
+        requestId: getNonEmptyString(latestRecord.requestId),
+      };
+    }
+
+    if (elapsedMs >= timeoutMs) {
+      return {
+        operationId: resolvedOperationId,
+        status,
+        terminal: false,
+        timedOut: true,
+        polls,
+        elapsedMs,
+        statusHistory,
+        result: Array.isArray(latest.result) ? latest.result : undefined,
+        error: getNonEmptyString(latest.error),
+        errorDetails,
+        requestId: getNonEmptyString(latestRecord.requestId),
+      };
+    }
+
+    const remainingMs = timeoutMs - elapsedMs;
+    await sleep(Math.min(pollIntervalMs, remainingMs));
+  }
+}
+
 function withToolSpecificErrorHint(operation: string, error: ArchiApiError): ArchiApiError {
-  if (operation !== 'archi_get_element') {
-    return error;
+  if (operation === 'archi_get_element' && error.status === 404 && error.code === 'NotFound') {
+    return new ArchiApiError(
+      `${error.message}\nHint: Use an exact model element/relationship ID. If this came from archi_get_view, pass elements[].conceptId or connections[].conceptId instead of visual id values.`,
+      error.status,
+      error.code,
+      error.details,
+    );
   }
 
-  if (error.status !== 404 || error.code !== 'NotFound') {
-    return error;
+  if (
+    operation === 'archi_run_script' &&
+    /currently selected model/i.test(error.message) &&
+    error.status !== undefined
+  ) {
+    return new ArchiApiError(
+      `${error.message}\nHint: MCP script execution has no UI selection context. Prefer structured tools (archi_get_element, archi_get_view, archi_apply_model_changes, archi_populate_view).`,
+      error.status,
+      error.code,
+      error.details,
+    );
   }
 
-  return new ArchiApiError(
-    `${error.message}\nHint: Use an exact model element/relationship ID. If this came from archi_get_view, pass elements[].conceptId or connections[].conceptId instead of visual id values.`,
-    error.status,
-    error.code,
-    error.details,
-  );
+  if (
+    (operation === 'archi_get_relationships_between_elements' || operation === 'archi_populate_view') &&
+    error.status === 404 &&
+    error.code === 'NotFound'
+  ) {
+    return new ArchiApiError(
+      `${error.message}\nHint: These tools require model concept IDs. If IDs came from archi_get_view, use elements[].conceptId or connections[].conceptId instead of visual id values.`,
+      error.status,
+      error.code,
+      error.details,
+    );
+  }
+
+  return error;
 }
 
 function successResult<TData>(operation: string, data: TData): CallToolResult {
@@ -704,6 +1685,43 @@ function registerResources(server: McpServer, config: AppConfig): void {
       };
     },
   );
+
+  server.registerResource(
+    'archi_agent_quickstart',
+    'archi://agent/quickstart',
+    {
+      title: 'Archi MCP Agent Quickstart',
+      description: 'Recommended read-first flow and ID-handling tips for reliable agent execution.',
+      mimeType: 'text/markdown',
+    },
+    async () => {
+      const quickstart = [
+        '# Archi MCP Agent Quickstart',
+        '',
+        '1. Verify connectivity with `archi_get_health`.',
+        '2. Inspect model shape with `archi_query_model` and `archi_get_model_stats`.',
+        '3. Resolve candidate concepts using `archi_search_model`.',
+        '4. Resolve target views with `archi_list_views` filters (`exactName`/`nameContains`).',
+        '5. Use `archi_get_view_summary` when you need concept IDs from visual objects.',
+        '6. Run plan/mutation tools only after ambiguity is resolved.',
+        '7. For async writes, call `archi_wait_for_operation` (or poll `archi_get_operation_status`).',
+        '',
+        'ID safety:',
+        '- `archi_get_view` returns visual IDs and concept IDs.',
+        '- Mutation and element relationship tools require concept IDs.',
+      ].join('\n');
+
+      return {
+        contents: [
+          {
+            uri: 'archi://agent/quickstart',
+            mimeType: 'text/markdown',
+            text: quickstart,
+          },
+        ],
+      };
+    },
+  );
 }
 
 export function createArchiMcpServer(config: AppConfig): McpServer {
@@ -720,7 +1738,7 @@ export function createArchiMcpServer(config: AppConfig): McpServer {
         tools: {},
       },
       instructions:
-        'Use these tools to inspect and mutate an Archi model through the local Archi Server API. Prefer read tools before write tools, and confirm intent before destructive operations. Mandatory clarification protocol: treat ambiguity or missing inputs as blocking uncertainty, stop and ask the user (client question tool such as AskUserQuestionTool/askQuestions, or chat fallback), and do not run `archi_plan_model_changes` or mutation tools until the user answers or explicitly says "make reasonable assumptions."',
+        'Use these tools to inspect and mutate an Archi model through the local Archi Server API. Prefer read tools before write tools, and confirm intent before destructive operations. Use `archi_list_views` filters to resolve view IDs by name and `archi_wait_for_operation` for async mutation completion. Mandatory clarification protocol: treat ambiguity or missing inputs as blocking uncertainty, stop and ask the user (client question tool such as AskUserQuestionTool/askQuestions, or chat fallback), and do not run `archi_plan_model_changes` or mutation tools until the user answers or explicitly says "make reasonable assumptions."',
     },
   );
 
@@ -797,12 +1815,24 @@ export function createArchiMcpServer(config: AppConfig): McpServer {
     'archi_search_model',
     {
       title: 'Search Model',
-      description: 'Searches elements/relationships using type, name, and property filters.',
+      description:
+        'Searches elements/relationships using type, name, and property filters. Case-insensitive name search is enabled by default when namePattern is provided.',
       inputSchema: SearchSchema,
       outputDataSchema: SearchDataSchema,
       annotations: ReadOnlyAnnotations,
     },
-    async (args) => api.postModelSearch(args),
+    async (args) => {
+      const { request, metadata } = prepareSearchRequest(args);
+      const result = await api.postModelSearch(request);
+      if (!metadata) {
+        return result;
+      }
+
+      return {
+        ...result,
+        mcp: metadata,
+      };
+    },
   );
 
   registerTool(
@@ -854,7 +1884,24 @@ export function createArchiMcpServer(config: AppConfig): McpServer {
       outputDataSchema: OperationStatusDataSchema,
       annotations: ReadOnlyAnnotations,
     },
-    async ({ opId }) => api.getOpsStatus(opId),
+    async (args) => {
+      const operationId = resolveOperationIdentifier(args, 'archi_get_operation_status');
+      return api.getOpsStatus(operationId);
+    },
+  );
+
+  registerTool(
+    server,
+    'archi_wait_for_operation',
+    {
+      title: 'Wait For Operation Completion',
+      description:
+        'Polls operation status until complete/error or timeout, returning final status plus polling metadata.',
+      inputSchema: WaitForOperationSchema,
+      outputDataSchema: WaitForOperationDataSchema,
+      annotations: ReadOnlyAnnotations,
+    },
+    async (args) => waitForOperationCompletion(api, args),
   );
 
   registerTool(
@@ -875,12 +1922,16 @@ export function createArchiMcpServer(config: AppConfig): McpServer {
     'archi_list_views',
     {
       title: 'List Views',
-      description: 'Lists views and basic metadata.',
-      inputSchema: EmptySchema,
+      description:
+        'Lists views with optional name/type/viewpoint filters, sorting, and pagination to reduce overfetch.',
+      inputSchema: ListViewsSchema,
       outputDataSchema: ViewListDataSchema,
       annotations: ReadOnlyAnnotations,
     },
-    async () => api.getViews(),
+    async (args) => {
+      const views = await api.getViews();
+      return filterAndPaginateViews(views, args);
+    },
   );
 
   registerTool(
@@ -894,6 +1945,51 @@ export function createArchiMcpServer(config: AppConfig): McpServer {
       annotations: ReadOnlyAnnotations,
     },
     async ({ viewId }) => api.getViewById(viewId),
+  );
+
+  registerTool(
+    server,
+    'archi_get_view_summary',
+    {
+      title: 'Get View Summary',
+      description:
+        'Returns compact view details with visual-to-concept mappings (no coordinates/styles) for faster agent reasoning.',
+      inputSchema: ViewSummarySchema,
+      outputDataSchema: ViewSummaryDataSchema,
+      annotations: ReadOnlyAnnotations,
+    },
+    async ({ viewId, includeConnections }) => {
+      const view = await api.getViewById(viewId);
+      return buildViewSummary(view, includeConnections ?? true);
+    },
+  );
+
+  registerTool(
+    server,
+    'archi_get_relationships_between_elements',
+    {
+      title: 'Get Relationships Between Elements',
+      description:
+        'Returns relationships where both source and target are in a supplied element ID set.',
+      inputSchema: RelationshipsBetweenElementsSchema,
+      outputDataSchema: RelationshipsBetweenElementsDataSchema,
+      annotations: ReadOnlyAnnotations,
+    },
+    async ({ elementIds, relationshipTypes, limit }) => {
+      const uniqueElementIds = uniqueStrings(elementIds);
+      const { relationships } = await collectRelationshipsBetweenElements(api, uniqueElementIds, relationshipTypes);
+      const effectiveLimit = limit ?? relationships.length;
+      const limitedRelationships = relationships.slice(0, effectiveLimit);
+
+      return {
+        elementIds: uniqueElementIds,
+        relationshipTypes,
+        relationships: limitedRelationships,
+        total: relationships.length,
+        limit: effectiveLimit,
+        truncated: limitedRelationships.length < relationships.length,
+      };
+    },
   );
 
   registerTool(
@@ -933,7 +2029,36 @@ export function createArchiMcpServer(config: AppConfig): McpServer {
       outputDataSchema: ApplyDataSchema,
       annotations: DestructiveAnnotations,
     },
-    async ({ changes }) => api.postModelApply({ changes }),
+    async ({ changes }) => {
+      const { changes: normalizedChanges, aliasesResolved } = normalizeApplyChanges(changes);
+      const result = await api.postModelApply({ changes: normalizedChanges });
+
+      if (aliasesResolved === 0) {
+        return result;
+      }
+
+      return {
+        ...result,
+        mcp: {
+          aliasesResolved,
+          note: 'Normalized setProperty alias fields (elementId/relationshipId) to id.',
+        },
+      };
+    },
+  );
+
+  registerTool(
+    server,
+    'archi_populate_view',
+    {
+      title: 'Populate View',
+      description:
+        'Adds elements to a view and optionally auto-connects existing relationships using automatic visual resolution.',
+      inputSchema: PopulateViewSchema,
+      outputDataSchema: PopulateViewDataSchema,
+      annotations: MutationAnnotations,
+    },
+    async (args) => populateViewWithRelationships(api, args),
   );
 
   registerTool(
@@ -942,7 +2067,7 @@ export function createArchiMcpServer(config: AppConfig): McpServer {
     {
       title: 'Run JArchi Script',
       description:
-        'Executes JavaScript inside Archi. This can mutate model state and block the UI thread if misused.',
+        'Executes JavaScript inside Archi. MCP execution has no UI selection context, so selection-dependent APIs can fail; prefer structured model/view tools for routine tasks.',
       inputSchema: ScriptSchema,
       outputDataSchema: ScriptRunDataSchema,
       annotations: ScriptAnnotations,

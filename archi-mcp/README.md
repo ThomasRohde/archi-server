@@ -66,16 +66,24 @@ Read-only tools:
 - `archi_get_health`, `archi_get_test`, `archi_get_model_diagnostics`
 - `archi_query_model`, `archi_plan_model_changes`, `archi_search_model`
 - `archi_get_model_stats`, `archi_get_element`, `archi_list_folders`
-- `archi_list_views`, `archi_get_view`, `archi_validate_view`
-- `archi_get_operation_status`, `archi_list_operations`
+- `archi_list_views` (supports filtering/sorting/pagination), `archi_get_view`, `archi_get_view_summary`, `archi_validate_view`
+- `archi_get_relationships_between_elements`
+- `archi_get_operation_status`, `archi_wait_for_operation`, `archi_list_operations`
 
 Mutation tools:
 
-- `archi_save_model`, `archi_apply_model_changes`, `archi_run_script`
+- `archi_save_model`, `archi_apply_model_changes`, `archi_populate_view`, `archi_run_script`
 - `archi_create_view`, `archi_delete_view`, `archi_export_view`
 - `archi_duplicate_view`, `archi_set_view_router`, `archi_layout_view`
 - `archi_shutdown_server`
 
+## Agent UX additions
+
+- `archi_wait_for_operation` removes client-side polling loops by waiting until an async operation reaches `complete`/`error` or timeout.
+- `archi_get_operation_status` accepts both `operationId` and `opId` for compatibility.
+- `archi_list_views` supports name/type/viewpoint filtering plus pagination metadata to reduce context bloat.
+- MCP resource `archi://agent/quickstart` provides a recommended read-first workflow and ID safety tips for agents.
+ 
 ## Prompt Templates (Modeling Activities)
 
 The server also exposes reusable MCP prompts for common ArchiMate modeling workflows.

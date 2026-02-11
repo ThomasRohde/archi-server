@@ -122,16 +122,406 @@ test('archi_get_element rejects likely malformed Archi IDs before API call', asy
   });
 });
 
+test('archi_search_model normalizes case-insensitive regex for backend compatibility', async () => {
+  let capturedBody;
+  const { server, baseUrl } = await startMockServer((req, res) => {
+    if (req.method === 'POST' && req.url === '/model/search') {
+      let body = '';
+      req.on('data', (chunk) => {
+        body += chunk;
+      });
+      req.on('end', () => {
+        capturedBody = JSON.parse(body || '{}');
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(
+          JSON.stringify({
+            results: [],
+            total: 0,
+            criteria: capturedBody,
+            requestId: 'search-1',
+          }),
+        );
+      });
+      return;
+    }
+
+    res.writeHead(404, { 'content-type': 'application/json' });
+    res.end(JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Not found' } }));
+  });
+
+  try {
+    await withMcpClient(baseUrl, async (client) => {
+      const result = await client.callTool({
+        name: 'archi_search_model',
+        arguments: {
+          namePattern: '(?i)customer|deposit',
+          limit: 50,
+        },
+      });
+
+      assert.equal(result.isError, undefined);
+      assert.ok(capturedBody);
+      assert.doesNotMatch(capturedBody.namePattern, /\(\?i\)/);
+      assert.match(capturedBody.namePattern, /\[cC\]/);
+      assert.equal(result.structuredContent.data.mcp.caseSensitive, false);
+      assert.equal(result.structuredContent.data.requestId, 'search-1');
+    });
+  } finally {
+    await closeServer(server);
+  }
+});
+
+test('archi_apply_model_changes accepts setProperty alias fields and normalizes payload', async () => {
+  let capturedBody;
+  const { server, baseUrl } = await startMockServer((req, res) => {
+    if (req.method === 'POST' && req.url === '/model/apply') {
+      let body = '';
+      req.on('data', (chunk) => {
+        body += chunk;
+      });
+      req.on('end', () => {
+        capturedBody = JSON.parse(body || '{}');
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(
+          JSON.stringify({
+            operationId: 'op-alias-1',
+            status: 'queued',
+            requestId: 'apply-alias-1',
+          }),
+        );
+      });
+      return;
+    }
+
+    res.writeHead(404, { 'content-type': 'application/json' });
+    res.end(JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Not found' } }));
+  });
+
+  try {
+    await withMcpClient(baseUrl, async (client) => {
+      const result = await client.callTool({
+        name: 'archi_apply_model_changes',
+        arguments: {
+          changes: [
+            {
+              op: 'setProperty',
+              elementId: 'id-b27d66b1f5324c9a9dea1af5416c6be8',
+              key: 'owner',
+              value: 'EA Team',
+            },
+          ],
+        },
+      });
+
+      assert.equal(result.isError, undefined);
+      assert.ok(capturedBody);
+      assert.equal(capturedBody.changes[0].id, 'id-b27d66b1f5324c9a9dea1af5416c6be8');
+      assert.equal('elementId' in capturedBody.changes[0], false);
+      assert.equal(result.structuredContent.data.mcp.aliasesResolved, 1);
+      assert.equal(result.structuredContent.data.operationId, 'op-alias-1');
+    });
+  } finally {
+    await closeServer(server);
+  }
+});
+
+test('archi_apply_model_changes rejects conflicting setProperty id aliases', async () => {
+  await withMcpClient('http://127.0.0.1:9999', async (client) => {
+    const result = await client.callTool({
+      name: 'archi_apply_model_changes',
+      arguments: {
+        changes: [
+          {
+            op: 'setProperty',
+            id: 'id-a',
+            elementId: 'id-b',
+            key: 'owner',
+            value: 'EA Team',
+          },
+        ],
+      },
+    });
+
+    assert.equal(result.isError, true);
+    assert.match(extractFirstText(result), /conflicts with alias field values/);
+  });
+});
+
+test('archi_get_view_summary returns compact concept to visual mappings', async () => {
+  const { server, baseUrl } = await startMockServer((req, res) => {
+    if (req.method === 'GET' && req.url === '/views/view-1') {
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(
+        JSON.stringify({
+          id: 'view-1',
+          name: 'Application Overview',
+          type: 'archimate-diagram-model',
+          elements: [
+            {
+              id: 'vo-1',
+              name: 'Customer Portal',
+              x: 100,
+              y: 120,
+              width: 120,
+              height: 55,
+              conceptId: 'id-element-1',
+              conceptType: 'ApplicationComponent',
+            },
+            {
+              id: 'vo-2',
+              name: 'Claims API',
+              x: 320,
+              y: 120,
+              width: 120,
+              height: 55,
+              parentId: 'vo-1',
+              conceptId: 'id-element-2',
+              conceptType: 'ApplicationService',
+            },
+          ],
+          connections: [
+            {
+              id: 'vc-1',
+              sourceId: 'vo-1',
+              targetId: 'vo-2',
+              conceptId: 'id-rel-1',
+              conceptType: 'ServingRelationship',
+            },
+          ],
+          requestId: 'view-compact-1',
+        }),
+      );
+      return;
+    }
+
+    res.writeHead(404, { 'content-type': 'application/json' });
+    res.end(JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Not found' } }));
+  });
+
+  try {
+    await withMcpClient(baseUrl, async (client) => {
+      const result = await client.callTool({
+        name: 'archi_get_view_summary',
+        arguments: {
+          viewId: 'view-1',
+          includeConnections: false,
+        },
+      });
+
+      assert.equal(result.isError, undefined);
+      assert.equal(result.structuredContent.data.id, 'view-1');
+      assert.equal(result.structuredContent.data.elementCount, 2);
+      assert.equal(result.structuredContent.data.connectionCount, 1);
+      assert.equal(result.structuredContent.data.connections, undefined);
+      assert.equal('x' in result.structuredContent.data.elements[0], false);
+      assert.equal(result.structuredContent.data.requestId, 'view-compact-1');
+    });
+  } finally {
+    await closeServer(server);
+  }
+});
+
+test('archi_get_relationships_between_elements returns scoped relationships', async () => {
+  const { server, baseUrl } = await startMockServer((req, res) => {
+    if (req.method === 'GET' && req.url === '/model/element/e1') {
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(
+        JSON.stringify({
+          id: 'e1',
+          name: 'Customer Portal',
+          relationships: {
+            outgoing: [
+              { id: 'r1', type: 'ServingRelationship', name: 'serves', otherEndId: 'e2' },
+              { id: 'r2', type: 'FlowRelationship', name: 'flows', otherEndId: 'x' },
+            ],
+          },
+        }),
+      );
+      return;
+    }
+
+    if (req.method === 'GET' && req.url === '/model/element/e2') {
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(
+        JSON.stringify({
+          id: 'e2',
+          name: 'Claims API',
+          relationships: {
+            incoming: [{ id: 'r1', type: 'ServingRelationship', name: 'served by', otherEndId: 'e1' }],
+            outgoing: [{ id: 'r3', type: 'FlowRelationship', name: 'flows', otherEndId: 'e3' }],
+          },
+        }),
+      );
+      return;
+    }
+
+    if (req.method === 'GET' && req.url === '/model/element/e3') {
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(
+        JSON.stringify({
+          id: 'e3',
+          name: 'Payments API',
+          relationships: {
+            incoming: [{ id: 'r3', type: 'FlowRelationship', name: 'flow in', otherEndId: 'e2' }],
+          },
+        }),
+      );
+      return;
+    }
+
+    res.writeHead(404, { 'content-type': 'application/json' });
+    res.end(JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Not found' } }));
+  });
+
+  try {
+    await withMcpClient(baseUrl, async (client) => {
+      const result = await client.callTool({
+        name: 'archi_get_relationships_between_elements',
+        arguments: {
+          elementIds: ['e1', 'e2', 'e3'],
+          relationshipTypes: ['serving-relationship'],
+        },
+      });
+
+      assert.equal(result.isError, undefined);
+      assert.equal(result.structuredContent.data.total, 1);
+      assert.equal(result.structuredContent.data.relationships[0].id, 'r1');
+      assert.equal(result.structuredContent.data.relationships[0].sourceId, 'e1');
+      assert.equal(result.structuredContent.data.relationships[0].targetId, 'e2');
+      assert.equal(result.structuredContent.data.truncated, false);
+    });
+  } finally {
+    await closeServer(server);
+  }
+});
+
+test('archi_populate_view batches addToView plus auto-connected relationships', async () => {
+  let capturedApplyBody;
+
+  const { server, baseUrl } = await startMockServer((req, res) => {
+    if (req.method === 'GET' && req.url === '/views/view-1') {
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(
+        JSON.stringify({
+          id: 'view-1',
+          elements: [{ id: 'vo-existing', conceptId: 'e1', conceptType: 'ApplicationComponent' }],
+          connections: [{ id: 'vc-existing', conceptId: 'r1', conceptType: 'ServingRelationship' }],
+        }),
+      );
+      return;
+    }
+
+    if (req.method === 'GET' && req.url === '/model/element/e1') {
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(
+        JSON.stringify({
+          id: 'e1',
+          relationships: {
+            outgoing: [{ id: 'r1', type: 'ServingRelationship', otherEndId: 'e2' }],
+          },
+        }),
+      );
+      return;
+    }
+
+    if (req.method === 'GET' && req.url === '/model/element/e2') {
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(
+        JSON.stringify({
+          id: 'e2',
+          relationships: {
+            incoming: [{ id: 'r1', type: 'ServingRelationship', otherEndId: 'e1' }],
+            outgoing: [{ id: 'r2', type: 'FlowRelationship', otherEndId: 'e3' }],
+          },
+        }),
+      );
+      return;
+    }
+
+    if (req.method === 'GET' && req.url === '/model/element/e3') {
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(
+        JSON.stringify({
+          id: 'e3',
+          relationships: {
+            incoming: [{ id: 'r2', type: 'FlowRelationship', otherEndId: 'e2' }],
+          },
+        }),
+      );
+      return;
+    }
+
+    if (req.method === 'POST' && req.url === '/model/apply') {
+      let body = '';
+      req.on('data', (chunk) => {
+        body += chunk;
+      });
+      req.on('end', () => {
+        capturedApplyBody = JSON.parse(body || '{}');
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(
+          JSON.stringify({
+            operationId: 'op-populate-1',
+            status: 'queued',
+            requestId: 'populate-1',
+          }),
+        );
+      });
+      return;
+    }
+
+    res.writeHead(404, { 'content-type': 'application/json' });
+    res.end(JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Not found' } }));
+  });
+
+  try {
+    await withMcpClient(baseUrl, async (client) => {
+      const result = await client.callTool({
+        name: 'archi_populate_view',
+        arguments: {
+          viewId: 'view-1',
+          elementIds: ['e1', 'e2', 'e3'],
+        },
+      });
+
+      assert.equal(result.isError, undefined);
+      assert.ok(capturedApplyBody);
+      assert.equal(capturedApplyBody.changes.length, 3);
+      assert.deepEqual(
+        capturedApplyBody.changes.filter((change) => change.op === 'addToView').map((change) => change.elementId),
+        ['e2', 'e3'],
+      );
+      assert.deepEqual(
+        capturedApplyBody.changes.filter((change) => change.op === 'addConnectionToView').map((change) => change.relationshipId),
+        ['r2'],
+      );
+      assert.equal(
+        capturedApplyBody.changes.filter((change) => change.op === 'addConnectionToView')[0].autoResolveVisuals,
+        true,
+      );
+
+      assert.equal(result.structuredContent.data.operationId, 'op-populate-1');
+      assert.equal(result.structuredContent.data.elementOpsQueued, 2);
+      assert.equal(result.structuredContent.data.connectionOpsQueued, 1);
+      assert.deepEqual(result.structuredContent.data.skippedElementIds, ['e1']);
+      assert.deepEqual(result.structuredContent.data.skippedRelationshipIds, ['r1']);
+    });
+  } finally {
+    await closeServer(server);
+  }
+});
+
 test('tool metadata exposes prompts/resources and aligned schemas', async () => {
   await withMcpClient('http://127.0.0.1:9999', async (client) => {
     const { tools } = await client.listTools();
     const { prompts } = await client.listPrompts();
     const { resources } = await client.listResources();
 
-    assert.equal(tools.length, 24);
+    assert.equal(tools.length, 28);
     assert.equal(prompts.length, 8);
-    assert.equal(resources.length, 1);
-    assert.equal(resources[0].uri, 'archi://server/defaults');
+    assert.equal(resources.length, 2);
+    assert.ok(resources.some((resource) => resource.uri === 'archi://server/defaults'));
+    assert.ok(resources.some((resource) => resource.uri === 'archi://agent/quickstart'));
 
     const applyTool = tools.find((tool) => tool.name === 'archi_apply_model_changes');
     assert.ok(applyTool);
@@ -146,6 +536,32 @@ test('tool metadata exposes prompts/resources and aligned schemas', async () => 
     const queryTool = tools.find((tool) => tool.name === 'archi_query_model');
     assert.ok(queryTool);
     assert.equal(queryTool.inputSchema.properties.relationshipLimit.minimum, 1);
+
+    const searchTool = tools.find((tool) => tool.name === 'archi_search_model');
+    assert.ok(searchTool);
+    assert.equal(searchTool.inputSchema.properties.caseSensitive.type, 'boolean');
+
+    const viewSummaryTool = tools.find((tool) => tool.name === 'archi_get_view_summary');
+    assert.ok(viewSummaryTool);
+    assert.match(JSON.stringify(viewSummaryTool.outputSchema.properties.data), /elementCount/);
+
+    const relationshipsTool = tools.find((tool) => tool.name === 'archi_get_relationships_between_elements');
+    assert.ok(relationshipsTool);
+    assert.equal(relationshipsTool.inputSchema.properties.elementIds.minItems, 2);
+
+    const waitTool = tools.find((tool) => tool.name === 'archi_wait_for_operation');
+    assert.ok(waitTool);
+    assert.equal(waitTool.inputSchema.properties.operationId.type, 'string');
+    assert.equal(waitTool.inputSchema.properties.timeoutMs.minimum, 1000);
+
+    const listViewsTool = tools.find((tool) => tool.name === 'archi_list_views');
+    assert.ok(listViewsTool);
+    assert.equal(listViewsTool.inputSchema.properties.nameContains.type, 'string');
+    assert.equal(listViewsTool.inputSchema.properties.offset.minimum, 0);
+
+    const populateViewTool = tools.find((tool) => tool.name === 'archi_populate_view');
+    assert.ok(populateViewTool);
+    assert.equal(populateViewTool.annotations.readOnlyHint, false);
 
     const exportTool = tools.find((tool) => tool.name === 'archi_export_view');
     assert.ok(exportTool);
@@ -540,12 +956,136 @@ test('operation tools expose operationId in structured output', async () => {
 
       const statusResult = await client.callTool({
         name: 'archi_get_operation_status',
-        arguments: { opId },
+        arguments: { operationId: opId },
       });
 
       assert.equal(statusResult.isError, undefined);
       assert.equal(statusResult.structuredContent.data.operationId, opId);
       assert.ok(Array.isArray(statusResult.structuredContent.data.result));
+    });
+  } finally {
+    await closeServer(server);
+  }
+});
+
+test('archi_wait_for_operation polls until completion', async () => {
+  const opId = 'op-wait-1';
+  let statusPolls = 0;
+
+  const { server, baseUrl } = await startMockServer((req, res) => {
+    if (req.method === 'GET' && req.url?.startsWith('/ops/status')) {
+      const url = new URL(req.url, 'http://127.0.0.1');
+      if (url.searchParams.get('opId') !== opId) {
+        res.writeHead(400, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({ error: { code: 'BAD_REQUEST', message: 'Wrong opId' } }));
+        return;
+      }
+
+      statusPolls += 1;
+      const status = statusPolls >= 2 ? 'complete' : 'queued';
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(
+        JSON.stringify({
+          operationId: opId,
+          status,
+          result: status === 'complete' ? [{ ok: true }] : undefined,
+          requestId: `wait-${statusPolls}`,
+        }),
+      );
+      return;
+    }
+
+    res.writeHead(404, { 'content-type': 'application/json' });
+    res.end(JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Not found' } }));
+  });
+
+  try {
+    await withMcpClient(baseUrl, async (client) => {
+      const result = await client.callTool({
+        name: 'archi_wait_for_operation',
+        arguments: {
+          operationId: opId,
+          timeoutMs: 5000,
+          pollIntervalMs: 200,
+        },
+      });
+
+      assert.equal(result.isError, undefined);
+      assert.equal(result.structuredContent.data.operationId, opId);
+      assert.equal(result.structuredContent.data.status, 'complete');
+      assert.equal(result.structuredContent.data.terminal, true);
+      assert.equal(result.structuredContent.data.timedOut, false);
+      assert.ok(result.structuredContent.data.polls >= 2);
+      assert.deepEqual(result.structuredContent.data.statusHistory, ['queued', 'complete']);
+      assert.ok(Array.isArray(result.structuredContent.data.result));
+    });
+  } finally {
+    await closeServer(server);
+  }
+});
+
+test('archi_list_views applies filtering, sorting, and pagination metadata', async () => {
+  const { server, baseUrl } = await startMockServer((req, res) => {
+    if (req.method === 'GET' && req.url === '/views') {
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(
+        JSON.stringify({
+          views: [
+            {
+              id: 'v1',
+              name: 'Customer Operations',
+              type: 'archimate-diagram-model',
+              viewpoint: 'business_process_cooperation',
+              objectCount: 12,
+              connectionCount: 8,
+            },
+            {
+              id: 'v2',
+              name: 'Customer Architecture',
+              type: 'archimate-diagram-model',
+              viewpoint: 'layered',
+              objectCount: 33,
+              connectionCount: 14,
+            },
+            {
+              id: 'v3',
+              name: 'Risk View',
+              type: 'archimate-diagram-model',
+              viewpoint: 'motivation',
+              objectCount: 9,
+              connectionCount: 4,
+            },
+          ],
+          total: 3,
+          requestId: 'views-filter-1',
+        }),
+      );
+      return;
+    }
+
+    res.writeHead(404, { 'content-type': 'application/json' });
+    res.end(JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Not found' } }));
+  });
+
+  try {
+    await withMcpClient(baseUrl, async (client) => {
+      const result = await client.callTool({
+        name: 'archi_list_views',
+        arguments: {
+          nameContains: 'customer',
+          sortBy: 'objectCount',
+          sortDirection: 'desc',
+          limit: 1,
+        },
+      });
+
+      assert.equal(result.isError, undefined);
+      assert.equal(result.structuredContent.data.total, 2);
+      assert.equal(result.structuredContent.data.views.length, 1);
+      assert.equal(result.structuredContent.data.views[0].id, 'v2');
+      assert.equal(result.structuredContent.data.mcp.pagination.returned, 1);
+      assert.equal(result.structuredContent.data.mcp.pagination.hasMore, true);
+      assert.equal(result.structuredContent.data.requestId, 'views-filter-1');
     });
   } finally {
     await closeServer(server);
@@ -560,6 +1100,10 @@ test('resource defaults expose runtime config from environment', async () => {
       const payload = JSON.parse(resource.contents[0].text);
       assert.equal(payload.apiBaseUrl, 'http://127.0.0.1:8765');
       assert.equal(payload.requestTimeoutMs, 12345);
+
+      const quickstart = await client.readResource({ uri: 'archi://agent/quickstart' });
+      assert.match(quickstart.contents[0].text, /archi_wait_for_operation/);
+      assert.match(quickstart.contents[0].text, /archi_get_view_summary/);
     },
     { ARCHI_API_TIMEOUT_MS: '12345' },
   );
