@@ -4,9 +4,18 @@ import * as z from 'zod/v4';
 
 type PromptContext = Record<string, string | number | boolean | undefined>;
 
+type PromptInputRequirement = {
+  key: string;
+  required: boolean;
+  description: string;
+  askWhenMissing: string;
+  recommendedDefault?: string;
+};
+
 type WorkflowPromptOptions = {
   goal: string;
   context: PromptContext;
+  inputRequirements: PromptInputRequirement[];
   requiredToolSequence: string[];
   activityGuidance?: string[];
   expectedOutputFormat: string[];
@@ -46,15 +55,54 @@ function section(title: string, lines: string[]): string {
   return [`## ${title}`, ...lines].join('\n');
 }
 
+function getMissingRequiredInputs(
+  inputRequirements: PromptInputRequirement[],
+  context: PromptContext,
+): PromptInputRequirement[] {
+  return inputRequirements.filter((input) => {
+    if (!input.required) {
+      return false;
+    }
+
+    return context[input.key] === undefined;
+  });
+}
+
+function formatInputRequirementLine(input: PromptInputRequirement, value: PromptContext[string]): string {
+  const requirement = input.required ? 'required' : 'optional';
+  const defaultText = input.recommendedDefault ? ` Recommended default: ${input.recommendedDefault}.` : '';
+
+  return `- \`${input.key}\` (${requirement}): ${input.description} Current value: ${formatValue(value)}.${defaultText}`;
+}
+
 function buildWorkflowPrompt(options: WorkflowPromptOptions): string {
   const contextLines = Object.entries(options.context).map(([key, value]) => {
     return `- ${key}: ${formatValue(value)}`;
   });
+  const inputRequirementLines = options.inputRequirements.map((input) =>
+    formatInputRequirementLine(input, options.context[input.key]),
+  );
+  const missingRequiredInputs = getMissingRequiredInputs(options.inputRequirements, options.context);
+  const clarificationQuestions =
+    missingRequiredInputs.length > 0
+      ? asBulletedList(missingRequiredInputs.map((input) => input.askWhenMissing))
+      : ['- No required inputs are missing. Ask follow-up questions only for ambiguity.'];
 
   const content = [
     '# ArchiMate Modeling Workflow',
     section('Goal', [options.goal]),
     section('Context', contextLines),
+    section('Input Requirements', inputRequirementLines),
+    section(
+      'Clarification Workflow',
+      asNumberedList([
+        'Start with live model context by calling `archi_get_health` and `archi_query_model` before drafting changes.',
+        'Use additional read-only tools (for example `archi_get_model_stats`, `archi_search_model`, and `archi_list_views`) to infer likely input values.',
+        'If required inputs are missing or ambiguous, ask the user concise follow-up questions and wait for their answers before running mutation tools.',
+        'State assumptions explicitly before planning or applying model changes.',
+      ]),
+    ),
+    section('Questions To Ask User (When Needed)', clarificationQuestions),
     section('Required Tool Sequence', asNumberedList(options.requiredToolSequence)),
     section('ArchiMate Guardrails', asBulletedList(CommonGuardrails)),
     options.activityGuidance && options.activityGuidance.length > 0
@@ -92,14 +140,15 @@ export function registerArchiModelingPrompts(server: McpServer): void {
           .string()
           .min(1)
           .max(500)
+          .optional()
           .describe('Scope boundary such as domain, product line, or program.'),
         focus: z
           .enum(['business', 'application', 'technology', 'cross-layer', 'all'])
-          .default('all')
+          .optional()
           .describe('Primary architecture focus for assessment.'),
         detailLevel: z
           .enum(['overview', 'coherence', 'detail'])
-          .default('coherence')
+          .optional()
           .describe('Depth of analysis output.'),
       },
     },
@@ -111,6 +160,28 @@ export function registerArchiModelingPrompts(server: McpServer): void {
           focus,
           detailLevel,
         },
+        inputRequirements: [
+          {
+            key: 'scope',
+            required: true,
+            description: 'Scope boundary such as domain, product line, or program.',
+            askWhenMissing: 'What exact scope should I assess (domain, product line, or program)?',
+          },
+          {
+            key: 'focus',
+            required: false,
+            description: 'Primary architecture focus for assessment.',
+            askWhenMissing: 'Which layer should I prioritize: business, application, technology, or cross-layer?',
+            recommendedDefault: 'all',
+          },
+          {
+            key: 'detailLevel',
+            required: false,
+            description: 'Depth of analysis output.',
+            askWhenMissing: 'How deep should the analysis be: overview, coherence, or detail?',
+            recommendedDefault: 'coherence',
+          },
+        ],
         requiredToolSequence: [
           'Call `archi_get_health` to verify server and model availability.',
           'Call `archi_query_model` with limits aligned to `detailLevel` to sample the current model.',
@@ -145,10 +216,10 @@ export function registerArchiModelingPrompts(server: McpServer): void {
       description:
         'Design or refine a capability map linked to strategic goals, with optional maturity heatmap guidance.',
       argsSchema: {
-        businessDomain: z.string().min(1).max(500).describe('Business domain to model capabilities for.'),
-        strategicGoal: z.string().min(1).max(500).describe('Strategic goal this capability map should realize.'),
+        businessDomain: z.string().min(1).max(500).optional().describe('Business domain to model capabilities for.'),
+        strategicGoal: z.string().min(1).max(500).optional().describe('Strategic goal this capability map should realize.'),
         timeHorizon: z.string().min(1).max(200).optional().describe('Planning horizon, for example 12-18 months.'),
-        includeHeatmap: z.boolean().default(true).describe('Include maturity heatmap metadata guidance.'),
+        includeHeatmap: z.boolean().optional().describe('Include maturity heatmap metadata guidance.'),
       },
     },
     async ({ businessDomain, strategicGoal, timeHorizon, includeHeatmap }) => {
@@ -160,6 +231,33 @@ export function registerArchiModelingPrompts(server: McpServer): void {
           timeHorizon,
           includeHeatmap,
         },
+        inputRequirements: [
+          {
+            key: 'businessDomain',
+            required: true,
+            description: 'Business domain to model capabilities for.',
+            askWhenMissing: 'Which business domain should the capability map cover?',
+          },
+          {
+            key: 'strategicGoal',
+            required: true,
+            description: 'Strategic goal this capability map should realize.',
+            askWhenMissing: 'What strategic goal should this capability map support?',
+          },
+          {
+            key: 'timeHorizon',
+            required: false,
+            description: 'Planning horizon, for example 12-18 months.',
+            askWhenMissing: 'What planning horizon should we use (for example 12-18 months)?',
+          },
+          {
+            key: 'includeHeatmap',
+            required: false,
+            description: 'Include maturity heatmap metadata guidance.',
+            askWhenMissing: 'Do you want maturity heatmap metadata included?',
+            recommendedDefault: 'true',
+          },
+        ],
         requiredToolSequence: [
           'Call `archi_search_model` to find existing `capability`, `goal`, `value-stream`, and related strategy elements.',
           'Call `archi_query_model` to inspect existing decomposition depth and avoid duplicate concepts.',
@@ -198,10 +296,11 @@ export function registerArchiModelingPrompts(server: McpServer): void {
           .string()
           .min(1)
           .max(500)
+          .optional()
           .describe('Business process to align with supporting application architecture.'),
         includeDataMapping: z
           .boolean()
-          .default(true)
+          .optional()
           .describe('Include business object to data object access and realization mappings.'),
         targetViewName: z.string().min(1).max(500).optional().describe('Optional target view name to create or update.'),
       },
@@ -214,6 +313,27 @@ export function registerArchiModelingPrompts(server: McpServer): void {
           includeDataMapping,
           targetViewName,
         },
+        inputRequirements: [
+          {
+            key: 'businessProcessName',
+            required: true,
+            description: 'Business process to align with supporting application architecture.',
+            askWhenMissing: 'Which business process should be aligned to application support?',
+          },
+          {
+            key: 'includeDataMapping',
+            required: false,
+            description: 'Include business object to data object access and realization mappings.',
+            askWhenMissing: 'Should I include business object to data object mapping?',
+            recommendedDefault: 'true',
+          },
+          {
+            key: 'targetViewName',
+            required: false,
+            description: 'Optional target view name to create or update.',
+            askWhenMissing: 'Do you want to target a specific view name?',
+          },
+        ],
         requiredToolSequence: [
           'Call `archi_search_model` for the named business process plus candidate business/application services.',
           'Call `archi_get_element` on key matches to inspect existing relationships and avoid duplicates.',
@@ -247,11 +367,11 @@ export function registerArchiModelingPrompts(server: McpServer): void {
       description:
         'Design integration between source and target applications using simple, service-based, or full-detail patterns.',
       argsSchema: {
-        sourceApp: z.string().min(1).max(500).describe('Source application component name.'),
-        targetApp: z.string().min(1).max(500).describe('Target application component name.'),
+        sourceApp: z.string().min(1).max(500).optional().describe('Source application component name.'),
+        targetApp: z.string().min(1).max(500).optional().describe('Target application component name.'),
         integrationPattern: z
           .enum(['simple_flow', 'service_based', 'full_detail'])
-          .default('service_based')
+          .optional()
           .describe('Integration modeling pattern to apply.'),
         dataObjectName: z
           .string()
@@ -270,6 +390,33 @@ export function registerArchiModelingPrompts(server: McpServer): void {
           integrationPattern,
           dataObjectName,
         },
+        inputRequirements: [
+          {
+            key: 'sourceApp',
+            required: true,
+            description: 'Source application component name.',
+            askWhenMissing: 'Which application is the integration source?',
+          },
+          {
+            key: 'targetApp',
+            required: true,
+            description: 'Target application component name.',
+            askWhenMissing: 'Which application is the integration target?',
+          },
+          {
+            key: 'integrationPattern',
+            required: false,
+            description: 'Integration modeling pattern to apply.',
+            askWhenMissing: 'Which integration pattern should I use: simple_flow, service_based, or full_detail?',
+            recommendedDefault: 'service_based',
+          },
+          {
+            key: 'dataObjectName',
+            required: false,
+            description: 'Optional data object flowing across the integration boundary.',
+            askWhenMissing: 'Is there a specific data object that should be shown in the integration flow?',
+          },
+        ],
         requiredToolSequence: [
           'Call `archi_search_model` to locate source and target applications plus existing integration artifacts.',
           'Call `archi_get_element` to inspect existing interfaces/services and relationship directions.',
@@ -307,12 +454,13 @@ export function registerArchiModelingPrompts(server: McpServer): void {
           .string()
           .min(1)
           .max(500)
+          .optional()
           .describe('Application component to map onto the technology layer.'),
         environment: z
           .enum(['dev', 'test', 'prod', 'all'])
-          .default('prod')
+          .optional()
           .describe('Environment scope for deployment mapping.'),
-        includeNetwork: z.boolean().default(true).describe('Include communication network/path elements where relevant.'),
+        includeNetwork: z.boolean().optional().describe('Include communication network/path elements where relevant.'),
       },
     },
     async ({ applicationComponentName, environment, includeNetwork }) => {
@@ -323,6 +471,28 @@ export function registerArchiModelingPrompts(server: McpServer): void {
           environment,
           includeNetwork,
         },
+        inputRequirements: [
+          {
+            key: 'applicationComponentName',
+            required: true,
+            description: 'Application component to map onto the technology layer.',
+            askWhenMissing: 'Which application component should be mapped to technology deployment?',
+          },
+          {
+            key: 'environment',
+            required: false,
+            description: 'Environment scope for deployment mapping.',
+            askWhenMissing: 'Which environment should be modeled: dev, test, prod, or all?',
+            recommendedDefault: 'prod',
+          },
+          {
+            key: 'includeNetwork',
+            required: false,
+            description: 'Include communication network/path elements where relevant.',
+            askWhenMissing: 'Should network/path elements be included in the deployment mapping?',
+            recommendedDefault: 'true',
+          },
+        ],
         requiredToolSequence: [
           'Call `archi_search_model` for application component, artifacts, nodes, system software, and technology services.',
           'Call `archi_get_element` on deployment candidates to verify existing runtime mappings.',
@@ -356,10 +526,10 @@ export function registerArchiModelingPrompts(server: McpServer): void {
       description:
         'Define baseline-to-target architecture transitions using plateaus, gaps, and implementation work packages.',
       argsSchema: {
-        baselinePlateauName: z.string().min(1).max(500).describe('Name of the baseline plateau.'),
-        targetPlateauName: z.string().min(1).max(500).describe('Name of the target plateau.'),
-        roadmapHorizon: z.string().min(1).max(200).describe('Roadmap horizon such as Q1-Q4 FY2026.'),
-        includeWorkPackages: z.boolean().default(true).describe('Include work packages and deliverables in roadmap design.'),
+        baselinePlateauName: z.string().min(1).max(500).optional().describe('Name of the baseline plateau.'),
+        targetPlateauName: z.string().min(1).max(500).optional().describe('Name of the target plateau.'),
+        roadmapHorizon: z.string().min(1).max(200).optional().describe('Roadmap horizon such as Q1-Q4 FY2026.'),
+        includeWorkPackages: z.boolean().optional().describe('Include work packages and deliverables in roadmap design.'),
       },
     },
     async ({ baselinePlateauName, targetPlateauName, roadmapHorizon, includeWorkPackages }) => {
@@ -371,6 +541,33 @@ export function registerArchiModelingPrompts(server: McpServer): void {
           roadmapHorizon,
           includeWorkPackages,
         },
+        inputRequirements: [
+          {
+            key: 'baselinePlateauName',
+            required: true,
+            description: 'Name of the baseline plateau.',
+            askWhenMissing: 'What is the baseline plateau name?',
+          },
+          {
+            key: 'targetPlateauName',
+            required: true,
+            description: 'Name of the target plateau.',
+            askWhenMissing: 'What is the target plateau name?',
+          },
+          {
+            key: 'roadmapHorizon',
+            required: true,
+            description: 'Roadmap horizon such as Q1-Q4 FY2026.',
+            askWhenMissing: 'What roadmap horizon should the transition plan use?',
+          },
+          {
+            key: 'includeWorkPackages',
+            required: false,
+            description: 'Include work packages and deliverables in roadmap design.',
+            askWhenMissing: 'Should work packages and deliverables be included?',
+            recommendedDefault: 'true',
+          },
+        ],
         requiredToolSequence: [
           'Call `archi_search_model` for existing plateaus, gaps, work packages, and deliverables.',
           'Call `archi_query_model` to understand current implementation/migration landscape.',
@@ -406,9 +603,9 @@ export function registerArchiModelingPrompts(server: McpServer): void {
       argsSchema: {
         auditFocus: z
           .enum(['naming', 'relationships', 'layering', 'views', 'all'])
-          .default('all')
+          .optional()
           .describe('Primary audit dimension.'),
-        maxFindings: z.number().int().min(5).max(50).default(20).describe('Maximum findings to report.'),
+        maxFindings: z.number().int().min(5).max(50).optional().describe('Maximum findings to report.'),
       },
     },
     async ({ auditFocus, maxFindings }) => {
@@ -418,6 +615,22 @@ export function registerArchiModelingPrompts(server: McpServer): void {
           auditFocus,
           maxFindings,
         },
+        inputRequirements: [
+          {
+            key: 'auditFocus',
+            required: false,
+            description: 'Primary audit dimension.',
+            askWhenMissing: 'Should the audit focus on naming, relationships, layering, views, or all?',
+            recommendedDefault: 'all',
+          },
+          {
+            key: 'maxFindings',
+            required: false,
+            description: 'Maximum findings to report.',
+            askWhenMissing: 'How many findings should be returned (5-50)?',
+            recommendedDefault: '20',
+          },
+        ],
         requiredToolSequence: [
           'Call `archi_get_model_diagnostics` for structural integrity signals.',
           'Call `archi_get_model_stats` and `archi_query_model` to establish baseline quality indicators.',
@@ -450,13 +663,13 @@ export function registerArchiModelingPrompts(server: McpServer): void {
       description:
         'Locate a view, validate it, apply router/layout settings, and export an image artifact.',
       argsSchema: {
-        viewIdOrName: z.string().min(1).max(500).describe('View identifier or exact view name to curate.'),
-        layoutDirection: z.enum(['TB', 'BT', 'LR', 'RL']).default('LR').describe('Layout direction for auto-layout.'),
+        viewIdOrName: z.string().min(1).max(500).optional().describe('View identifier or exact view name to curate.'),
+        layoutDirection: z.enum(['TB', 'BT', 'LR', 'RL']).optional().describe('Layout direction for auto-layout.'),
         routerType: z
           .enum(['bendpoint', 'manhattan'])
-          .default('manhattan')
+          .optional()
           .describe('Connection router style to apply before export.'),
-        exportFormat: z.enum(['PNG', 'JPG']).default('PNG').describe('Export image format.'),
+        exportFormat: z.enum(['PNG', 'JPG']).optional().describe('Export image format.'),
       },
     },
     async ({ viewIdOrName, layoutDirection, routerType, exportFormat }) => {
@@ -468,6 +681,35 @@ export function registerArchiModelingPrompts(server: McpServer): void {
           routerType,
           exportFormat,
         },
+        inputRequirements: [
+          {
+            key: 'viewIdOrName',
+            required: true,
+            description: 'View identifier or exact view name to curate.',
+            askWhenMissing: 'Which view ID or exact view name should be curated and exported?',
+          },
+          {
+            key: 'layoutDirection',
+            required: false,
+            description: 'Layout direction for auto-layout.',
+            askWhenMissing: 'What layout direction should be used: TB, BT, LR, or RL?',
+            recommendedDefault: 'LR',
+          },
+          {
+            key: 'routerType',
+            required: false,
+            description: 'Connection router style to apply before export.',
+            askWhenMissing: 'Which router style should be applied: bendpoint or manhattan?',
+            recommendedDefault: 'manhattan',
+          },
+          {
+            key: 'exportFormat',
+            required: false,
+            description: 'Export image format.',
+            askWhenMissing: 'Which export format should be used: PNG or JPG?',
+            recommendedDefault: 'PNG',
+          },
+        ],
         requiredToolSequence: [
           'Call `archi_list_views` to resolve `viewIdOrName` to a concrete `viewId`.',
           'Call `archi_get_view` to inspect current visual density and connection structure.',
@@ -494,4 +736,3 @@ export function registerArchiModelingPrompts(server: McpServer): void {
     },
   );
 }
-

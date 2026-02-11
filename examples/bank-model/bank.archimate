@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="(new model)" id="id-15829546fd8a4744a785c135a9bbff63" version="5.0.0">
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="Bank" id="id-15829546fd8a4744a785c135a9bbff63" version="5.0.0">
   <folder name="Strategy" id="id-0c196d182e16419aa7d958d25ae8ee8b" type="strategy">
     <element xsi:type="archimate:Capability" name="Customer Onboarding Capability" id="id-868410f4182a4c3aa268e8b0cbf46b93">
       <property key="maturity" value="Developing"/>

@@ -676,7 +676,7 @@ export function createArchiMcpServer(config: AppConfig): McpServer {
         tools: {},
       },
       instructions:
-        'Use these tools to inspect and mutate an Archi model through the local Archi Server API. Prefer read tools before write tools, and confirm intent before destructive operations. Modeling workflow templates are available as MCP prompts.',
+        'Use these tools to inspect and mutate an Archi model through the local Archi Server API. Prefer read tools before write tools, and confirm intent before destructive operations. If prompt inputs are missing, gather live context with read-only tools and ask the user targeted follow-up questions before mutating the model. Modeling workflow templates are available as MCP prompts.',
     },
   );
 
