@@ -109,6 +109,19 @@ test('archi_apply_model_changes requires a supported op at MCP schema level', as
   });
 });
 
+test('archi_get_element rejects likely malformed Archi IDs before API call', async () => {
+  await withMcpClient('http://127.0.0.1:9999', async (client) => {
+    const malformed = await client.callTool({
+      name: 'archi_get_element',
+      arguments: { elementId: 'id-da3eeeda379149e18ef259caa621c78' },
+    });
+
+    assert.equal(malformed.isError, true);
+    assert.match(extractFirstText(malformed), /Input validation error/);
+    assert.match(extractFirstText(malformed), /Likely malformed Archi ID/);
+  });
+});
+
 test('tool metadata exposes prompts/resources and aligned schemas', async () => {
   await withMcpClient('http://127.0.0.1:9999', async (client) => {
     const { tools } = await client.listTools();
@@ -427,6 +440,45 @@ test('archi_get_element accepts incoming/outgoing relationship payload shape', a
       assert.ok(Array.isArray(result.structuredContent.data.relationships.outgoing));
       assert.equal(result.structuredContent.data.relationships.incoming[0].id, 'rel-in-1');
       assert.equal(result.structuredContent.data.relationships.outgoing[0].id, 'rel-out-1');
+    });
+  } finally {
+    await closeServer(server);
+  }
+});
+
+test('archi_get_element not found errors include conceptId guidance', async () => {
+  const elementId = 'id-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+  const { server, baseUrl } = await startMockServer((req, res) => {
+    if (req.method === 'GET' && req.url === `/model/element/${elementId}`) {
+      res.writeHead(404, { 'content-type': 'application/json' });
+      res.end(
+        JSON.stringify({
+          error: {
+            code: 'NotFound',
+            message: `Element not found: ${elementId}`,
+          },
+          requestId: 'missing-1',
+        }),
+      );
+      return;
+    }
+
+    res.writeHead(404, { 'content-type': 'application/json' });
+    res.end(JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Not found' } }));
+  });
+
+  try {
+    await withMcpClient(baseUrl, async (client) => {
+      const result = await client.callTool({
+        name: 'archi_get_element',
+        arguments: { elementId },
+      });
+
+      assert.equal(result.isError, true);
+      const text = extractFirstText(result);
+      assert.match(text, /Element not found/);
+      assert.match(text, /elements\[\]\.conceptId/);
+      assert.match(text, /connections\[\]\.conceptId/);
     });
   } finally {
     await closeServer(server);

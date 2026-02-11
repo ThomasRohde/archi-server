@@ -56,6 +56,16 @@ const ScriptAnnotations: ToolAnnotations = {
 };
 
 const EmptySchema = z.object({}).strict();
+const ARCHI_ID_HEX_LENGTH = 32;
+const ARCHI_ID_TOTAL_LENGTH = 3 + ARCHI_ID_HEX_LENGTH;
+
+function isLikelyMalformedArchiId(value: string): boolean {
+  if (!/^id-[0-9a-f]+$/i.test(value)) {
+    return false;
+  }
+
+  return value.length !== ARCHI_ID_TOTAL_LENGTH;
+}
 
 const QuerySchema = z
   .object({
@@ -104,7 +114,15 @@ const SearchSchema = z
 
 const GetElementSchema = z
   .object({
-    elementId: z.string().min(1).describe('Element identifier to retrieve.'),
+    elementId: z
+      .string()
+      .min(1)
+      .refine((value) => !isLikelyMalformedArchiId(value), {
+        message: `Likely malformed Archi ID. Expected "id-" followed by ${ARCHI_ID_HEX_LENGTH} hex characters (${ARCHI_ID_TOTAL_LENGTH} total characters).`,
+      })
+      .describe(
+        'Element identifier to retrieve (model concept ID; use conceptId from archi_get_view elements/connections).',
+      ),
   })
   .strict();
 
@@ -536,6 +554,23 @@ function truncateErrorDetails(details: unknown): string {
   return `${rendered.slice(0, ERROR_DETAILS_LIMIT)}\n...[details truncated]`;
 }
 
+function withToolSpecificErrorHint(operation: string, error: ArchiApiError): ArchiApiError {
+  if (operation !== 'archi_get_element') {
+    return error;
+  }
+
+  if (error.status !== 404 || error.code !== 'NotFound') {
+    return error;
+  }
+
+  return new ArchiApiError(
+    `${error.message}\nHint: Use an exact model element/relationship ID. If this came from archi_get_view, pass elements[].conceptId or connections[].conceptId instead of visual id values.`,
+    error.status,
+    error.code,
+    error.details,
+  );
+}
+
 function successResult<TData>(operation: string, data: TData): CallToolResult {
   const fullPayload: ToolOutput<TData> = {
     ok: true,
@@ -569,16 +604,17 @@ function successResult<TData>(operation: string, data: TData): CallToolResult {
 
 function errorResult(operation: string, error: unknown): CallToolResult {
   if (error instanceof ArchiApiError) {
-    const status = error.status !== undefined ? ` (HTTP ${error.status})` : '';
-    const code = error.code ? ` [${error.code}]` : '';
-    const details = error.details ? `\nDetails: ${truncateErrorDetails(error.details)}` : '';
+    const hintedError = withToolSpecificErrorHint(operation, error);
+    const status = hintedError.status !== undefined ? ` (HTTP ${hintedError.status})` : '';
+    const code = hintedError.code ? ` [${hintedError.code}]` : '';
+    const details = hintedError.details ? `\nDetails: ${truncateErrorDetails(hintedError.details)}` : '';
 
     return {
       isError: true,
       content: [
         {
           type: 'text',
-          text: `${operation} failed${status}${code}: ${error.message}${details}`,
+          text: `${operation} failed${status}${code}: ${hintedError.message}${details}`,
         },
       ],
     };
