@@ -746,9 +746,9 @@
                     "Change " + index + " (createFolder): missing 'name' field"
                 );
             }
-            if (!change.parentId && !change.parentType) {
+            if (!change.parentId && !change.parentType && !change.parentFolder) {
                 throw this.createValidationError(
-                    "Change " + index + " (createFolder): must specify 'parentId' or 'parentType'"
+                    "Change " + index + " (createFolder): must specify 'parentId', 'parentType' (e.g. 'BUSINESS'), or 'parentFolder' (name, e.g. 'Views')"
                 );
             }
         },

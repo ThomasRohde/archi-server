@@ -455,7 +455,7 @@
                     if (errorMsg.indexOf("Could not get the currently selected model") !== -1) {
                         var detailedError = errorMsg;
                         errorMsg = "$() requires UI selection context which is not available via API. " +
-                            "Use getModel() or $.model.getLoadedModels().get(0).";
+                            "Use: var model = $.model.getLoadedModels().get(0); model.find('element').each(function(e) { console.log(e.name); });";
                         output.push({ level: "error", message: detailedError });
                     }
                     

@@ -1140,6 +1140,19 @@ function normalizeApplyChanges(changes: Array<Record<string, unknown>>): {
     'moveViewObject',
   ]);
 
+  // Operations where agents commonly send `viewConnectionId` but the Archi
+  // server expects `connectionId`.
+  const opsAcceptingConnectionIdAlias = new Set([
+    'styleConnection',
+    'deleteConnectionFromView',
+  ]);
+
+  // Operations where the canonical field is `visualId` but agents commonly
+  // send `viewObjectId` (reverse of the viewObjectId alias above).
+  const opsAcceptingVisualIdAlias = new Set([
+    'nestInView',
+  ]);
+
   let aliasesResolved = 0;
 
   const normalized = changes.map((change, index) => {
@@ -1199,6 +1212,48 @@ function normalizeApplyChanges(changes: Array<Record<string, unknown>>): {
       if (!viewObjectId && visualId) {
         result.viewObjectId = visualId;
         delete result.visualId;
+        aliasesResolved += 1;
+      }
+    }
+
+    // --- Normalize viewConnectionId → connectionId ---
+    if (opsAcceptingConnectionIdAlias.has(op)) {
+      const connectionId = getNonEmptyString(result.connectionId);
+      const viewConnectionId = getNonEmptyString(result.viewConnectionId);
+
+      if (connectionId && viewConnectionId && connectionId !== viewConnectionId) {
+        throw new ArchiApiError(
+          `Invalid ${op} change at index ${index}: "connectionId" conflicts with "viewConnectionId".`,
+          undefined,
+          'INVALID_APPLY_REQUEST',
+          { index, op, connectionId, viewConnectionId },
+        );
+      }
+
+      if (!connectionId && viewConnectionId) {
+        result.connectionId = viewConnectionId;
+        delete result.viewConnectionId;
+        aliasesResolved += 1;
+      }
+    }
+
+    // --- Normalize viewObjectId → visualId (reverse alias for nestInView) ---
+    if (opsAcceptingVisualIdAlias.has(op)) {
+      const visualId = getNonEmptyString(result.visualId);
+      const viewObjectId = getNonEmptyString(result.viewObjectId);
+
+      if (visualId && viewObjectId && visualId !== viewObjectId) {
+        throw new ArchiApiError(
+          `Invalid ${op} change at index ${index}: "visualId" conflicts with "viewObjectId".`,
+          undefined,
+          'INVALID_APPLY_REQUEST',
+          { index, op, visualId, viewObjectId },
+        );
+      }
+
+      if (!visualId && viewObjectId) {
+        result.visualId = viewObjectId;
+        delete result.viewObjectId;
         aliasesResolved += 1;
       }
     }
@@ -2068,7 +2123,28 @@ export function createArchiMcpServer(config: AppConfig): McpServer {
     {
       title: 'Apply Model Changes',
       description:
-        'Queues model changes for async execution. Use archi_get_operation_status to poll completion.',
+        'Queues model changes for async execution. Use archi_get_operation_status to poll completion.\n\n' +
+        'Operation field reference (aliases auto-normalized):\n' +
+        '- createElement: type, name, tempId?, documentation?, properties?, folder?\n' +
+        '- createRelationship: type, sourceId, targetId, tempId?, name?, accessType?\n' +
+        '- updateElement: id (or elementId), name?, documentation?\n' +
+        '- updateRelationship: id (or relationshipId), name?, accessType?\n' +
+        '- deleteElement: id (or elementId)\n' +
+        '- deleteRelationship: id (or relationshipId)\n' +
+        '- setProperty: id (or elementId/relationshipId), key, value\n' +
+        '- moveToFolder: id (or elementId), folderId\n' +
+        '- createFolder: name, parentId | parentType (e.g. BUSINESS) | parentFolder (e.g. Views)\n' +
+        '- addToView: viewId, elementId, tempId?, x?, y?, w?, h?, parentVisualId?\n' +
+        '- addConnectionToView: viewId, relationshipId, sourceVisualId, targetVisualId, tempId?\n' +
+        '- nestInView: viewId, visualId (or viewObjectId), parentVisualId, x?, y?\n' +
+        '- deleteConnectionFromView: viewId, connectionId (or viewConnectionId)\n' +
+        '- styleViewObject: viewId, viewObjectId (or visualId), fillColor?, fontColor?, fontStyle?, opacity?, outlineOpacity?\n' +
+        '- styleConnection: viewId, connectionId (or viewConnectionId), lineColor?, lineWidth?, fontColor?, fontStyle?\n' +
+        '- moveViewObject: viewId, viewObjectId (or visualId), x, y, w?, h?\n' +
+        '- createNote: viewId, text, x?, y?, w?, h?, tempId?\n' +
+        '- createGroup: viewId, name, x?, y?, w?, h?, tempId?\n' +
+        '- createView: name, viewpoint?, documentation?, folder?, tempId?\n' +
+        '- deleteView: viewId',
       inputSchema: ApplySchema,
       outputDataSchema: ApplyDataSchema,
       annotations: DestructiveAnnotations,
@@ -2098,7 +2174,7 @@ export function createArchiMcpServer(config: AppConfig): McpServer {
         ...result,
         mcp: {
           aliasesResolved,
-          note: 'Normalized alias fields: elementId/relationshipId→id, visualId→viewObjectId.',
+          note: 'Normalized alias fields: elementId/relationshipId→id, visualId→viewObjectId, viewConnectionId→connectionId, viewObjectId→visualId (nestInView).',
         },
       };
     },
