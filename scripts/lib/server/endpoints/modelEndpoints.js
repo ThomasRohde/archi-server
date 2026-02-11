@@ -838,12 +838,18 @@
                 var requestedPath = body.path || null;
                 var IEditorModelManager = Java.type("com.archimatetool.editor.model.IEditorModelManager");
                 var modelManager = IEditorModelManager.INSTANCE;
+                var File = Java.type("java.io.File");
 
-                // Use jArchi model.getPath() to check if model has been saved before
-                var currentPath = (typeof model !== "undefined" && model && typeof model.getPath === "function")
-                    ? model.getPath()
-                    : null;
-                var hasExistingFile = (currentPath !== null && currentPath !== undefined);
+                // Resolve current file from the EMF model reference captured at server startup.
+                var currentFile = null;
+                try {
+                    if (serverState.modelRef && typeof serverState.modelRef.getFile === "function") {
+                        currentFile = serverState.modelRef.getFile();
+                    }
+                } catch (_currentFileError) {
+                    currentFile = null;
+                }
+                var hasExistingFile = (currentFile !== null && currentFile !== undefined);
 
                 if (!hasExistingFile && !requestedPath) {
                     // Auto-generate path from model name
@@ -855,7 +861,6 @@
                     var safeName = String(modelName).replace(/[\/\\:*?"<>|]/g, "_");
 
                     // Generate path in Documents/archi-models/
-                    var File = Java.type("java.io.File");
                     var autoPath = userHome + "/Documents/archi-models/" + safeName + ".archimate";
                     requestedPath = autoPath;
 
@@ -869,7 +874,6 @@
 
                 // If a path was provided (or auto-generated), set the file on the model before saving
                 if (requestedPath) {
-                    var File = Java.type("java.io.File");
                     var targetFile = new File(String(requestedPath));
                     // Ensure .archimate extension
                     if (!String(requestedPath).endsWith(".archimate")) {
@@ -887,10 +891,16 @@
                 modelManager.saveModel(serverState.modelRef);
                 var durationMs = Date.now() - startTime;
 
-                // Get the resolved file path for the response (use jArchi API)
-                var savedPath = (typeof model !== "undefined" && model && typeof model.getPath === "function")
-                    ? model.getPath()
-                    : null;
+                // Read final path from EMF model file binding (does not require UI model selection).
+                var savedPath = null;
+                try {
+                    var savedFile = serverState.modelRef.getFile();
+                    if (savedFile) {
+                        savedPath = String(savedFile.getAbsolutePath());
+                    }
+                } catch (_savedPathError) {
+                    savedPath = null;
+                }
 
                 if (typeof loggingQueue !== "undefined" && loggingQueue) {
                     loggingQueue.log("[" + request.requestId + "] Model saved to " + (savedPath || "existing path") + " (" + durationMs + "ms)");

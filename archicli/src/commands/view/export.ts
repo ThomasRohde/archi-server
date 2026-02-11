@@ -18,6 +18,35 @@ interface ViewListItem {
   type?: string;
 }
 
+function isObjectRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function toViewListItem(value: unknown): ViewListItem | null {
+  if (!isObjectRecord(value) || typeof value.id !== 'string') {
+    return null;
+  }
+  return {
+    id: value.id,
+    name: typeof value.name === 'string' ? value.name : '',
+    ...(typeof value.type === 'string' ? { type: value.type } : {}),
+  };
+}
+
+/**
+ * Normalize `/views` responses from either legacy-array or envelope formats.
+ */
+export function normalizeViewListResponse(data: unknown): ViewListItem[] {
+  const rawViews = Array.isArray(data)
+    ? data
+    : isObjectRecord(data) && Array.isArray(data.views)
+      ? data.views
+      : [];
+  return rawViews
+    .map((item) => toViewListItem(item))
+    .filter((item): item is ViewListItem => item !== null);
+}
+
 /**
  * Export a single view through the server export endpoint.
  */
@@ -98,8 +127,8 @@ export function viewExportCommand(): Command {
             mkdirSync(outDir, { recursive: true });
           }
 
-          const viewsData = await get('/views') as ViewListItem[];
-          const views = Array.isArray(viewsData) ? viewsData : [];
+          const viewsData = await get('/views');
+          const views = normalizeViewListResponse(viewsData);
           if (views.length === 0) {
             print(failure('NO_VIEWS', 'No views found in the model'));
             cmd.error('', { exitCode: 1 });

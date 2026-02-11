@@ -6,16 +6,71 @@ import { ARCHIMATE_TYPES } from '../utils/archimateTypes';
 
 export type CompletionShell = 'bash' | 'zsh' | 'fish' | 'pwsh';
 
-// Keep completion vocab centralized so scripts stay in sync with CLI command tree.
-const TOP_LEVEL_COMMANDS = ['health', 'verify', 'model', 'batch', 'view', 'ops', 'completion'];
-const MODEL_COMMANDS = ['query', 'search', 'element', 'apply'];
-const BATCH_COMMANDS = ['apply', 'split'];
-const VIEW_COMMANDS = ['list', 'get', 'create', 'export', 'delete'];
-const OPS_COMMANDS = ['status', 'list'];
 const COMPLETION_SHELLS: CompletionShell[] = ['bash', 'zsh', 'fish', 'pwsh'];
 
+export interface CompletionVocabulary {
+  topLevel: ReadonlyArray<string>;
+  model: ReadonlyArray<string>;
+  batch: ReadonlyArray<string>;
+  view: ReadonlyArray<string>;
+  ops: ReadonlyArray<string>;
+  folder: ReadonlyArray<string>;
+  ids: ReadonlyArray<string>;
+  shells: ReadonlyArray<CompletionShell>;
+  archimateTypes: ReadonlyArray<string>;
+}
+
+const DEFAULT_COMPLETION_VOCABULARY: CompletionVocabulary = {
+  topLevel: ['health', 'verify', 'model', 'batch', 'view', 'ops', 'folder', 'ids', 'completion'],
+  model: ['query', 'apply', 'search', 'element', 'save', 'stats'],
+  batch: ['apply', 'split'],
+  view: ['list', 'get', 'create', 'export', 'delete', 'layout'],
+  ops: ['status', 'list'],
+  folder: ['list'],
+  ids: ['lookup'],
+  shells: COMPLETION_SHELLS,
+  archimateTypes: ARCHIMATE_TYPES,
+};
+
+function commandNames(command: Command | undefined): string[] {
+  if (!command) return [];
+  return command.commands
+    .map((subcommand) => subcommand.name())
+    .filter((name) => typeof name === 'string' && name.length > 0);
+}
+
+function findSubcommand(command: Command | undefined, name: string): Command | undefined {
+  if (!command) return undefined;
+  return command.commands.find((subcommand) => subcommand.name() === name);
+}
+
+/**
+ * Derive completion vocabulary from the currently registered Commander tree.
+ */
+export function deriveCompletionVocabulary(rootCommand?: Command): CompletionVocabulary {
+  const topLevel = commandNames(rootCommand);
+  const model = commandNames(findSubcommand(rootCommand, 'model'));
+  const batch = commandNames(findSubcommand(rootCommand, 'batch'));
+  const view = commandNames(findSubcommand(rootCommand, 'view'));
+  const ops = commandNames(findSubcommand(rootCommand, 'ops'));
+  const folder = commandNames(findSubcommand(rootCommand, 'folder'));
+  const ids = commandNames(findSubcommand(rootCommand, 'ids'));
+
+  return {
+    topLevel: topLevel.length > 0 ? topLevel : DEFAULT_COMPLETION_VOCABULARY.topLevel,
+    model: model.length > 0 ? model : DEFAULT_COMPLETION_VOCABULARY.model,
+    batch: batch.length > 0 ? batch : DEFAULT_COMPLETION_VOCABULARY.batch,
+    view: view.length > 0 ? view : DEFAULT_COMPLETION_VOCABULARY.view,
+    ops: ops.length > 0 ? ops : DEFAULT_COMPLETION_VOCABULARY.ops,
+    folder: folder.length > 0 ? folder : DEFAULT_COMPLETION_VOCABULARY.folder,
+    ids: ids.length > 0 ? ids : DEFAULT_COMPLETION_VOCABULARY.ids,
+    shells: [...DEFAULT_COMPLETION_VOCABULARY.shells],
+    archimateTypes: [...DEFAULT_COMPLETION_VOCABULARY.archimateTypes],
+  };
+}
+
 // Emit bash completion script as a literal string to avoid external template deps.
-function bashScript(): string {
+function bashScript(vocabulary: CompletionVocabulary): string {
   return `# archicli bash completion
 _archicli_complete() {
   local cur prev
@@ -23,13 +78,15 @@ _archicli_complete() {
   cur="\${COMP_WORDS[COMP_CWORD]}"
   prev="\${COMP_WORDS[COMP_CWORD-1]}"
 
-  local top="${TOP_LEVEL_COMMANDS.join(' ')}"
-  local model="${MODEL_COMMANDS.join(' ')}"
-  local batch="${BATCH_COMMANDS.join(' ')}"
-  local view="${VIEW_COMMANDS.join(' ')}"
-  local ops="${OPS_COMMANDS.join(' ')}"
-  local shells="${COMPLETION_SHELLS.join(' ')}"
-  local archimate_types="${ARCHIMATE_TYPES.join(' ')}"
+  local top="${vocabulary.topLevel.join(' ')}"
+  local model="${vocabulary.model.join(' ')}"
+  local batch="${vocabulary.batch.join(' ')}"
+  local view="${vocabulary.view.join(' ')}"
+  local ops="${vocabulary.ops.join(' ')}"
+  local folder="${vocabulary.folder.join(' ')}"
+  local ids="${vocabulary.ids.join(' ')}"
+  local shells="${vocabulary.shells.join(' ')}"
+  local archimate_types="${vocabulary.archimateTypes.join(' ')}"
 
   if [[ \${COMP_CWORD} -eq 1 ]]; then
     COMPREPLY=( $(compgen -W "\${top}" -- "\${cur}") )
@@ -62,6 +119,12 @@ _archicli_complete() {
     ops)
       [[ \${COMP_CWORD} -eq 2 ]] && COMPREPLY=( $(compgen -W "\${ops}" -- "\${cur}") )
       ;;
+    folder)
+      [[ \${COMP_CWORD} -eq 2 ]] && COMPREPLY=( $(compgen -W "\${folder}" -- "\${cur}") )
+      ;;
+    ids)
+      [[ \${COMP_CWORD} -eq 2 ]] && COMPREPLY=( $(compgen -W "\${ids}" -- "\${cur}") )
+      ;;
     completion)
       [[ \${COMP_CWORD} -eq 2 ]] && COMPREPLY=( $(compgen -W "\${shells}" -- "\${cur}") )
       ;;
@@ -73,18 +136,20 @@ complete -F _archicli_complete archicli
 }
 
 // Emit zsh completion script with the same command/type coverage as bash.
-function zshScript(): string {
+function zshScript(vocabulary: CompletionVocabulary): string {
   return `#compdef archicli
 # archicli zsh completion
 _archicli_complete() {
-  local -a top model batch view ops shells archimate_types
-  top=(${TOP_LEVEL_COMMANDS.join(' ')})
-  model=(${MODEL_COMMANDS.join(' ')})
-  batch=(${BATCH_COMMANDS.join(' ')})
-  view=(${VIEW_COMMANDS.join(' ')})
-  ops=(${OPS_COMMANDS.join(' ')})
-  shells=(${COMPLETION_SHELLS.join(' ')})
-  archimate_types=(${ARCHIMATE_TYPES.join(' ')})
+  local -a top model batch view ops folder ids shells archimate_types
+  top=(${vocabulary.topLevel.join(' ')})
+  model=(${vocabulary.model.join(' ')})
+  batch=(${vocabulary.batch.join(' ')})
+  view=(${vocabulary.view.join(' ')})
+  ops=(${vocabulary.ops.join(' ')})
+  folder=(${vocabulary.folder.join(' ')})
+  ids=(${vocabulary.ids.join(' ')})
+  shells=(${vocabulary.shells.join(' ')})
+  archimate_types=(${vocabulary.archimateTypes.join(' ')})
 
   if (( CURRENT == 2 )); then
     _describe 'command' top
@@ -112,6 +177,8 @@ _archicli_complete() {
     batch) (( CURRENT == 3 )) && _describe 'batch command' batch ;;
     view) (( CURRENT == 3 )) && _describe 'view command' view ;;
     ops) (( CURRENT == 3 )) && _describe 'ops command' ops ;;
+    folder) (( CURRENT == 3 )) && _describe 'folder command' folder ;;
+    ids) (( CURRENT == 3 )) && _describe 'ids command' ids ;;
     completion) (( CURRENT == 3 )) && _describe 'shell' shells ;;
   esac
 }
@@ -121,14 +188,16 @@ compdef _archicli_complete archicli
 }
 
 // Emit fish completion entries for top-level and nested commands.
-function fishScript(): string {
-  const top = TOP_LEVEL_COMMANDS.join(' ');
-  const model = MODEL_COMMANDS.join(' ');
-  const batch = BATCH_COMMANDS.join(' ');
-  const view = VIEW_COMMANDS.join(' ');
-  const ops = OPS_COMMANDS.join(' ');
-  const shells = COMPLETION_SHELLS.join(' ');
-  const archimateTypes = ARCHIMATE_TYPES.join(' ');
+function fishScript(vocabulary: CompletionVocabulary): string {
+  const top = vocabulary.topLevel.join(' ');
+  const model = vocabulary.model.join(' ');
+  const batch = vocabulary.batch.join(' ');
+  const view = vocabulary.view.join(' ');
+  const ops = vocabulary.ops.join(' ');
+  const folder = vocabulary.folder.join(' ');
+  const ids = vocabulary.ids.join(' ');
+  const shells = vocabulary.shells.join(' ');
+  const archimateTypes = vocabulary.archimateTypes.join(' ');
 
   return `# archicli fish completion
 complete -c archicli -f
@@ -137,13 +206,15 @@ complete -c archicli -n "__fish_seen_subcommand_from model" -a "${model}"
 complete -c archicli -n "__fish_seen_subcommand_from batch" -a "${batch}"
 complete -c archicli -n "__fish_seen_subcommand_from view" -a "${view}"
 complete -c archicli -n "__fish_seen_subcommand_from ops" -a "${ops}"
+complete -c archicli -n "__fish_seen_subcommand_from folder" -a "${folder}"
+complete -c archicli -n "__fish_seen_subcommand_from ids" -a "${ids}"
 complete -c archicli -n "__fish_seen_subcommand_from completion" -a "${shells}"
 complete -c archicli -n "__fish_seen_subcommand_from model; and __fish_seen_subcommand_from search" -l type -s t -a "${archimateTypes}"
 `;
 }
 
 // Emit PowerShell argument completer with type-aware completions for model search.
-function pwshScript(): string {
+function pwshScript(vocabulary: CompletionVocabulary): string {
   return `# archicli PowerShell completion
 Register-ArgumentCompleter -CommandName archicli -ScriptBlock {
   param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
@@ -155,13 +226,15 @@ Register-ArgumentCompleter -CommandName archicli -ScriptBlock {
     }
   }
 
-  $top = @(${TOP_LEVEL_COMMANDS.map((cmd) => `'${cmd}'`).join(', ')})
-  $model = @(${MODEL_COMMANDS.map((cmd) => `'${cmd}'`).join(', ')})
-  $batch = @(${BATCH_COMMANDS.map((cmd) => `'${cmd}'`).join(', ')})
-  $view = @(${VIEW_COMMANDS.map((cmd) => `'${cmd}'`).join(', ')})
-  $ops = @(${OPS_COMMANDS.map((cmd) => `'${cmd}'`).join(', ')})
-  $shells = @(${COMPLETION_SHELLS.map((cmd) => `'${cmd}'`).join(', ')})
-  $archimateTypes = @(${ARCHIMATE_TYPES.map((cmd) => `'${cmd}'`).join(', ')})
+  $top = @(${vocabulary.topLevel.map((cmd) => `'${cmd}'`).join(', ')})
+  $model = @(${vocabulary.model.map((cmd) => `'${cmd}'`).join(', ')})
+  $batch = @(${vocabulary.batch.map((cmd) => `'${cmd}'`).join(', ')})
+  $view = @(${vocabulary.view.map((cmd) => `'${cmd}'`).join(', ')})
+  $ops = @(${vocabulary.ops.map((cmd) => `'${cmd}'`).join(', ')})
+  $folder = @(${vocabulary.folder.map((cmd) => `'${cmd}'`).join(', ')})
+  $ids = @(${vocabulary.ids.map((cmd) => `'${cmd}'`).join(', ')})
+  $shells = @(${vocabulary.shells.map((cmd) => `'${cmd}'`).join(', ')})
+  $archimateTypes = @(${vocabulary.archimateTypes.map((cmd) => `'${cmd}'`).join(', ')})
   $normalizedTokens = @($tokens | ForEach-Object { $_.Trim('"').Trim("'") })
   $prevToken = if ($normalizedTokens.Count -gt 0) { $normalizedTokens[$normalizedTokens.Count - 1] } else { '' }
 
@@ -181,6 +254,8 @@ Register-ArgumentCompleter -CommandName archicli -ScriptBlock {
       'batch' { $candidates = $batch }
       'view' { $candidates = $view }
       'ops' { $candidates = $ops }
+      'folder' { $candidates = $folder }
+      'ids' { $candidates = $ids }
       'completion' { $candidates = $shells }
       default { $candidates = @() }
     }
@@ -198,16 +273,19 @@ Register-ArgumentCompleter -CommandName archicli -ScriptBlock {
 /**
  * Build completion script contents for the requested shell target.
  */
-export function buildCompletionScript(shell: CompletionShell): string {
+export function buildCompletionScript(
+  shell: CompletionShell,
+  vocabulary: CompletionVocabulary = DEFAULT_COMPLETION_VOCABULARY
+): string {
   switch (shell) {
     case 'bash':
-      return bashScript();
+      return bashScript(vocabulary);
     case 'zsh':
-      return zshScript();
+      return zshScript(vocabulary);
     case 'fish':
-      return fishScript();
+      return fishScript(vocabulary);
     case 'pwsh':
-      return pwshScript();
+      return pwshScript(vocabulary);
   }
 }
 
@@ -235,7 +313,8 @@ export function completionCommand(): Command {
           cmd.error('', { exitCode: 1 });
           return;
         }
-        const script = buildCompletionScript(shell);
+        const vocabulary = deriveCompletionVocabulary(cmd.parent ?? undefined);
+        const script = buildCompletionScript(shell, vocabulary);
         if (getConfig().output === 'text') {
           process.stdout.write(script);
         } else {
