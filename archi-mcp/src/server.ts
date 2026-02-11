@@ -248,7 +248,7 @@ const ResponseWithRequestIdSchema = z.object({ requestId: z.string().optional() 
 
 const HealthDataSchema = z
   .object({
-    status: z.string(),
+    status: z.string().optional(),
     version: z.string().optional(),
     server: LooseObjectSchema.optional(),
     operations: LooseObjectSchema.optional(),
@@ -273,8 +273,8 @@ const DiagnosticsDataSchema = z
 
 const QueryDataSchema = z
   .object({
-    summary: LooseObjectSchema,
-    elements: LooseObjectArraySchema,
+    summary: LooseObjectSchema.optional(),
+    elements: LooseObjectArraySchema.optional(),
     relationships: LooseObjectArraySchema.optional(),
     requestId: z.string().optional(),
   })
@@ -291,7 +291,7 @@ const PlanDataSchema = z
 
 const SearchDataSchema = z
   .object({
-    results: LooseObjectArraySchema,
+    results: LooseObjectArraySchema.optional(),
     total: z.number().int().optional(),
     criteria: LooseObjectSchema.optional(),
     requestId: z.string().optional(),
@@ -320,7 +320,7 @@ const ElementDataSchema = z
 
 const StatsDataSchema = z
   .object({
-    summary: LooseObjectSchema,
+    summary: LooseObjectSchema.optional(),
     elements: LooseObjectSchema.optional(),
     relationships: LooseObjectSchema.optional(),
     views: LooseObjectSchema.optional(),
@@ -361,7 +361,7 @@ const OperationListDataSchema = z
 
 const ViewListDataSchema = z
   .object({
-    views: LooseObjectArraySchema,
+    views: LooseObjectArraySchema.optional(),
     total: z.number().int().optional(),
     requestId: z.string().optional(),
   })

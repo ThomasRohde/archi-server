@@ -250,6 +250,99 @@ test('diagnostics tool accepts live diagnostics payload shape', async () => {
   }
 });
 
+test('tools accept sparse payloads where response fields are optional', async () => {
+  const { server, baseUrl } = await startMockServer((req, res) => {
+    if (req.method === 'GET' && req.url === '/health') {
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({}));
+      return;
+    }
+
+    if (req.method === 'POST' && req.url === '/model/query') {
+      req.resume();
+      req.on('end', () => {
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({ requestId: 'query-sparse-1' }));
+      });
+      return;
+    }
+
+    if (req.method === 'POST' && req.url === '/model/search') {
+      req.resume();
+      req.on('end', () => {
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({ requestId: 'search-sparse-1' }));
+      });
+      return;
+    }
+
+    if (req.method === 'GET' && req.url === '/model/stats') {
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({ requestId: 'stats-sparse-1' }));
+      return;
+    }
+
+    if (req.method === 'GET' && req.url === '/views') {
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({ requestId: 'views-sparse-1' }));
+      return;
+    }
+
+    res.writeHead(404, { 'content-type': 'application/json' });
+    res.end(JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Not found' } }));
+  });
+
+  try {
+    await withMcpClient(baseUrl, async (client) => {
+      const health = await client.callTool({
+        name: 'archi_get_health',
+        arguments: {},
+      });
+      assert.equal(health.isError, undefined);
+      assert.equal(health.structuredContent.ok, true);
+      assert.equal(health.structuredContent.operation, 'archi_get_health');
+
+      const query = await client.callTool({
+        name: 'archi_query_model',
+        arguments: {},
+      });
+      assert.equal(query.isError, undefined);
+      assert.equal(query.structuredContent.ok, true);
+      assert.equal(query.structuredContent.operation, 'archi_query_model');
+      assert.equal(query.structuredContent.data.requestId, 'query-sparse-1');
+
+      const search = await client.callTool({
+        name: 'archi_search_model',
+        arguments: {},
+      });
+      assert.equal(search.isError, undefined);
+      assert.equal(search.structuredContent.ok, true);
+      assert.equal(search.structuredContent.operation, 'archi_search_model');
+      assert.equal(search.structuredContent.data.requestId, 'search-sparse-1');
+
+      const stats = await client.callTool({
+        name: 'archi_get_model_stats',
+        arguments: {},
+      });
+      assert.equal(stats.isError, undefined);
+      assert.equal(stats.structuredContent.ok, true);
+      assert.equal(stats.structuredContent.operation, 'archi_get_model_stats');
+      assert.equal(stats.structuredContent.data.requestId, 'stats-sparse-1');
+
+      const views = await client.callTool({
+        name: 'archi_list_views',
+        arguments: {},
+      });
+      assert.equal(views.isError, undefined);
+      assert.equal(views.structuredContent.ok, true);
+      assert.equal(views.structuredContent.operation, 'archi_list_views');
+      assert.equal(views.structuredContent.data.requestId, 'views-sparse-1');
+    });
+  } finally {
+    await closeServer(server);
+  }
+});
+
 test('archi_get_element accepts incoming/outgoing relationship payload shape', async () => {
   const elementId = 'id-b27d66b1f5324c9a9dea1af5416c6be8';
   const { server, baseUrl } = await startMockServer((req, res) => {
