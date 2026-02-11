@@ -1159,6 +1159,19 @@
         }
 
         // Second pass: mutations (no deletes — deletes handled in third pass)
+        // Build a name lookup from first-pass createElement results so that
+        // createRelationship results can backfill sourceName/targetName for
+        // elements whose names haven't been committed yet (compound command
+        // hasn't executed).
+        var batchNameMap = {};
+        for (var ni = 0; ni < results.length; ni++) {
+            var r = results[ni];
+            if (r.op === "createElement" && r.name) {
+                batchNameMap[r.realId] = r.name;
+                if (r.tempId) batchNameMap[r.tempId] = r.name;
+            }
+        }
+
         for (var j = 0; j < operations.length; j++) {
             var operation = operations[j];
 
@@ -1269,9 +1282,9 @@
                     realId: rel.getId(),
                     type: operation.type,
                     source: source.getId(),
-                    sourceName: source.getName ? source.getName() : '',
+                    sourceName: (source.getName && source.getName()) || batchNameMap[operation.sourceId] || '',
                     target: target.getId(),
-                    targetName: target.getName ? target.getName() : '',
+                    targetName: (target.getName && target.getName()) || batchNameMap[operation.targetId] || '',
                     relationship: rel
                 });
 

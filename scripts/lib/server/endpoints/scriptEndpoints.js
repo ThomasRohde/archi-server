@@ -143,6 +143,17 @@
             globalThis.__apiScriptResult = { files: [], value: null };
             globalThis.__apiScriptsDir = scriptsDir;
 
+            // Save original console methods on globalThis BEFORE the wrapper file
+            // is loaded. Inside the wrapper, `var console = {...}` is hoisted,
+            // which would shadow the host `console` object.  By stashing the
+            // originals here (outside the `load()` boundary) we guarantee the
+            // references point at the real host methods and can never re-enter
+            // through the shadowed object.
+            globalThis.__origConsoleLog      = console.log;
+            globalThis.__origConsolePrint    = console.print;
+            globalThis.__origConsolePrintln  = console.println;
+            globalThis.__origConsoleError    = console.error;
+
             var scriptCode = request.body.code;
             if (/\b__DIR__\b/.test(scriptCode)) {
                 scriptCode = scriptCode.replace(/\b__DIR__\b/g, "__scriptsDir__");
@@ -173,11 +184,14 @@
                 // Use globalThis for all shared state to survive load() boundary
                 var wrappedCode = [
                     "// Auto-generated wrapper for API script execution",
-                    "// Save references to original console methods for pass-through",
-                    "var __originalConsoleLog = console.log;",
-                    "var __originalConsolePrint = console.print;", 
-                    "var __originalConsolePrintln = console.println;",
-                    "var __originalConsoleError = console.error;",
+                    "// Original console methods were saved to globalThis BEFORE this",
+                    "// file was loaded — see scriptEndpoints.js.  We reference them",
+                    "// via globalThis so the var-hoisted `console` shadow below can",
+                    "// never cause infinite recursion.",
+                    "var __originalConsoleLog     = globalThis.__origConsoleLog;",
+                    "var __originalConsolePrint   = globalThis.__origConsolePrint;",
+                    "var __originalConsolePrintln = globalThis.__origConsolePrintln;",
+                    "var __originalConsoleError   = globalThis.__origConsoleError;",
                     "",
                     "// Shadow the entire console binding with a plain JS object.",
                     "// GraalVM's host-backed console object silently ignores property",
@@ -188,31 +202,31 @@
                     "        var args = Array.prototype.slice.call(arguments);",
                     "        var msg = args.map(function(a) { return String(a); }).join(' ');",
                     "        globalThis.__apiScriptOutput.push({ level: 'log', message: msg });",
-                    "        __originalConsoleLog.apply(null, arguments);",
+                    "        __originalConsoleLog.apply(null, args);",
                     "    },",
                     "    print: function() {",
                     "        var args = Array.prototype.slice.call(arguments);",
                     "        var msg = args.map(function(a) { return String(a); }).join('');",
                     "        globalThis.__apiScriptOutput.push({ level: 'print', message: msg });",
-                    "        __originalConsolePrint.apply(null, arguments);",
+                    "        __originalConsolePrint.apply(null, args);",
                     "    },",
                     "    println: function() {",
                     "        var args = Array.prototype.slice.call(arguments);",
                     "        var msg = args.map(function(a) { return String(a); }).join('');",
                     "        globalThis.__apiScriptOutput.push({ level: 'println', message: msg });",
-                    "        __originalConsolePrintln.apply(null, arguments);",
+                    "        __originalConsolePrintln.apply(null, args);",
                     "    },",
                     "    error: function() {",
                     "        var args = Array.prototype.slice.call(arguments);",
                     "        var msg = args.map(function(a) { return String(a); }).join(' ');",
                     "        globalThis.__apiScriptOutput.push({ level: 'error', message: msg });",
-                    "        __originalConsoleError.apply(null, arguments);",
+                    "        __originalConsoleError.apply(null, args);",
                     "    },",
                     "    warn: function() {",
                     "        var args = Array.prototype.slice.call(arguments);",
                     "        var msg = args.map(function(a) { return String(a); }).join(' ');",
                     "        globalThis.__apiScriptOutput.push({ level: 'warn', message: msg });",
-                    "        __originalConsoleLog.apply(null, arguments);",
+                    "        __originalConsoleLog.apply(null, args);",
                     "    }",
                     "};",
                     "",
@@ -317,8 +331,30 @@
                     "    return results;",
                     "}",
                     "",
-                    "// Execute user script",
-                    "(function() {",
+                    "// Auto-bind $ to the loaded model so $() selectors work",
+                    "// without requiring UI selection context.",
+                    "var __autoModel = (function() {",
+                    "    try {",
+                    "        var models = $.model.getLoadedModels();",
+                    "        return models && models.size() > 0 ? models.get(0) : null;",
+                    "    } catch(e) { return null; }",
+                    "})();",
+                    "if (__autoModel) {",
+                    "    var __original$ = $;",
+                    "    $ = function(selector) {",
+                    "        if (arguments.length === 1) {",
+                    "            return __original$(selector, __autoModel);",
+                    "        }",
+                    "        return __original$.apply(null, arguments);",
+                    "    };",
+                    "    // Copy static properties (e.g. $.model)",
+                    "    for (var __k in __original$) {",
+                    "        if (__original$.hasOwnProperty(__k)) { $[__k] = __original$[__k]; }",
+                    "    }",
+                    "}",
+                    "",
+                    "// Execute user script — capture last expression value",
+                    "globalThis.__apiScriptResult.value = (function() {",
                     "    try {",
                     "        " + scriptCode.split("\n").join("\n        "),
                     "    } finally {",
@@ -357,6 +393,10 @@
                 delete globalThis.__apiScriptOutput;
                 delete globalThis.__apiScriptResult;
                 delete globalThis.__apiScriptsDir;
+                delete globalThis.__origConsoleLog;
+                delete globalThis.__origConsolePrint;
+                delete globalThis.__origConsolePrintln;
+                delete globalThis.__origConsoleError;
                 
                 // Refresh model snapshot after script execution
                 if (typeof modelSnapshot !== "undefined" && modelSnapshot && serverState.modelRef) {

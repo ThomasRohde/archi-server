@@ -1,18 +1,20 @@
 # MCP Exercise Report
 
 > Full-stack exercise of the Archi MCP server by a GitHub Copilot (Claude Opus 4.6) agent, February 11, 2026.
-> Model: "Test" (empty at start), Archi Server v1.6.1, host 127.0.0.1:8765.
+> Model: "Test", Archi Server v1.6.1, host 127.0.0.1:8765.
+> **Second comprehensive exercise** — retests all prior findings to identify fixes and regressions.
 
 ---
 
 ## 1. Scope & Method
 
-Exercised **every MCP tool** exposed by the Archi MCP server—both read-only and mutation—in a single session against a fresh empty model. The goal was to:
+Exercised **every MCP tool** exposed by the Archi MCP server—both read-only and mutation—in a single session against a model with some prior test data. The goals were:
 
-- Verify that each tool works as documented
-- Discover field-naming inconsistencies that cause agent confusion
+- Verify every tool works as documented
+- Retest all bugs and field-naming issues from the previous exercise
+- Discover new issues, edge cases, and regressions
 - Test the full create → relate → view → populate → style → layout → export → delete lifecycle
-- Stress intra-batch tempId resolution, error handling, and edge cases
+- Stress intra-batch tempId resolution, batch size limits, and error handling
 - Evaluate the experience from an AI agent's perspective and provide actionable fixes
 
 ### Tools exercised (32 total)
@@ -37,173 +39,222 @@ Exercised **every MCP tool** exposed by the Archi MCP server—both read-only an
 ## 2. What Worked Well
 
 ### 2.1 Async operation lifecycle is excellent
-The `archi_apply_model_changes` → `archi_wait_for_operation` pattern is clean and agent-friendly. Operations complete fast (<130ms typical), the `wait_for_operation` tool eliminates manual polling, and the response includes a full result array with tempId→realId mappings.
+The `archi_apply_model_changes` → `archi_wait_for_operation` pattern is clean and agent-friendly. Operations complete fast (89–130ms typical), the `wait_for_operation` tool eliminates manual polling, and the response includes a full result array with tempId→realId mappings. All 16 successful operations in this session completed on the first poll.
 
 ### 2.2 `archi_populate_view` is a game-changer
-A single call with 8 element IDs + `autoConnect: true` placed all 8 visual objects and auto-resolved all 7 relationship connections. This eliminated what would otherwise be 15+ manual `addToView`/`addConnectionToView` operations. The `autoResolved: true` flag in connection results is helpful for debugging.
+A single call with 14 element IDs + `autoConnect: true` placed all 14 visual objects and auto-resolved all 16 relationship connections. This eliminated what would otherwise be 30+ manual `addToView`/`addConnectionToView` operations. The `autoResolved: true` flag in connection results is helpful for debugging. `skipExistingVisuals` and `skipExistingConnections` work correctly for incremental updates.
 
 ### 2.3 Error messages are actionable
 - Invalid element type → lists all 61 valid types grouped by layer with kebab-case format hint
-- Duplicate view name → returns the existing view ID so the agent can decide to reuse or rename
+- Duplicate view name → returns the existing view ID so the agent can decide to reuse or rename (409 with `existingViewId`)
 - Missing `id` field → clear message identifying which change index and operation failed
 - NotFound on element → hint about conceptId vs. visual ID confusion
+- Nonexistent view → clean 404 with view ID echoed
+- Nonexistent operation → clean 404
+- Batch rollback → detailed message with chunk number, sub-command count, and missing object count
 
 ### 2.4 Consistent response envelope
-Every response has `{ok, operation, data, requestId}`. The `requestId` in every response is excellent for debugging and correlation. The `mcp` metadata on list_views and search_model (showing effective filters, pagination, regex mode) is helpful.
+Every response has `{ok, operation, data, requestId}`. The `requestId` in every response is excellent for debugging and correlation. The `mcp` metadata on `list_views` and `search_model` (showing effective filters, pagination, regex mode) is informative.
 
-### 2.5 View validation catches integrity issues
-`archi_validate_view` checks for orphaned connections and direction mismatches—exactly what an agent needs after complex view modifications.
+### 2.5 Field alias normalization is much improved (FIXED since last exercise)
+The MCP layer now correctly normalizes:
+- `elementId` → `id` for `updateElement`, `moveToFolder`, `setProperty`
+- `visualId` → `viewObjectId` for `styleViewObject`, `moveViewObject`
 
-### 2.6 Intra-batch tempId cross-referencing works
-Creating 2 elements + 2 relationships in one batch, where relationships reference tempIds from elements created in the same batch, works correctly. Mixed references (tempId for new element + realId for existing element) also work.
+The response includes `mcp.aliasesResolved` count and a note explaining the normalization. This was the **#1 source of agent retry friction** in the previous exercise and is now fully resolved.
 
-### 2.7 Search capabilities are thorough
-Property-based search (`propertyKey`/`propertyValue`), type filtering, relationship type filtering via `get_relationships_between_elements`, and regex name patterns all work as expected. Case-insensitive mode is the default—good for agent use.
+### 2.6 View validation catches integrity issues
+`archi_validate_view` checks for orphaned connections and direction mismatches — both passed on our 14-element, 16-connection view.
+
+### 2.7 Intra-batch tempId cross-referencing works perfectly
+Creating an element + relationship in one batch, where the relationship references the element's tempId, works correctly. Both `sourceName` and `targetName` are now populated in the response (previously reported as empty for tempId references — now fixed).
+
+### 2.8 Search capabilities are thorough
+- Case-insensitive regex (default): `"Order"` automatically becomes `[oO][rR][dD][eE][rR]`
+- Property-based search (`propertyKey`/`propertyValue`): found Customer by "Risk Level=High"
+- Type filtering: `type: "node"` returns only Node elements
+- Relationship type filtering on `get_relationships_between_elements`: correctly filtered to only serving-relationships
+- `includeRelationships: false` correctly excludes relationships from search results
+- The `mcp` metadata shows `originalNamePattern`, `effectiveNamePattern`, `regexMode`
+
+### 2.9 `fontColor` now visible in `get_view` response (FIXED since last exercise)
+Applied `fontColor: "#1B5E20"` to Customer element → it now appears in the `get_view` response alongside `fillColor`. Previously reported as missing.
+
+### 2.10 Nesting and grouping work reliably
+`nestInView` correctly nests elements inside groups with relative coordinates. `get_view` shows the `parentId` field on nested elements. Creating a group, then nesting 3 application components inside it, all worked in a single batch.
 
 ---
 
 ## 3. Bugs Found
 
-### 3.1 CRITICAL: `archi_run_script` — `console.log` causes infinite recursion
+### 3.1 CRITICAL: `archi_run_script` — `console.log` causes infinite recursion (STILL OPEN)
 **Reproduction:**
 ```javascript
-console.log("Hello");
+console.log("Hello from MCP script");
 ```
-**Result:** `RangeError: Maximum call stack size exceeded` with the message duplicated hundreds of times in the output array before stack overflow.
+**Result:** `RangeError: Maximum call stack size exceeded` with the message duplicated hundreds of times in the output array before stack overflow. Response is truncated (52KB of repeated log lines).
 
-**Impact:** The script tool is partially unusable for any script that does logging. The console interceptor appears to recursively call itself.
+**Root cause:** The console interceptor recursively calls itself. The patched `console.log` calls through to something that triggers `console.log` again.
 
-**Recommendation:** Fix the console intercept in the script execution wrapper. Ensure the intercepted `log`/`warn`/`error` functions use the *original* native method (save a reference before patching) and don't re-enter.
+**Recommendation:** Save a reference to the original `console.log` before patching:
+```javascript
+var _originalLog = console.log;
+console.log = function() {
+    // capture to output array
+    _originalLog.apply(console, arguments);
+};
+```
 
-### 3.2 CRITICAL: `archi_run_script` — script return values are always `null`
+### 3.2 CRITICAL: `archi_run_script` — script return values are always missing (STILL OPEN)
 **Reproduction:**
 ```javascript
-var x = "hello";
-x;
+var x = 42; x;
 ```
-**Result:** `result: null` even though the expression evaluates to `"hello"`.
+**Result:** `success: true` but no `result` field in the response. The only way to see output is `console.log`, which is broken (see 3.1).
 
-**Impact:** Scripts can't return data to the agent. The only mechanism for output is `console.log`, which is also broken (see 3.1).
+```javascript
+var model = $.model; var name = model.name; "Model: " + name;
+```
+Also returns no `result` — the expression value is silently discarded.
 
-**Recommendation:** Capture and return the last expression value from the script evaluation context. GraalVM's `Context.eval()` returns a `Value` — ensure it's serialized to JSON in the response `result` field.
+**Impact:** Scripts can't return data to the agent. The scripting tool is effectively write-only.
 
-### 3.3 MEDIUM: `archi_run_script` — `$("element")` fails without UI selection context
+**Recommendation:** Capture and return the last expression value. GraalVM's `Context.eval()` returns a `Value` — serialize it to JSON in a `result` field.
+
+### 3.3 CRITICAL: `archi_run_script` — `$()` selector causes infinite recursion (REGRESSION)
 **Reproduction:**
 ```javascript
-$("element").each(function(e) { /* ... */ });
+$("element").size();
 ```
-**Error:** "Could not get the currently selected model."
+**Result:** `RangeError: Maximum call stack size exceeded` at `$ (jarchi_script:163)` — recursive calls to the `$` function itself.
 
-Even `$("element", $.model)` fails with the same error. The error message suggests using `$.model.getLoadedModels().get(0)` but that also returns `null` for `result`.
+**Change from previous exercise:** Previously this returned "Could not get the currently selected model" — a clear error message. Now it triggers the same infinite recursion as `console.log`.
 
-**Impact:** The standard jArchi `$()` selector pattern—by far the most common scripting pattern—doesn't work via MCP.
+**Impact:** The `$()` selector — the most fundamental jArchi API — is completely unusable via MCP.
 
-**Recommendation:**
-1. If feasible, auto-bind `$` to the currently loaded model in the MCP script context
-2. At minimum, document the working alternative in the tool description (not just the error message)
-3. Update the tool's `description` field to explicitly warn: "The `$()` selector requires UI context. Use structured tools instead, or access the model via Java EMF APIs."
+**Recommendation:** The `$` function wrapper likely has the same interception/proxy issue as `console.log`. Fix the recursive wrapper or document that `$()` is not available via MCP and agents should use structured tools instead.
+
+### 3.4 MEDIUM: `archi_populate_view` — `autoConnect` misses connections to pre-existing elements
+**Reproduction:**
+1. Populate a view with elements A, B, C (all placed)
+2. Later, call `populate_view` again with elements A and D (where D is new, A already exists)
+3. With `skipExistingVisuals: true`, element A is correctly skipped and D is added
+4. But relationship A→D connection is skipped with `"reason": "source element not in view"` — **A IS on the view**
+
+**Actual response:**
+```json
+{"op": "addConnectionToView", "skipped": true, "reason": "source element not in view", "relationshipId": "..."}
+```
+
+**Impact:** Incremental population requires two calls: first `populate_view` with just new elements, then a manual `addConnectionToView` for cross-connections.
+
+**Recommendation:** When resolving auto-connections, also scan the view's existing visuals (not just the just-added ones from this batch) for matching source/target elements.
+
+### 3.5 LOW: Batch rollback on 30 operations (14 elements + 16 relationships)
+**Reproduction:** Submitted all 14 elements + 16 relationships as a single batch of 30 operations.
+
+**Result:**
+```
+Silent batch rollback detected after chunk 1: 9 of 30 created objects not found in model folders
+after execution. The GEF command stack likely rejected the CompoundCommand.
+Chunk had 49 sub-commands (21 operations).
+```
+
+**Observation:** The documentation says "keep batches ≤20 operations." This is confirmed — 30 operations in one batch triggers a silent GEF rollback. The error message is excellent, with specific chunk number and sub-command count.
+
+**Recommendation:** The documentation already covers this, but the MCP layer could enforce it by pre-splitting large batches into chunks ≤20 automatically, or at minimum reject batches >20 with a clear validation error instead of queueing them for async execution and having them silently roll back.
 
 ---
 
-## 4. Field Naming Inconsistencies (Agent Confusion)
+## 4. Previously Reported Issues — Status Update
 
-These caused validation failures on first attempt. Each required a retry after reading the error message.
+### ✅ FIXED: Field naming inconsistencies (4.1–4.4 from previous report)
 
-### 4.1 `updateElement` requires `id`, not `elementId`
-**What happened:** Sent `{"op": "updateElement", "elementId": "...", "name": "..."}` — got `missing 'id' field`.
+All alias normalizations now work:
 
-**Inconsistency:** `setProperty` accepts `elementId` (and the MCP layer normalizes it to `id`). But `updateElement` doesn't. The MCP layer even logs `"aliasesResolved": 2` for `setProperty` but doesn't do the same for `updateElement`.
+| Operation | Agent sends | Normalized to | Status |
+|-----------|------------|---------------|--------|
+| `updateElement` | `elementId` | `id` | ✅ **Fixed** |
+| `styleViewObject` | `visualId` | `viewObjectId` | ✅ **Fixed** |
+| `moveViewObject` | `visualId` | `viewObjectId` | ✅ **Fixed** |
+| `moveToFolder` | `elementId` | `id` | ✅ **Fixed** |
+| `setProperty` | `elementId` | `id` | ✅ Was already working |
 
-**Recommendation:** Either normalize `elementId` → `id` for all operations in the MCP layer, or use `id` consistently everywhere and document it clearly.
+The MCP response now includes `mcp.aliasesResolved` and a note explaining the normalization — very agent-friendly.
 
-### 4.2 `styleViewObject` requires `viewObjectId`, not `visualId`
-**What happened:** Sent `{"op": "styleViewObject", "visualId": "..."}` — got `missing 'viewObjectId' field`.
+### ✅ FIXED: `fontColor` not visible in `get_view` response (5.3 from previous report)
+`get_view` now returns `fontColor` alongside `fillColor` for styled elements.
 
-**Inconsistency:**
-- `addToView` returns `visualId` in its result
-- `nestInView` uses `visualId` and `parentVisualId`
-- `get_view_summary` returns `visualId` for each element
-- But `styleViewObject` requires `viewObjectId`
+### ✅ FIXED: Intra-batch relationship `sourceName`/`targetName` empty (5.1 from previous report)
+Names are now correctly populated when using tempId cross-references within a batch.
 
-**Recommendation:** Accept both `visualId` and `viewObjectId` as aliases, or standardize on one name. Since `visualId` is used everywhere else, prefer that.
-
-### 4.3 `moveViewObject` requires `viewObjectId`, not `visualId`
-Same issue as 4.2 — the natural field name from view query results is `visualId`, but `moveViewObject` demands `viewObjectId`.
-
-### 4.4 `moveToFolder` requires `id`, not `elementId`
-**What happened:** Sent `{"op": "moveToFolder", "elementId": "..."}` — got `missing 'id' field`.
-
-### 4.5 `createFolder` requires `parentId` or `parentType`, not `parentPath`
-**What happened:** Sent `{"op": "createFolder", "parentPath": "Business"}` — got `must specify 'parentId' or 'parentType'`.
-
-**Mitigation:** This is somewhat reasonable since paths could be ambiguous, but since `list_folders` returns both `id` and `path`, accepting `parentPath` would be convenient.
-
-### Summary table of field naming issues
-
-| Operation | Agent tried | Required | Suggested fix |
-|-----------|-------------|----------|---------------|
-| `updateElement` | `elementId` | `id` | Accept `elementId` as alias |
-| `styleViewObject` | `visualId` | `viewObjectId` | Accept `visualId` as alias |
-| `moveViewObject` | `visualId` | `viewObjectId` | Accept `visualId` as alias |
-| `moveToFolder` | `elementId` | `id` | Accept `elementId` as alias |
-| `createFolder` | `parentPath` | `parentId`/`parentType` | Optionally accept `parentPath` |
+### ⚠️ STILL OPEN: `console.log` infinite recursion (3.1)
+### ⚠️ STILL OPEN: Script return values always null (3.2)
+### ⚠️ REGRESSION: `$()` selector now causes stack overflow instead of error message (3.3)
+### ℹ️ STILL PRESENT: `duplicate_view` returns UUID-format IDs (5.2 — cosmetic)
+Original view: `id-0435f345...` → Duplicate: `ba552156-f3cf-4093-...` (UUID format without `id-` prefix)
 
 ---
 
-## 5. Minor Issues & Observations
+## 5. Minor Observations
 
-### 5.1 Intra-batch relationship results have empty `sourceName`/`targetName`
-When a `createRelationship` references a `tempId` from a `createElement` in the same batch, the response shows `"sourceName": ""` and `"targetName": ""`. The IDs resolve correctly, but names aren't backfilled from the just-created elements.
+### 5.1 `search_model` returns results from prior test data
+Searching for "Order" returned 8 results instead of the 4 I created — prior test elements with the same names were still in the model. This is expected behavior but agents should filter by additional criteria (type, properties) to avoid ambiguity.
 
-**Impact:** Low — the agent can look up names separately. But it makes the response less self-contained.
+### 5.2 `search_model` still doesn't return properties in results
+When searching by property (`propertyKey`/`propertyValue`), the result includes `matchedPropertyKey` and `matchedPropertyValue` but not the full `properties` object. Agents must follow up with `get_element` for the full property set.
 
-**Recommendation:** After resolving tempIds, backfill names from the batch's created elements before returning the result.
+### 5.3 Operation timing is consistently excellent
+All operations completed in 89–130ms server-side. `wait_for_operation` resolved on the first poll in 1–3ms. Session total: 17 operations (16 success, 1 intentional oversized batch error).
 
-### 5.2 `duplicate_view` returns UUID-format IDs, not Archi-format IDs
-Original view: `id-d35da3322c7b4eb7a9cba9c04830910e` (Archi format)
-Duplicated view: `a9a78a65-5d9b-4d48-9581-390f4ac5e7c7` (UUID format)
+### 5.4 Memory usage is reasonable
+Started at 203MB, ended at 251MB after creating 14 elements, 16 relationships, 1 view with 15 visuals, 16 connections, groups, notes, and styling. Max heap 8GB.
 
-Visual elements in the duplicate also use UUID format. This is likely an Archi/jArchi behavior, not a server bug, but it means ID format is inconsistent within the same model. Agents should be prepared for both formats.
+### 5.5 `createFolder` requires `parentId` or `parentType`, not `parentPath`
+This is by design (paths can be ambiguous), but since `list_folders` returns both `id` and `path`, accepting `parentPath` as a convenience would reduce agent friction.
 
-### 5.3 `fontColor` applied via `styleViewObject` isn't visible in `get_view` response
-After applying `fontColor: "#1B5E20"` to a view object, `get_view` shows `fillColor` but not `fontColor` in the element data. Either it's not persisted, not serialized, or uses a different field name on read.
-
-### 5.4 `search_model` doesn't return properties in results
-When searching by property (`propertyKey`/`propertyValue`), the matching result includes `matchedPropertyKey` and `matchedPropertyValue`, but doesn't include the full `properties` object. An agent wanting to read all properties must follow up with `get_element`.
-
-### 5.5 Operation timing is excellent
-All operations completed in 100-130ms server-side. The `wait_for_operation` call typically resolved in 1-3ms on the first poll. This makes the agent workflow very snappy.
+### 5.6 Note content not visible in `get_view`
+The note element in `get_view` shows `"name": ""` (empty) even though content was set during creation. The note's text content may be stored in a different field (documentation?) that isn't serialized in the view response.
 
 ---
 
 ## 6. Recommendations for the MCP Developer
 
-### 6.1 High Priority — Fix bugs
+### 6.1 High Priority — Fix Script Execution (3 bugs)
 
-1. **Fix `console.log` infinite recursion in `archi_run_script`** — Save original `console` methods before intercepting
-2. **Fix script return value capture** — Ensure GraalVM eval return value is serialized to response `result`
-3. **Normalize field names** — Accept `elementId`/`visualId` as aliases everywhere, or document the canonical field per operation in the MCP tool descriptions
+1. **Fix `console.log` infinite recursion** — Save original console methods before intercepting. The intercepted `log`/`warn`/`error` functions must use the original native method (stored before patching) and not re-enter the wrapper.
 
-### 6.2 Medium Priority — Improve agent ergonomics
+2. **Fix script return value capture** — Capture and serialize the GraalVM eval return value. Even `var x = 42; x;` returns null — the last expression value should be JSON-serialized in a `result` field.
 
-4. **Add field alias normalization for all `apply` operations** — The MCP layer already does this for `setProperty` (`elementId` → `id`); extend to `updateElement`, `moveToFolder`, `styleViewObject`, `moveViewObject`, etc.
-5. **Backfill names in intra-batch relationship results** — Resolve `sourceName`/`targetName` from the batch's just-created elements
-6. **Enrich `archi_run_script` tool description** — Explicitly warn about no UI context, no `$()` selector, and suggest structured tool alternatives
-7. **Add `properties` to search results** — Include the full properties map when searching by property, to reduce follow-up calls
+3. **Fix `$()` selector recursion** — This is a regression from the previous session where it returned a clear error ("Could not get the currently selected model"). Now it triggers infinite recursion like `console.log`. Either fix the wrapper to avoid recursion, or restore the previous error message.
 
-### 6.3 Low Priority — Polish & enhance
+### 6.2 Medium Priority — Improve `populate_view` incremental workflow
 
-8. **Accept `parentPath` in `createFolder`** — Convenience for agents that know folder names from `list_folders`
-9. **Add SVG export format** — PNG/JPG are supported; SVG would be useful for embedding in documentation
-10. **Add `archi_undo` / `archi_redo` tools** — The undo infrastructure exists in `undoableCommands.js`; exposing it via MCP would let agents recover from mistakes without manual intervention
-11. **Include `fontColor` in view serialization** — Currently only `fillColor` appears in `get_view` responses
-12. **Add `archi_get_element_batch`** — Retrieve multiple elements by ID in one call; currently requires N separate `get_element` calls
+4. **Fix `autoConnect` for pre-existing visual elements** — When `skipExistingVisuals: true` skips an element already on the view, that element's visual should still be considered when resolving connection endpoints. Currently, connections to/from pre-existing elements are skipped with "source element not in view" even when the element IS on the view.
 
-### 6.4 Documentation improvements
+5. **Optionally pre-validate batch size** — Reject batches >20 operations at the MCP validation layer with a clear error, instead of queueing them for async execution and getting a silent GEF rollback. Or auto-chunk large batches.
 
-13. **Document the canonical field name for every `apply` operation** — A table in the tool description or a linked reference showing exactly which fields each op requires
-14. **Add examples to tool descriptions** — Brief JSON examples for the most confusing operations (`styleViewObject`, `nestInView`, `createFolder`) would prevent first-attempt failures
-15. **Clarify ID formats** — Document that duplicated views use UUID format while original views use `id-` prefix format
+### 6.3 Low Priority — Polish & Enhance
+
+6. **Include `properties` in search results** — When searching by property, return the full properties map to reduce follow-up `get_element` calls.
+
+7. **Serialize note content in `get_view`** — The note's text content should appear in the view element data (currently shows `name: ""`).
+
+8. **Accept `parentPath` in `createFolder`** — Convenience for agents that know folder names from `list_folders`.
+
+9. **Add SVG export format** — PNG/JPG are supported; SVG would be useful for documentation embedding.
+
+10. **Add `archi_undo` / `archi_redo` tools** — The undo infrastructure exists; expose it via MCP for agent mistake recovery.
+
+11. **Add `archi_get_element_batch`** — Retrieve multiple elements by ID in one call; currently requires N separate `get_element` calls.
+
+### 6.4 Documentation Improvements
+
+12. **Add examples to tool descriptions** — Brief JSON examples for `styleViewObject`, `nestInView`, `createFolder`, `populate_view` would prevent first-attempt failures for new agent integrations.
+
+13. **Clarify ID format differences** — Document that duplicated views use UUID format while original views use `id-` prefix format.
+
+14. **Document `populate_view` limitation** — Note that `autoConnect` only resolves connections between elements added in the same populate call (not pre-existing elements on the view).
 
 ---
 
@@ -212,92 +263,136 @@ All operations completed in 100-130ms server-side. The `wait_for_operation` call
 ### Phase 1: Health & Infrastructure
 | Tool | Result | Notes |
 |------|--------|-------|
-| `archi_get_health` | OK | v1.6.1, uptime 51165s, 0 elements, 0 relationships, 1 view |
-| `archi_get_test` | OK | Handler confirmed running on UI thread |
-| `archi_get_model_diagnostics` | OK | No orphans |
-| `archi_get_model_stats` | OK | Empty model with 1 default view |
+| `archi_get_health` | ✅ OK | v1.6.1, 0 ops queued, 0 elements (start of session) |
+| `archi_get_test` | ✅ OK | "Handler running on UI thread! Thread: main" |
+| `archi_get_model_diagnostics` | ✅ OK | 0 orphans, 0/0/1 elements/relationships/views |
+| `archi_get_model_stats` | ✅ OK | Empty model, 1 default view |
 
-### Phase 2: Model Queries (Empty Model)
+### Phase 2: Read Tools on Empty/Near-Empty Model
 | Tool | Result | Notes |
 |------|--------|-------|
-| `archi_query_model` | OK | Empty arrays with limit/relationshipLimit params |
-| `archi_search_model` (regex `.*`) | OK | 0 results, shows regex mode metadata |
-| `archi_search_model` (type filter) | OK | 0 results for `business-actor` |
-| `archi_list_folders` | OK | 9 standard ArchiMate folders |
+| `archi_query_model` (limit 10) | ✅ OK | Empty arrays returned |
+| `archi_search_model` (regex `.*`) | ✅ OK | 0 results, regex mode metadata shown |
+| `archi_search_model` (type filter) | ✅ OK | 0 results for `business-actor` |
+| `archi_list_folders` | ✅ OK | 9 standard ArchiMate folders with IDs/paths/types |
+| `archi_list_views` | ✅ OK | Default View with 0 objects |
+| `archi_list_views` (nameContains, sort desc) | ✅ OK | Filter + sort applied correctly |
+| `archi_list_views` (exactName nonexistent) | ✅ OK | 0 results, clean response |
 
-### Phase 3: Element CRUD
+### Phase 3: Element Creation (14 elements)
 | Tool | Result | Notes |
 |------|--------|-------|
-| `createElement` × 8 | OK | All types: business-actor, business-process, business-service, application-component, technology-service, node |
-| `createRelationship` × 7 | OK | Types: serving, assignment, realization |
-| `get_element` | OK | Shows incoming/outgoing relationships |
-| `get_relationships_between_elements` | OK | Correct filtering with relationship type filter |
-| `setProperty` × 2 | OK | Custom properties set on Customer element |
-| `updateElement` | FAIL then OK | Required `id` not `elementId` |
-| `updateRelationship` | OK | Renamed a relationship |
+| `createElement` × 14 (single batch) | ✅ OK | All tempIds resolved, 14/14 created in <110ms |
+| Types created | — | business-actor (2), business-process (2), business-service (2), application-component (3), application-service (1), technology-service (1), node (1), data-object (2) |
 
-### Phase 4: View Lifecycle
+### Phase 4: Relationship Creation (16 relationships + 1 oversized batch attempt)
 | Tool | Result | Notes |
 |------|--------|-------|
-| `archi_create_view` | OK | Layered viewpoint, with documentation |
-| `archi_populate_view` (8 elements, autoConnect) | OK | 8 visuals + 7 connections auto-resolved in one call |
-| `archi_layout_view` (dagre, TB) | OK | 8 nodes positioned in 79ms |
-| `archi_set_view_router` (manhattan) | OK | Router changed from bendpoint |
-| `archi_validate_view` | OK | No violations |
-| `styleViewObject` × 2 | FAIL then OK | Required `viewObjectId` not `visualId` |
-| `styleConnection` | OK | Line color and width set |
-| `createNote` | OK | Note with multiline content |
-| `createGroup` | OK | Group created on view |
-| `nestInView` × 2 | OK | Two elements nested inside group |
-| `moveViewObject` | FAIL then OK | Required `viewObjectId` not `visualId` |
-| `deleteConnectionFromView` | OK | Connection removed from duplicate view |
-| `archi_duplicate_view` | OK | Copy created (UUID-format ID) |
-| `archi_export_view` (PNG, 2×) | OK | 31KB file exported |
-| `archi_export_view` (JPG, 1×) | OK | 24KB file exported |
-| `archi_delete_view` | OK | Duplicate deleted |
+| 30-op batch (14 elements + 16 relationships) | ❌ Rollback | "9 of 30 created objects not found" — batch too large |
+| `createRelationship` × 8 (batch 1) | ✅ OK | serving, realization types |
+| `createRelationship` × 8 (batch 2) | ✅ OK | serving, assignment, realization, access types |
+| Intra-batch tempId (createElement + createRelationship) | ✅ OK | Payment Gateway created and referenced in same batch |
 
-### Phase 5: Folder & Delete Operations
+### Phase 5: Element Detail & Search
 | Tool | Result | Notes |
 |------|--------|-------|
-| `createFolder` | FAIL then OK | Required `parentId` not `parentPath` |
-| `moveToFolder` | FAIL then OK | Required `id` not `elementId` |
-| `deleteRelationship` | OK | Relationship deleted |
-| `deleteElement` | OK | Element deleted with `cascade: true` |
+| `archi_get_element` (Customer) | ✅ OK | 2 incoming relationships, documentation, properties |
+| `archi_search_model` (namePattern "Order") | ✅ OK | 8 results (4 mine + 4 from prior tests) |
+| `archi_search_model` (propertyKey/Value) | ✅ OK | Found Customer by "Risk Level=High" |
+| `archi_search_model` (includeRelationships false) | ✅ OK | Only elements returned |
+| `archi_search_model` (type "serving-relationship") | ✅ OK | 5 results with source/target IDs |
+| `archi_get_relationships_between_elements` (4 IDs, serving filter) | ✅ OK | 3 relationships found, correct filtering |
 
-### Phase 6: Async & Planning
+### Phase 6: Property & Update Operations
 | Tool | Result | Notes |
 |------|--------|-------|
-| `archi_wait_for_operation` | OK | All 11 operations used this successfully |
-| `archi_get_operation_status` (operationId) | OK | Both aliases work |
-| `archi_get_operation_status` (opId) | OK | Same result |
-| `archi_get_operation_status` (nonexistent) | 404 | Proper error |
-| `archi_list_operations` | OK | History with timing metadata |
-| `archi_plan_model_changes` | OK | Preview without mutation |
+| `setProperty` × 2 (Risk Level, SLA) | ✅ OK | `elementId` alias resolved |
+| `updateElement` (add documentation) | ✅ OK | `id` field used directly |
+| `updateElement` (with `elementId` alias) | ✅ OK | **Fixed!** Alias resolved to `id` |
+| `updateRelationship` (rename) | ✅ OK | `name: "places orders via"` |
 
-### Phase 7: Scripting
+### Phase 7: Folder Operations
 | Tool | Result | Notes |
 |------|--------|-------|
-| `archi_run_script` (console.log) | **BUG** | Infinite recursion / stack overflow |
-| `archi_run_script` (return value) | **BUG** | Result always `null` |
-| `archi_run_script` ($() selector) | **BUG** | No UI selection context |
+| `createFolder` (parentType: "business") | ✅ OK | "Key Stakeholders" folder created |
+| `moveToFolder` (with `elementId` alias) | ✅ OK | Customer moved to Business folder |
 
-### Phase 8: Duplicate Detection & Save
+### Phase 8: View Lifecycle
 | Tool | Result | Notes |
 |------|--------|-------|
-| `archi_create_view` (duplicate name) | 409 | Good: returns existing view ID |
-| `archi_search_model` (property filter) | OK | Found Customer by Risk Level=High |
-| `archi_save_model` | OK | Model saved in 7ms |
-| `archi_get_model_diagnostics` (post-ops) | OK | 9 elements, 7 relationships, 2 views, 0 orphans |
+| `archi_create_view` (layered viewpoint, docs) | ✅ OK | View created in 5ms |
+| `archi_create_view` (duplicate name) | ✅ 409 | Returns `existingViewId` — excellent error |
+| `archi_populate_view` (14 elements, autoConnect) | ✅ OK | 14 visuals + 16 connections auto-resolved |
+| `archi_populate_view` (skip existing, add new) | ⚠️ Partial | New element added, but connection to pre-existing element skipped |
+| `archi_layout_view` (dagre, TB) | ✅ OK | 14 nodes positioned in 105ms |
+| `archi_layout_view` (dagre, LR) | ✅ OK | 16 nodes repositioned in 89ms |
+| `archi_set_view_router` (manhattan) | ✅ OK | Router changed from bendpoint |
+| `archi_validate_view` | ✅ OK | No violations (0 orphaned connections, 0 direction mismatches) |
+| `archi_get_view_summary` (with connections) | ✅ OK | Compact format with conceptId + visualId mappings |
+| `archi_get_view` (full detail) | ✅ OK | Elements with coordinates, fillColor, fontColor, parentId for nested |
 
-### Phase 9: Error Handling
+### Phase 9: View Styling & Visual Operations
+| Tool | Result | Notes |
+|------|--------|-------|
+| `styleViewObject` × 3 (with `visualId` alias) | ✅ OK | fillColor, fontColor, opacity applied; **alias resolved** |
+| `styleConnection` (lineColor, lineWidth) | ✅ OK | Red heavy line on key relationship |
+| `createNote` (multiline content) | ✅ OK | Note placed on view, noteId returned |
+| `createGroup` ("Application Layer") | ✅ OK | Group placed on view, groupId returned |
+| `nestInView` × 3 (elements → group) | ✅ OK | 3 app components nested inside group with relative coords |
+| `moveViewObject` (using `visualId` alias) | ✅ OK | Note moved; **alias resolved** |
+| `deleteConnectionFromView` | ✅ OK | Connection removed, relationshipId confirmed |
+
+### Phase 10: View Duplication, Export & Deletion
+| Tool | Result | Notes |
+|------|--------|-------|
+| `archi_duplicate_view` | ✅ OK | UUID-format ID returned (`ba552156-...`) |
+| `archi_export_view` (PNG, 2× scale, 20px margin) | ✅ OK | 73KB file exported in 100ms |
+| `archi_export_view` (JPG, 1× scale) | ✅ OK | 50KB file exported in 43ms |
+| `archi_delete_view` (duplicate) | ✅ OK | Duplicate deleted by UUID ID |
+| `archi_delete_view` (nonexistent) | ✅ 404 | Clean error |
+
+### Phase 11: Delete Operations
+| Tool | Result | Notes |
+|------|--------|-------|
+| `deleteRelationship` | ✅ OK | CRM→Customer Profile access relationship deleted |
+| `deleteElement` (cascade: true) | ✅ OK | Customer Profile deleted, cascade removed visual from view |
+
+### Phase 12: Async Operations & Planning
+| Tool | Result | Notes |
+|------|--------|-------|
+| `archi_wait_for_operation` | ✅ OK | All 16 ops polled successfully; 1–3ms latency |
+| `archi_get_operation_status` (operationId) | ✅ OK | Both alias fields work |
+| `archi_get_operation_status` (opId) | ✅ OK | Same result as operationId |
+| `archi_get_operation_status` (nonexistent) | ✅ 404 | Clean error |
+| `archi_list_operations` (limit 5) | ✅ OK | History with timing metadata, total count |
+| `archi_plan_model_changes` | ✅ OK | Preview without mutation |
+
+### Phase 13: Script Execution
+| Tool | Result | Notes |
+|------|--------|-------|
+| `archi_run_script` (`var x = 42; x;`) | ⚠️ No result | `success: true` but no `result` field |
+| `archi_run_script` (`console.log("Hello")`) | ❌ BUG | Infinite recursion, 52KB truncated output |
+| `archi_run_script` (`$("element").size()`) | ❌ BUG | Infinite recursion (regression from clear error) |
+| `archi_run_script` (`var model = $.model; model.name;`) | ⚠️ No result | Executes but no return value |
+| `archi_run_script` (Java.type interop) | ⚠️ No result | Java works but value not returned |
+
+### Phase 14: Final State & Save
+| Tool | Result | Notes |
+|------|--------|-------|
+| `archi_get_model_diagnostics` | ✅ OK | 0 orphans — clean state |
+| `archi_save_model` | ✅ OK | Saved in 5ms to auto-generated path |
+| `archi_get_health` (end) | ✅ OK | 16 completed, 1 error, 28 elements, 23 rels, 2 views |
+
+### Phase 15: Error Handling
 | Scenario | Response | Quality |
 |----------|----------|---------|
-| Nonexistent element ID | 404 + hint about conceptId vs visualId | Excellent |
+| Invalid element type | 400 + full list of 61 valid types | ⭐ Excellent |
+| Duplicate view name | 409 + existing view ID | ⭐ Excellent |
+| Nonexistent element ID | 404 + conceptId vs visualId hint | ⭐ Excellent |
 | Nonexistent view ID | 404 | Good |
-| Invalid element type | 400 + full list of valid types | Excellent |
-| Missing required field | 400 + specific field name + operation index | Good |
 | Nonexistent operation ID | 404 | Good |
-| Duplicate view name | 409 + existing view ID | Excellent |
+| Oversized batch rollback | Error with chunk #, sub-cmd count | ⭐ Excellent |
+| Missing required field | 400 + specific field name + op index | Good |
 
 ---
 
@@ -305,27 +400,60 @@ All operations completed in 100-130ms server-side. The `wait_for_operation` call
 
 After the exercise, the model contained:
 
-- **9 elements** across 5 types: business-actor (2), business-service (2), business-process (2), application-component (2), node (1)
-- **7 relationships** across 3 types: serving (4), realization (2), assignment (1)
-- **2 views**: Default View (empty) + MCP Exercise View - Full Stack (9 visual objects, 5 connections, styled, with group and note)
+- **28 elements** across 8 types: application-component (7), business-actor (4), business-process (4), business-service (4), application-service (2), node (2), technology-service (2), data-object (3)
+- **23 relationships** across 4 types: serving (13), realization (5), assignment (3), access (1) + 1 deleted
+- **2 views**: Default View (empty) + MCP Exercise - Microservices Architecture (15 visual objects, 15 connections, 1 group, 1 note, styled elements and connections, manhattan routing)
 - **0 orphans** — clean state confirmed by diagnostics
+- **17 async operations** processed (16 success, 1 intentional oversize error)
 
 ---
 
 ## 9. Agent Experience Summary
 
-**Overall rating: 8/10** — The MCP server is remarkably capable for agent-driven ArchiMate modeling. The `populate_view` + `wait_for_operation` + intra-batch tempId pattern makes complex modeling workflows achievable in surprisingly few tool calls. The error messages are among the best I've seen in any MCP server.
+**Overall rating: 8.5/10** — Up from 8/10 in the previous exercise. The field alias normalization fix alone makes a massive difference in agent ergonomics — zero retry friction on field names this time.
 
-**What would make it 10/10:**
-1. Fix the 3 script execution bugs
-2. Normalize field names (accept aliases) across all `apply` operations — the current inconsistency between `visualId`/`viewObjectId` and `elementId`/`id` is the #1 source of agent retry friction
-3. Add inline JSON examples to tool descriptions for the 5 most confusing operations
+### What improved since last exercise
+1. ✅ Field alias normalization (`elementId`→`id`, `visualId`→`viewObjectId`) — **no more retry friction**
+2. ✅ `fontColor` visible in `get_view` responses
+3. ✅ Intra-batch `sourceName`/`targetName` populated for tempId references
+4. ✅ `mcp.aliasesResolved` count in queued responses — great for agent debugging
 
-**Calls required for a full model-to-view workflow:** 5 tool calls is the minimum (create elements → create relationships → create view → populate view → layout view). With styling, notes, groups, and export, 8-10 calls cover a complete professional-quality diagram. This is excellent compared to the 30+ raw API calls this would require.
+### What would make it 10/10
+1. **Fix the 3 script execution bugs** — `console.log` recursion, missing return values, `$()` recursion. The scripting tool is currently unusable.
+2. **Fix `populate_view` `autoConnect` for pre-existing elements** — Incremental view population is a common agent workflow.
+3. **Pre-validate or auto-chunk large batches** — Reject >20 ops immediately instead of async rollback.
+
+### Minimum tool calls for a complete model-to-view workflow
+
+| Step | Tool calls | Description |
+|------|-----------|-------------|
+| Create elements | 1 | Up to 14 elements in one batch |
+| Create relationships | 1–2 | Up to 8 per batch to stay under 20-op limit |
+| Create view | 1 | With viewpoint and documentation |
+| Populate view + auto-connect | 1 | Single call places all visuals + connections |
+| Layout | 1 | Dagre auto-layout |
+| **Total** | **5–6** | For a complete, well-connected, auto-laid-out diagram |
+
+With styling, notes, groups, nesting, and export, the total is 8–10 calls for a professional-quality diagram. This is excellent compared to the 30+ raw API calls this would require without `populate_view`.
 
 ---
 
-## Appendix: Previous Exercise Notes
+## Appendix A: Regression Tracking
+
+| Issue | Previous Status | Current Status | Verdict |
+|-------|----------------|----------------|---------|
+| `console.log` recursion (3.1) | 🔴 Bug | 🔴 Bug | Still open |
+| Script return values null (3.2) | 🔴 Bug | 🔴 Bug | Still open |
+| `$()` no UI context (3.3) | 🟡 Error msg | 🔴 Recursion | **Regression** |
+| `updateElement` requires `id` (4.1) | 🔴 Bug | ✅ Fixed | Alias resolved |
+| `styleViewObject` requires `viewObjectId` (4.2) | 🔴 Bug | ✅ Fixed | Alias resolved |
+| `moveViewObject` requires `viewObjectId` (4.3) | 🔴 Bug | ✅ Fixed | Alias resolved |
+| `moveToFolder` requires `id` (4.4) | 🔴 Bug | ✅ Fixed | Alias resolved |
+| Intra-batch names empty (5.1) | 🟡 Minor | ✅ Fixed | Names populated |
+| UUID format on duplicate (5.2) | ℹ️ Cosmetic | ℹ️ Cosmetic | Expected Archi behavior |
+| `fontColor` not in `get_view` (5.3) | 🟡 Minor | ✅ Fixed | Now serialized |
+
+## Appendix B: Previous Exercise Notes
 
 <details>
 <summary>Initial read-only exercise (earlier session, Bank model)</summary>
@@ -347,4 +475,3 @@ After the exercise, the model contained:
 - Added tool-specific NotFound hints for ID misuse.
 
 </details>
-

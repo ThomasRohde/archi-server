@@ -304,6 +304,10 @@
                             var lineWidth = conn.getLineWidth();
                             if (lineWidth !== undefined && lineWidth !== 1) connData.lineWidth = lineWidth;
                         }
+                        if (typeof conn.getFontColor === "function") {
+                            var connFontColor = conn.getFontColor();
+                            if (connFontColor) connData.fontColor = connFontColor;
+                        }
 
                         connections.push(connData);
                     }
@@ -338,6 +342,10 @@
                     if (typeof child.getLineWidth === "function") {
                         var objLineWidth = child.getLineWidth();
                         if (objLineWidth !== undefined && objLineWidth !== 1) elemData.lineWidth = objLineWidth;
+                    }
+                    if (typeof child.getFontColor === "function") {
+                        var fontColor = child.getFontColor();
+                        if (fontColor) elemData.fontColor = fontColor;
                     }
 
                     // Get underlying concept for archimate objects

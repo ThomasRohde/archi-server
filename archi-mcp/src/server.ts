@@ -1122,64 +1122,88 @@ function normalizeApplyChanges(changes: Array<Record<string, unknown>>): {
   changes: Array<Record<string, unknown>>;
   aliasesResolved: number;
 } {
+  // Operations where agents commonly send `elementId` or `relationshipId`
+  // but the Archi server expects `id`.
+  const opsAcceptingIdAlias = new Set([
+    'setProperty',
+    'updateElement',
+    'updateRelationship',
+    'moveToFolder',
+    'deleteElement',
+    'deleteRelationship',
+  ]);
+
+  // Operations where agents commonly send `visualId` but the Archi server
+  // expects `viewObjectId`.
+  const opsAcceptingViewObjectIdAlias = new Set([
+    'styleViewObject',
+    'moveViewObject',
+  ]);
+
   let aliasesResolved = 0;
 
   const normalized = changes.map((change, index) => {
-    if (change.op !== 'setProperty') {
-      return change;
-    }
+    const op = change.op as string;
+    let result = { ...change };
 
-    const id = getNonEmptyString(change.id);
-    const elementId = getNonEmptyString(change.elementId);
-    const relationshipId = getNonEmptyString(change.relationshipId);
-    const aliases = [elementId, relationshipId].filter((value): value is string => value !== undefined);
-
-    if (id && aliases.some((alias) => alias !== id)) {
-      throw new ArchiApiError(
-        `Invalid setProperty change at index ${index}: "id" conflicts with alias field values.`,
-        undefined,
-        'INVALID_APPLY_REQUEST',
-        {
-          index,
-          op: change.op,
-          id,
-          elementId,
-          relationshipId,
-        },
+    // --- Normalize elementId / relationshipId → id ---
+    if (opsAcceptingIdAlias.has(op)) {
+      const id = getNonEmptyString(result.id);
+      const elementId = getNonEmptyString(result.elementId);
+      const relationshipId = getNonEmptyString(result.relationshipId);
+      const aliases = [elementId, relationshipId].filter(
+        (value): value is string => value !== undefined,
       );
+
+      if (id && aliases.some((alias) => alias !== id)) {
+        throw new ArchiApiError(
+          `Invalid ${op} change at index ${index}: "id" conflicts with alias field values.`,
+          undefined,
+          'INVALID_APPLY_REQUEST',
+          { index, op, id, elementId, relationshipId },
+        );
+      }
+
+      if (!id && aliases.length > 1 && aliases.some((alias) => alias !== aliases[0])) {
+        throw new ArchiApiError(
+          `Invalid ${op} change at index ${index}: alias fields disagree.`,
+          undefined,
+          'INVALID_APPLY_REQUEST',
+          { index, op, elementId, relationshipId },
+        );
+      }
+
+      const resolvedId = id ?? aliases[0];
+      if (resolvedId && (elementId !== undefined || relationshipId !== undefined)) {
+        result.id = resolvedId;
+        delete result.elementId;
+        delete result.relationshipId;
+        aliasesResolved += 1;
+      }
     }
 
-    if (!id && aliases.length > 1 && aliases.some((alias) => alias !== aliases[0])) {
-      throw new ArchiApiError(
-        `Invalid setProperty change at index ${index}: alias fields disagree.`,
-        undefined,
-        'INVALID_APPLY_REQUEST',
-        {
-          index,
-          op: change.op,
-          elementId,
-          relationshipId,
-        },
-      );
+    // --- Normalize visualId → viewObjectId ---
+    if (opsAcceptingViewObjectIdAlias.has(op)) {
+      const viewObjectId = getNonEmptyString(result.viewObjectId);
+      const visualId = getNonEmptyString(result.visualId);
+
+      if (viewObjectId && visualId && viewObjectId !== visualId) {
+        throw new ArchiApiError(
+          `Invalid ${op} change at index ${index}: "viewObjectId" conflicts with "visualId".`,
+          undefined,
+          'INVALID_APPLY_REQUEST',
+          { index, op, viewObjectId, visualId },
+        );
+      }
+
+      if (!viewObjectId && visualId) {
+        result.viewObjectId = visualId;
+        delete result.visualId;
+        aliasesResolved += 1;
+      }
     }
 
-    const resolvedId = id ?? aliases[0];
-    if (!resolvedId) {
-      return change;
-    }
-
-    const hadAlias = elementId !== undefined || relationshipId !== undefined;
-    if (hadAlias) {
-      aliasesResolved += 1;
-    }
-
-    const normalizedChange: Record<string, unknown> = {
-      ...change,
-      id: resolvedId,
-    };
-    delete normalizedChange.elementId;
-    delete normalizedChange.relationshipId;
-    return normalizedChange;
+    return result;
   });
 
   return {
@@ -2051,7 +2075,7 @@ export function createArchiMcpServer(config: AppConfig): McpServer {
         ...result,
         mcp: {
           aliasesResolved,
-          note: 'Normalized setProperty alias fields (elementId/relationshipId) to id.',
+          note: 'Normalized alias fields: elementId/relationshipId→id, visualId→viewObjectId.',
         },
       };
     },
