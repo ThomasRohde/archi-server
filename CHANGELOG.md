@@ -5,6 +5,55 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0](https://github.com/ThomasRohde/archi-server/compare/v1.6.1...v1.7.0) (2026-02-11)
+
+
+### Features
+
+* **completion:** enhance completion vocabulary and scripts for new commands ([f3bd39b](https://github.com/ThomasRohde/archi-server/commit/f3bd39b779741167110b9735292aaaafd4aa06dd))
+* **doctor:** add preflight diagnostics command for server and model readiness ([1f0c314](https://github.com/ThomasRohde/archi-server/commit/1f0c3148076ac32e04b5a6828a6256f971d0ddc6))
+* **init:** implement command to create starter BOM templates and workflow README ([1f0c314](https://github.com/ThomasRohde/archi-server/commit/1f0c3148076ac32e04b5a6828a6256f971d0ddc6))
+* **view:** normalize view list response for legacy and envelope formats ([f3bd39b](https://github.com/ThomasRohde/archi-server/commit/f3bd39b779741167110b9735292aaaafd4aa06dd))
+* **warnings:** introduce structured warning handling for non-fatal issues ([1f0c314](https://github.com/ThomasRohde/archi-server/commit/1f0c3148076ac32e04b5a6828a6256f971d0ddc6))
+
+
+### Bug Fixes
+
+* **modelEndpoints:** improve model file path resolution and error handling ([f3bd39b](https://github.com/ThomasRohde/archi-server/commit/f3bd39b779741167110b9735292aaaafd4aa06dd))
+
+
+### Documentation
+
+* add remaining work backlog and experience report for archicli ([f3bd39b](https://github.com/ThomasRohde/archi-server/commit/f3bd39b779741167110b9735292aaaafd4aa06dd))
+
+
+### Maintenance
+
+* **archicli:** update version to 1.6.0 in package-lock.json ([8e876c2](https://github.com/ThomasRohde/archi-server/commit/8e876c2ed24498cc973e8f2d5ca5cf879a8ad4fd))
+* **server:** update server version to 1.6.1 ([63c12f1](https://github.com/ThomasRohde/archi-server/commit/63c12f1f956e2f23c9661f6abd2ab25f5bd00b9c))
+
+
+### Code Refactoring
+
+* **api:** log request details as warnings instead of stderr ([1f0c314](https://github.com/ThomasRohde/archi-server/commit/1f0c3148076ac32e04b5a6828a6256f971d0ddc6))
+* **health:** remove text output mode for health command ([1f0c314](https://github.com/ThomasRohde/archi-server/commit/1f0c3148076ac32e04b5a6828a6256f971d0ddc6))
+* **ids:** streamline output handling in IDs command ([1f0c314](https://github.com/ThomasRohde/archi-server/commit/1f0c3148076ac32e04b5a6828a6256f971d0ddc6))
+* **model:** adjust output handling in model save command ([1f0c314](https://github.com/ThomasRohde/archi-server/commit/1f0c3148076ac32e04b5a6828a6256f971d0ddc6))
+* **output:** capture and include warnings in CLI output ([1f0c314](https://github.com/ThomasRohde/archi-server/commit/1f0c3148076ac32e04b5a6828a6256f971d0ddc6))
+* **poll:** log rate limit warnings during polling ([1f0c314](https://github.com/ThomasRohde/archi-server/commit/1f0c3148076ac32e04b5a6828a6256f971d0ddc6))
+* **verify:** enhance output structure for verification results ([1f0c314](https://github.com/ThomasRohde/archi-server/commit/1f0c3148076ac32e04b5a6828a6256f971d0ddc6))
+* **view:** simplify view command output handling ([1f0c314](https://github.com/ThomasRohde/archi-server/commit/1f0c3148076ac32e04b5a6828a6256f971d0ddc6))
+* **view:** unify output handling in view commands ([1f0c314](https://github.com/ThomasRohde/archi-server/commit/1f0c3148076ac32e04b5a6828a6256f971d0ddc6))
+
+
+### Tests
+
+* **completion:** add tests for completion vocabulary and script generation ([f3bd39b](https://github.com/ThomasRohde/archi-server/commit/f3bd39b779741167110b9735292aaaafd4aa06dd))
+* **init:** add tests for init command functionality ([1f0c314](https://github.com/ThomasRohde/archi-server/commit/1f0c3148076ac32e04b5a6828a6256f971d0ddc6))
+* **output:** verify structured output for warnings ([1f0c314](https://github.com/ThomasRohde/archi-server/commit/1f0c3148076ac32e04b5a6828a6256f971d0ddc6))
+* **readme:** ensure all commands are documented in README ([1f0c314](https://github.com/ThomasRohde/archi-server/commit/1f0c3148076ac32e04b5a6828a6256f971d0ddc6))
+* **view:** add tests for normalizeViewListResponse function ([f3bd39b](https://github.com/ThomasRohde/archi-server/commit/f3bd39b779741167110b9735292aaaafd4aa06dd))
+
 ## [1.6.1](https://github.com/ThomasRohde/archi-server/compare/v1.6.0...v1.6.1) (2026-02-11)
 
 
