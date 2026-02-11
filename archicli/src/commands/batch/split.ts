@@ -1,4 +1,4 @@
-import { Command } from 'commander';
+import { Command, Option } from 'commander';
 import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync } from 'fs';
 import { resolve, dirname, basename, extname, join } from 'path';
 import { print, success, failure } from '../../utils/output';
@@ -15,11 +15,12 @@ export function batchSplitCommand(): Command {
     .description(
       'Split a large BOM into N chunk files and produce a new index BOM that\n' +
         'links them all via "includes". Useful for version-controlling large change sets.\n\n' +
-        '--chunk-size is the preferred flag name. --size remains as a deprecated alias.'
+        '--chunk-size is the preferred flag name.\n' +
+        'Legacy --size remains accepted for backward compatibility and emits a deprecation warning.'
     )
     .argument('<file>', 'path to source BOM JSON file')
     .option('-c, --chunk-size <n>', 'operations per chunk file')
-    .option('-s, --size <n>', 'deprecated alias for --chunk-size')
+    .addOption(new Option('-s, --size <n>', 'deprecated alias for --chunk-size').hideHelp())
     .option('-o, --output-dir <dir>', 'directory for chunk files (default: <basename>-parts/)')
     .option('--force', 'overwrite existing output files without warning')
     .action(
@@ -55,7 +56,7 @@ export function batchSplitCommand(): Command {
         const sizeRaw = options.chunkSize ?? options.size ?? '20';
         const warnings: string[] = [];
         if (options.size !== undefined && options.chunkSize === undefined) {
-          warnings.push('--size is deprecated and will be removed in a future release; use --chunk-size instead');
+          warnings.push('--size is deprecated and hidden from help; migrate to --chunk-size');
         }
         const size = parsePositiveInt(sizeRaw, '--chunk-size');
 

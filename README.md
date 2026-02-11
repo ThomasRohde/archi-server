@@ -114,6 +114,7 @@ Numeric CLI options are also strict: invalid integers/floats are rejected (no si
 Examples: `--limit 1.5`, `--chunk-size -1`, `--margin abc`.
 
 Use `archicli verify --semantic` for tempId preflight checks, and add `--resolve-names` to mirror `batch apply --resolve-names` behavior against a running server.
+`--resolve-names` is concept-name lookup only; it cannot reconstruct visual IDs (`sourceVisualId`, `targetVisualId`).
 By default, `verify --semantic` and `batch apply` fail when declared `idFiles` are missing/malformed; use
 `--allow-incomplete-idfiles` only when you intentionally want best-effort behavior.
 
@@ -170,7 +171,7 @@ archicli model save [--path <file>]   Save the current model to disk
 archicli model stats                  Get model statistics by type
 archicli batch apply <file>           Apply BOM atomically (chunk-size 1, polls, validates connections)
 archicli batch apply <file> --fast    Apply BOM in fast mode (chunk-size 20, no validation)
-archicli batch split <file>           Split large BOM into linked chunk files (--chunk-size, alias --size)
+archicli batch split <file>           Split large BOM into linked chunk files (--chunk-size)
 archicli view list                    List all views
 archicli view get <id>                View detail with visual object IDs
 archicli view create <name> [options] Create view synchronously (invalid --viewpoint values are rejected)

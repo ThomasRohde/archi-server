@@ -87,7 +87,7 @@ Useful apply flags:
 - `--skip-existing`: idempotent re-apply behavior for duplicate creates
 - `--layout`: auto-layout views created/populated in this run
 - `--continue-on-error`: keep processing independent chunks
-- `--resolve-names`: resolve unresolved tempIds by exact name lookup
+- `--resolve-names`: resolve unresolved concept tempIds by exact name lookup (not visual IDs)
 
 ### All commands
 

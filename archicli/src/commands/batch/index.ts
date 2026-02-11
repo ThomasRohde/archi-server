@@ -45,7 +45,7 @@ export function batchCommand(): Command {
         '  a BOM that was already applied. Duplicate create ops are skipped and their\n' +
         '  real IDs are recovered so downstream ops still resolve correctly.\n\n' +
         'SPLITTING: Use "batch split --chunk-size <n>" to split large BOM files.\n' +
-        '  The legacy alias "--size" is still accepted with a deprecation warning.'
+        '  Legacy "--size" is accepted for compatibility only and should be avoided in new scripts.'
     )
     .action(function (this: Command) {
       if (this.args.length > 0) {

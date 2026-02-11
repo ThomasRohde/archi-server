@@ -295,6 +295,7 @@ export function buildIdFileRemediation(
   const malformedPaths = [...diagnostics.malformed];
   const nextSteps = [
     'Apply the producer BOM first so required *.ids.json mappings are generated.',
+    '--resolve-names is concept-name lookup only; it cannot reconstruct producer-only visual IDs (for example sourceVisualId/targetVisualId).',
     ...(missingPaths.length > 0
       ? [`Missing idFiles: ${missingPaths.join(', ')}`]
       : []),

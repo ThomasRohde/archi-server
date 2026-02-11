@@ -144,7 +144,7 @@ export function batchApplyCommand(): Command {
         'TEMPID RESOLUTION ORDER (per chunk submission):\n' +
         '  1. Declared "idFiles" in the BOM (loaded upfront)\n' +
         '  2. Results from previously polled chunks in this run\n' +
-        '  3. Model name lookup if --resolve-names is set\n\n' +
+        '  3. Model name lookup for concept IDs if --resolve-names is set\n\n' +
         'EXAMPLE WORKFLOW:\n' +
         '  archicli batch apply model/elements.json\n' +
         '  # creates model/elements.ids.json with tempId->realId map\n' +
@@ -166,7 +166,10 @@ export function batchApplyCommand(): Command {
     .option('--poll-timeout <ms>', 'polling timeout in ms per chunk', '60000')
     .option('--save-ids [path]', 'save tempId→realId map after apply (default: <file>.ids.json)')
     .option('--no-save-ids', 'skip saving the ID map after apply')
-    .option('--resolve-names', 'query model by name for any unresolved tempId references')
+    .option(
+      '--resolve-names',
+      'query model by exact name for unresolved concept tempIds (does not resolve visual IDs)'
+    )
     .option(
       '--allow-incomplete-idfiles',
       'allow apply to continue when declared idFiles are missing or malformed'

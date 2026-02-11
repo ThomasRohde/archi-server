@@ -85,4 +85,55 @@ describe('delete operations (phase 3)', () => {
     const result = await validateBomSemantics(changes, [], { resolveNames: false });
     expect(result.valid).toBe(true);
   });
+
+  test('deleteConnectionFromView can reference earlier connection tempId', async () => {
+    const changes = [
+      { op: 'createElement', type: 'business-actor', name: 'A', tempId: 'e-a' },
+      { op: 'createElement', type: 'business-actor', name: 'B', tempId: 'e-b' },
+      { op: 'createRelationship', type: 'association-relationship', sourceId: 'e-a', targetId: 'e-b', tempId: 'r-ab' },
+      { op: 'addToView', viewId: 'id-view-1', elementId: 'e-a', tempId: 'vis-a' },
+      { op: 'addToView', viewId: 'id-view-1', elementId: 'e-b', tempId: 'vis-b' },
+      { op: 'addConnectionToView', viewId: 'id-view-1', relationshipId: 'r-ab', sourceVisualId: 'vis-a', targetVisualId: 'vis-b', tempId: 'conn-ab' },
+      { op: 'deleteConnectionFromView', viewId: 'id-view-1', connectionId: 'conn-ab' },
+    ];
+    const result = await validateBomSemantics(changes, [], { resolveNames: false });
+    expect(result.valid).toBe(true);
+  });
+});
+
+describe('visual ID semantics', () => {
+  test('rejects element tempIds used as connection visual IDs', async () => {
+    const changes = [
+      { op: 'createElement', type: 'business-actor', name: 'A', tempId: 'e-a' },
+      { op: 'createElement', type: 'business-actor', name: 'B', tempId: 'e-b' },
+      { op: 'createRelationship', type: 'association-relationship', sourceId: 'e-a', targetId: 'e-b', tempId: 'r-ab' },
+      { op: 'addToView', viewId: 'id-view-1', elementId: 'e-a', tempId: 'vis-a' },
+      { op: 'addToView', viewId: 'id-view-1', elementId: 'e-b', tempId: 'vis-b' },
+      // Intentional mistake: using element tempIds instead of visual tempIds
+      { op: 'addConnectionToView', viewId: 'id-view-1', relationshipId: 'r-ab', sourceVisualId: 'e-a', targetVisualId: 'e-b' },
+    ];
+    const result = await validateBomSemantics(changes, [], { resolveNames: false });
+    expect(result.valid).toBe(false);
+    expect(result.errors.some((e) => e.message.includes('non-visual tempId'))).toBe(true);
+    expect(result.errors.some((e) => (e.hint ?? '').includes('addToView.tempId'))).toBe(true);
+  });
+
+  test('unknown visual tempIds explain resolve-name limitation', async () => {
+    const changes = [
+      {
+        op: 'addConnectionToView',
+        viewId: 'id-view-1',
+        relationshipId: 'id-rel-1',
+        sourceVisualId: 'missing-source-visual',
+        targetVisualId: 'missing-target-visual',
+      },
+    ];
+    const result = await validateBomSemantics(changes, [], { resolveNames: false });
+    expect(result.valid).toBe(false);
+    expect(
+      result.errors.some((e) =>
+        (e.hint ?? '').includes('cannot reconstruct visual IDs')
+      )
+    ).toBe(true);
+  });
 });

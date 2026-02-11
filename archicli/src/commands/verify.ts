@@ -27,6 +27,7 @@ const PHASE2_TEMPID_CREATORS = new Set([
   'createElement',
   'createRelationship',
   'addToView',
+  'addConnectionToView',
   'createFolder',
   'createNote',
   'createGroup',
@@ -54,6 +55,99 @@ interface SemanticResult {
   resolveNames: boolean;
 }
 
+interface TempIdDeclaration {
+  index: number;
+  op: string;
+}
+
+const VISUAL_REFERENCE_FIELDS = new Set([
+  'sourceVisualId',
+  'targetVisualId',
+  'visualId',
+  'parentVisualId',
+  'viewObjectId',
+  'connectionId',
+]);
+
+const VISUAL_TEMPID_CREATORS = new Set([
+  'addToView',
+  'createNote',
+  'createGroup',
+  'addConnectionToView',
+]);
+
+const CONNECTION_ENDPOINT_VISUAL_CREATORS = new Set([
+  'addToView',
+]);
+
+const CONNECTION_TEMPID_CREATORS = new Set([
+  'addConnectionToView',
+]);
+
+function isVisualReferenceField(field: (typeof REFERENCE_ID_FIELDS)[number]): boolean {
+  return VISUAL_REFERENCE_FIELDS.has(field);
+}
+
+function expectedVisualTempIdCreators(field: (typeof REFERENCE_ID_FIELDS)[number]): Set<string> {
+  if (field === 'sourceVisualId' || field === 'targetVisualId') {
+    return CONNECTION_ENDPOINT_VISUAL_CREATORS;
+  }
+  if (field === 'connectionId') {
+    return CONNECTION_TEMPID_CREATORS;
+  }
+  return VISUAL_TEMPID_CREATORS;
+}
+
+function buildUnknownTempIdHint(
+  field: (typeof REFERENCE_ID_FIELDS)[number],
+  resolveNames: boolean,
+): string {
+  const parts = [
+    "This tempId is not declared in the BOM, not in idFiles, and not a real ID (format: id-...).",
+  ];
+
+  if (field === 'sourceVisualId' || field === 'targetVisualId') {
+    parts.push("These fields require visual IDs from 'addToView' operations in the same view.");
+    parts.push('--resolve-names resolves concept IDs by exact name only and cannot reconstruct visual IDs.');
+    parts.push('Load producer-generated *.ids.json files via idFiles when wiring cross-file view connections.');
+    return parts.join(' ');
+  }
+
+  if (field === 'connectionId' || field === 'viewObjectId' || field === 'visualId' || field === 'parentVisualId') {
+    parts.push('This field expects a visual object ID/tempId (diagram object), not an element/relationship tempId.');
+    parts.push('--resolve-names resolves concept IDs by exact name only and cannot reconstruct visual IDs.');
+    return parts.join(' ');
+  }
+
+  if (field === 'id' || field === 'elementId' || field === 'relationshipId' || field === 'viewId') {
+    parts.push('If this reference comes from an earlier BOM, ensure the producer *.ids.json file is listed under idFiles.');
+  }
+
+  if (resolveNames) {
+    parts.push('--resolve-names was enabled, but no exact name match was found on the running server.');
+  } else {
+    parts.push('Enable --resolve-names for best-effort exact name lookup against a running server.');
+  }
+
+  return parts.join(' ');
+}
+
+function buildVisualTempIdTypeHint(
+  field: (typeof REFERENCE_ID_FIELDS)[number],
+  refValue: string,
+  declared: TempIdDeclaration,
+): string {
+  if (field === 'sourceVisualId' || field === 'targetVisualId') {
+    return `Use addToView.tempId for connection endpoints. '${refValue}' is declared by '${declared.op}' at /changes/${declared.index}, which is not a visual endpoint tempId.`;
+  }
+
+  if (field === 'connectionId') {
+    return `Use a connection tempId from addConnectionToView (or a real connection ID). '${refValue}' is declared by '${declared.op}' at /changes/${declared.index}.`;
+  }
+
+  return `Use a visual tempId from addToView/createNote/createGroup (or a real visual ID). '${refValue}' is declared by '${declared.op}' at /changes/${declared.index}.`;
+}
+
 function isRealId(value: string): boolean {
   return value.startsWith('id-');
 }
@@ -75,7 +169,7 @@ export async function validateBomSemantics(
     errors.push(...duplicateTempIdErrors);
   }
 
-  const declaredTempIds = new Map<string, { index: number; op: string }>();
+  const declaredTempIds = new Map<string, TempIdDeclaration>();
   for (const [index, change] of changes.entries()) {
     const operation = change as BomOperation;
     if (
@@ -120,20 +214,32 @@ export async function validateBomSemantics(
         errors.push({
           path: `/changes/${opIndex}/${field}`,
           message: `Change ${opIndex} (${opName}): '${field}' references unknown tempId '${refValue}'`,
-          hint:
-            "This tempId is not declared in the BOM, not in idFiles, not resolvable by --resolve-names (if enabled), and not a real ID (format: id-...).",
+          hint: buildUnknownTempIdHint(field, options.resolveNames ?? false),
         });
         continue;
       }
 
+      const declared = declaredTempIds.get(refValue);
+      if (declared && isVisualReferenceField(field)) {
+        const expectedCreators = expectedVisualTempIdCreators(field);
+        if (!expectedCreators.has(declared.op)) {
+          errors.push({
+            path: `/changes/${opIndex}/${field}`,
+            message: `Change ${opIndex} (${opName}): '${field}' references non-visual tempId '${refValue}' from ${declared.op}`,
+            hint: buildVisualTempIdTypeHint(field, refValue, declared),
+          });
+          continue;
+        }
+      }
+
       if (availableTempIds.has(refValue)) continue;
 
-      const declared = declaredTempIds.get(refValue);
+      const declaredForOrdering = declaredTempIds.get(refValue);
       errors.push({
         path: `/changes/${opIndex}/${field}`,
         message: `Change ${opIndex} (${opName}): '${field}' references tempId '${refValue}' before it is available`,
-        hint: declared
-          ? `Declared at /changes/${declared.index} (${declared.op}); reorder operations or pre-resolve via idFiles.`
+        hint: declaredForOrdering
+          ? `Declared at /changes/${declaredForOrdering.index} (${declaredForOrdering.op}); reorder operations or pre-resolve via idFiles.`
           : `Declare this tempId earlier in the BOM or provide it via idFiles.`,
       });
     }
@@ -245,7 +351,8 @@ export function verifyCommand(): Command {
         'Run this before "batch apply" to catch authoring errors (missing required\n' +
         'fields, unknown operation types, invalid structure) without touching the model.\n\n' +
         'Use --semantic for tempId reference preflight.\n' +
-        'Use --resolve-names with --semantic to mirror batch apply name resolution.\n\n' +
+        'Use --resolve-names with --semantic to mirror batch apply name resolution for concept IDs.\n' +
+        'Name lookup cannot reconstruct visual IDs (sourceVisualId/targetVisualId).\n\n' +
         'Schema is auto-detected from file structure if --schema is omitted.\n' +
         'Available schemas: ' +
         SCHEMA_NAMES.join(', ')
@@ -257,7 +364,10 @@ export function verifyCommand(): Command {
     )
     .option('--semantic', 'run semantic BOM checks (tempId reference preflight)')
     .option('--preflight', 'alias for --semantic')
-    .option('--resolve-names', 'resolve unresolved tempIds by exact name lookup (requires running server)')
+    .option(
+      '--resolve-names',
+      'resolve unresolved concept tempIds by exact name lookup (requires running server)'
+    )
     .option(
       '--allow-incomplete-idfiles',
       'allow semantic validation to continue when declared idFiles are missing or malformed'

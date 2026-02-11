@@ -27,6 +27,7 @@ const SOURCE_FILES = [
 
 const DEPRECATED_COMMAND_OPTIONS: Record<string, Set<string>> = {
   'batch apply': new Set(['--poll']),
+  'batch split': new Set(['--size']),
 };
 
 function normalizeToken(token: string): string {
