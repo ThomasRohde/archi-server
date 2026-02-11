@@ -26,7 +26,7 @@
         server: {
             port: 8765,
             host: "127.0.0.1",
-            version: "1.1.0"
+            version: "1.6.1"
         },
 
         /**
