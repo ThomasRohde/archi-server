@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0](https://github.com/ThomasRohde/archi-server/compare/v1.5.0...v1.6.0) (2026-02-10)
+
+
+### Features
+
+* enhance CLI command structure with detailed documentation and error handling ([208d6d9](https://github.com/ThomasRohde/archi-server/commit/208d6d9ee5bdf822a3241e8216e67e46ecdca1ca))
+
+
+### Bug Fixes
+
+* batch apply robustness — op-aligned chunking, post-exec ID capture, cross-validation ([621891d](https://github.com/ThomasRohde/archi-server/commit/621891d82babad9ae0452d070395f45f944e27c7))
+
+
+### Maintenance
+
+* apply local changes ([0e8dd30](https://github.com/ThomasRohde/archi-server/commit/0e8dd305e997ad0da7151ff2d2b2bc8ee809ff20))
+* remove empty code change entries from changes log ([0c1a961](https://github.com/ThomasRohde/archi-server/commit/0c1a9612bac779e620b3d198acaace2f75ef1562))
+
+
+### Code Refactoring
+
+* **api:** remove unused PUT function and clean up server helper methods ([530a56c](https://github.com/ThomasRohde/archi-server/commit/530a56ca62753bc6c6401d62eec2d9b34f0f4a16))
+
 ## [1.5.0](https://github.com/ThomasRohde/archi-server/compare/v1.4.0...v1.5.0) (2026-02-10)
 
 
