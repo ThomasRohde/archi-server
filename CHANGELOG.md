@@ -5,6 +5,51 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.0](https://github.com/ThomasRohde/archi-server/compare/v1.7.0...v1.8.0) (2026-02-11)
+
+
+### Features
+
+* added banking example ([99e01ee](https://github.com/ThomasRohde/archi-server/commit/99e01ee2f18b4f21146ba76372e422af54f3d9c4))
+* **completion:** update completion command to use --raw option for direct script output ([292f18e](https://github.com/ThomasRohde/archi-server/commit/292f18ee14b70173d98568674bea85210095e196))
+* **docs:** clarify --resolve-names behavior and deprecate --size option in batch commands ([e37cd29](https://github.com/ThomasRohde/archi-server/commit/e37cd299073396190dbe506b9bd213dbe26f4d98))
+
+
+### Bug Fixes
+
+* **doctor:** remove unnecessary --poll flag from examples ([292f18e](https://github.com/ThomasRohde/archi-server/commit/292f18ee14b70173d98568674bea85210095e196))
+* **ids:** clarify polling behavior in ID mappings description ([292f18e](https://github.com/ThomasRohde/archi-server/commit/292f18ee14b70173d98568674bea85210095e196))
+* **ops:** update help text to reflect default polling behavior in batch apply ([292f18e](https://github.com/ThomasRohde/archi-server/commit/292f18ee14b70173d98568674bea85210095e196))
+* **references:** update accessType values and reorganize BOM reference for clarity ([bf03b12](https://github.com/ThomasRohde/archi-server/commit/bf03b121cf6d636695ce4d3477500a5a2a8f2a06))
+* **verify:** add remediation guidance for incomplete ID files ([292f18e](https://github.com/ThomasRohde/archi-server/commit/292f18ee14b70173d98568674bea85210095e196))
+
+
+### Documentation
+
+* **init:** update apply/poll cycle instructions for clarity ([292f18e](https://github.com/ThomasRohde/archi-server/commit/292f18ee14b70173d98568674bea85210095e196))
+* **openapi:** clarify batch apply behavior in OpenAPI documentation ([292f18e](https://github.com/ThomasRohde/archi-server/commit/292f18ee14b70173d98568674bea85210095e196))
+* **readme:** add comprehensive README for archicli with usage examples ([292f18e](https://github.com/ThomasRohde/archi-server/commit/292f18ee14b70173d98568674bea85210095e196))
+
+
+### Maintenance
+
+* **experience:** delete outdated experience report for archicli ([cc02a3b](https://github.com/ThomasRohde/archi-server/commit/cc02a3bff6b1f5f9d951b536f2cccbb0f1522d3a))
+* **skill-creator:** remove obsolete skill creation scripts and documentation ([0d12aff](https://github.com/ThomasRohde/archi-server/commit/0d12affde150df7a66768629af6aaeb42317eb4d))
+* **todos:** remove completed TODO item for archicli health command ([cc02a3b](https://github.com/ThomasRohde/archi-server/commit/cc02a3bff6b1f5f9d951b536f2cccbb0f1522d3a))
+
+
+### Code Refactoring
+
+* **init:** improve target directory resolution logic and output structure ([292f18e](https://github.com/ThomasRohde/archi-server/commit/292f18ee14b70173d98568674bea85210095e196))
+
+
+### Tests
+
+* **docs-option-parity:** ensure command snippets use supported options ([292f18e](https://github.com/ThomasRohde/archi-server/commit/292f18ee14b70173d98568674bea85210095e196))
+* **first-run-workflow:** validate onboarding workflow for archicli ([292f18e](https://github.com/ThomasRohde/archi-server/commit/292f18ee14b70173d98568674bea85210095e196))
+* **poll-and-completion-ux:** verify polling behavior and completion command ergonomics ([292f18e](https://github.com/ThomasRohde/archi-server/commit/292f18ee14b70173d98568674bea85210095e196))
+* **quiet-mode-contract:** ensure quiet mode returns expected data-only outputs ([292f18e](https://github.com/ThomasRohde/archi-server/commit/292f18ee14b70173d98568674bea85210095e196))
+
 ## [1.7.0](https://github.com/ThomasRohde/archi-server/compare/v1.6.1...v1.7.0) (2026-02-11)
 
 
