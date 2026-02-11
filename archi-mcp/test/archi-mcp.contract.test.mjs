@@ -123,6 +123,7 @@ test('tool metadata exposes prompts/resources and aligned schemas', async () => 
       applyChanges.items.properties.op.enum.includes('createElement'),
       true,
     );
+    assert.match(JSON.stringify(applyTool.outputSchema.properties.data), /operationId/);
 
     const queryTool = tools.find((tool) => tool.name === 'archi_query_model');
     assert.ok(queryTool);
@@ -197,6 +198,119 @@ test('large tool outputs truncate text and structured content', async () => {
       assert.equal(result.structuredContent.data._truncated, true);
       assert.ok(result.structuredContent.data.preview.length <= 4000);
       assert.ok(JSON.stringify(result.structuredContent).length <= 4600);
+    });
+  } finally {
+    await closeServer(server);
+  }
+});
+
+test('diagnostics tool accepts live diagnostics payload shape', async () => {
+  const { server, baseUrl } = await startMockServer((req, res) => {
+    if (req.method === 'GET' && req.url === '/model/diagnostics') {
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(
+        JSON.stringify({
+          timestamp: '2026-02-11T12:35:00.000Z',
+          model: { name: 'Demo Model', id: 'model-1' },
+          orphans: {
+            orphanElements: [],
+            orphanRelationships: [],
+            totalOrphans: 0,
+          },
+          snapshot: {
+            elements: 10,
+            relationships: 5,
+            views: 2,
+          },
+          requestId: 'diag-1',
+        }),
+      );
+      return;
+    }
+
+    res.writeHead(404, { 'content-type': 'application/json' });
+    res.end(JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Not found' } }));
+  });
+
+  try {
+    await withMcpClient(baseUrl, async (client) => {
+      const result = await client.callTool({
+        name: 'archi_get_model_diagnostics',
+        arguments: {},
+      });
+
+      assert.equal(result.isError, undefined);
+      assert.equal(result.structuredContent.ok, true);
+      assert.equal(result.structuredContent.operation, 'archi_get_model_diagnostics');
+      assert.equal(result.structuredContent.data.orphans.totalOrphans, 0);
+      assert.equal(result.structuredContent.data.snapshot.views, 2);
+    });
+  } finally {
+    await closeServer(server);
+  }
+});
+
+test('operation tools expose operationId in structured output', async () => {
+  const opId = 'op-test-123';
+  const { server, baseUrl } = await startMockServer((req, res) => {
+    if (req.method === 'POST' && req.url === '/model/apply') {
+      req.resume();
+      req.on('end', () => {
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(
+          JSON.stringify({
+            operationId: opId,
+            status: 'queued',
+            message: 'Operation queued',
+            requestId: 'apply-1',
+          }),
+        );
+      });
+      return;
+    }
+
+    if (req.method === 'GET' && req.url?.startsWith('/ops/status')) {
+      const url = new URL(req.url, 'http://127.0.0.1');
+      if (url.searchParams.get('opId') !== opId) {
+        res.writeHead(400, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({ error: { code: 'BAD_REQUEST', message: 'Wrong opId' } }));
+        return;
+      }
+
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(
+        JSON.stringify({
+          operationId: opId,
+          status: 'complete',
+          result: [{ ok: true }],
+          requestId: 'status-1',
+        }),
+      );
+      return;
+    }
+
+    res.writeHead(404, { 'content-type': 'application/json' });
+    res.end(JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Not found' } }));
+  });
+
+  try {
+    await withMcpClient(baseUrl, async (client) => {
+      const applyResult = await client.callTool({
+        name: 'archi_apply_model_changes',
+        arguments: { changes: [{ op: 'createElement' }] },
+      });
+
+      assert.equal(applyResult.isError, undefined);
+      assert.equal(applyResult.structuredContent.data.operationId, opId);
+
+      const statusResult = await client.callTool({
+        name: 'archi_get_operation_status',
+        arguments: { opId },
+      });
+
+      assert.equal(statusResult.isError, undefined);
+      assert.equal(statusResult.structuredContent.data.operationId, opId);
+      assert.ok(Array.isArray(statusResult.structuredContent.data.result));
     });
   } finally {
     await closeServer(server);

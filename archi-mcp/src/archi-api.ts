@@ -73,6 +73,44 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }
 
+const SupportedApplyOperations = new Set<ApplyRequest['changes'][number]['op']>([
+  'createElement',
+  'createRelationship',
+  'setProperty',
+  'updateElement',
+  'deleteElement',
+  'deleteRelationship',
+  'updateRelationship',
+  'moveToFolder',
+  'createFolder',
+  'addToView',
+  'addConnectionToView',
+  'nestInView',
+  'deleteConnectionFromView',
+  'styleViewObject',
+  'styleConnection',
+  'moveViewObject',
+  'createNote',
+  'createGroup',
+  'createView',
+  'deleteView',
+]);
+
+function isApplyRequest(body: { changes: Array<Record<string, unknown>> }): body is ApplyRequest {
+  if (body.changes.length === 0) {
+    return false;
+  }
+
+  return body.changes.every((change) => {
+    if (!isRecord(change)) {
+      return false;
+    }
+
+    const { op } = change;
+    return typeof op === 'string' && SupportedApplyOperations.has(op as ApplyRequest['changes'][number]['op']);
+  });
+}
+
 function createTimeoutFetch(timeoutMs: number): typeof fetch {
   return async (input, init) => {
     if (init?.signal) {
@@ -249,10 +287,18 @@ export class ArchiApiClient {
   }
 
   postModelApply(body: { changes: Array<Record<string, unknown>> }): Promise<ApplyResponse> {
+    if (!isApplyRequest(body)) {
+      throw new ArchiApiError(
+        'Invalid apply request payload. Each change must include a supported "op" value.',
+        undefined,
+        'INVALID_APPLY_REQUEST',
+      );
+    }
+
     return this.unwrap<ApplyResponse>(
       postModelApply({
         client: this.apiClient,
-        body: body as unknown as ApplyRequest,
+        body,
       }),
     );
   }

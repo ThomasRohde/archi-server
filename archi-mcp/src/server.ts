@@ -27,10 +27,6 @@ type ToolOutput<TData = unknown> = {
   truncated?: boolean;
 };
 
-type ToolExtra = {
-  sessionId?: string;
-};
-
 const ReadOnlyAnnotations: ToolAnnotations = {
   readOnlyHint: true,
   destructiveHint: false,
@@ -159,7 +155,10 @@ const ApplySchema = z
 
 const OpsStatusSchema = z
   .object({
-    opId: z.string().min(1).describe('Operation ID returned by archi_apply_model_changes.'),
+    opId: z
+      .string()
+      .min(1)
+      .describe('Operation ID returned by archi_apply_model_changes (operationId in response).'),
   })
   .strict();
 
@@ -264,9 +263,10 @@ const TestDataSchema = ResponseWithRequestIdSchema;
 
 const DiagnosticsDataSchema = z
   .object({
-    summary: LooseObjectSchema.optional(),
-    orphans: LooseObjectArraySchema.optional(),
-    ghostObjects: LooseObjectArraySchema.optional(),
+    timestamp: z.string().optional(),
+    model: LooseObjectSchema.optional(),
+    orphans: LooseObjectSchema.optional(),
+    snapshot: LooseObjectSchema.optional(),
     requestId: z.string().optional(),
   })
   .passthrough();
@@ -329,8 +329,16 @@ const FolderListDataSchema = z
 
 const OperationStatusDataSchema = z
   .object({
+    operationId: z.string().optional(),
     opId: z.string().optional(),
     status: z.string().optional(),
+    result: z.array(z.unknown()).optional(),
+    error: z.string().optional(),
+    errorDetails: LooseObjectSchema.optional(),
+    createdAt: z.string().optional(),
+    startedAt: z.string().optional(),
+    completedAt: z.string().optional(),
+    durationMs: z.number().int().optional(),
     requestId: z.string().optional(),
   })
   .passthrough();
@@ -384,8 +392,10 @@ const SaveDataSchema = z
 
 const ApplyDataSchema = z
   .object({
+    operationId: z.string().optional(),
     opId: z.string().optional(),
     status: z.string().optional(),
+    message: z.string().optional(),
     queuedAt: z.string().optional(),
     requestId: z.string().optional(),
   })
@@ -589,10 +599,10 @@ function registerTool<TInputSchema extends z.ZodTypeAny, TOutputDataSchema exten
     outputDataSchema: TOutputDataSchema;
     annotations: ToolAnnotations;
   },
-  handler: (args: z.infer<TInputSchema>, extra: ToolExtra) => Promise<unknown>,
+  handler: (args: z.infer<TInputSchema>) => Promise<unknown>,
 ): void {
   const outputSchema = createToolOutputSchema(config.outputDataSchema);
-  const register = server.registerTool.bind(server) as unknown as (
+  const register = server.registerTool.bind(server) as (
     toolName: string,
     toolConfig: {
       title: string;
@@ -601,7 +611,7 @@ function registerTool<TInputSchema extends z.ZodTypeAny, TOutputDataSchema exten
       outputSchema: z.ZodTypeAny;
       annotations: ToolAnnotations;
     },
-    toolHandler: (args: z.infer<TInputSchema>, extra: ToolExtra) => Promise<CallToolResult>,
+    toolHandler: (args: z.infer<TInputSchema>, extra: unknown) => Promise<CallToolResult>,
   ) => void;
 
   register(
@@ -613,9 +623,9 @@ function registerTool<TInputSchema extends z.ZodTypeAny, TOutputDataSchema exten
       outputSchema,
       annotations: config.annotations,
     },
-    async (args, extra) => {
+    async (args) => {
       try {
-        const data = await handler(args as z.infer<TInputSchema>, extra as ToolExtra);
+        const data = await handler(args);
         return successResult(name, data);
       } catch (error) {
         return errorResult(name, error);
