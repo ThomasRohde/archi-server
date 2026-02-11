@@ -1381,10 +1381,20 @@ async function populateViewWithRelationships(
     elementIdsToAdd.push(elementId);
   }
 
-  const changes: Array<Record<string, unknown>> = elementIdsToAdd.map((elementId) => ({
+  // Place elements in a grid layout so they don't all stack at the same position.
+  // 4 columns, 160px horizontal spacing, 80px vertical spacing, starting at (20, 20).
+  const GRID_COLS = 4;
+  const GRID_X_START = 20;
+  const GRID_Y_START = 20;
+  const GRID_X_STEP = 160;
+  const GRID_Y_STEP = 80;
+
+  const changes: Array<Record<string, unknown>> = elementIdsToAdd.map((elementId, index) => ({
     op: 'addToView',
     viewId: args.viewId,
     elementId,
+    x: GRID_X_START + (index % GRID_COLS) * GRID_X_STEP,
+    y: GRID_Y_START + Math.floor(index / GRID_COLS) * GRID_Y_STEP,
   }));
 
   const skippedRelationshipIds: string[] = [];

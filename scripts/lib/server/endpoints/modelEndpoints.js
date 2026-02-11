@@ -218,8 +218,9 @@
                     id: rel.getId(),
                     name: rel.getName() || '',
                     type: getTypeString(rel),
-                    targetId: target ? target.getId() : null,
-                    targetName: target ? target.getName() : null
+                    otherEndId: target ? target.getId() : null,
+                    otherEndName: target ? target.getName() : null,
+                    otherEndType: target ? getTypeString(target) : null
                 });
             }
             if (target && target.getId() === elementId) {
@@ -227,8 +228,9 @@
                     id: rel.getId(),
                     name: rel.getName() || '',
                     type: getTypeString(rel),
-                    sourceId: source ? source.getId() : null,
-                    sourceName: source ? source.getName() : null
+                    otherEndId: source ? source.getId() : null,
+                    otherEndName: source ? source.getName() : null,
+                    otherEndType: source ? getTypeString(source) : null
                 });
             }
         }

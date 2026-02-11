@@ -55,6 +55,7 @@
     var EcoreUtil = Java.type("org.eclipse.emf.ecore.util.EcoreUtil");
     var IArchimatePackage = Java.type("com.archimatetool.model.IArchimatePackage");
     var FolderType = Java.type("com.archimatetool.model.FolderType");
+    var UUID = Java.type("java.util.UUID");
 
     var factory = IArchimateFactory.eINSTANCE;
     var modelManager = IEditorModelManager.INSTANCE;
@@ -715,6 +716,49 @@
             if (folderType && folderType.getName().toUpperCase() === typeName.toUpperCase()) {
                 return folder;
             }
+        }
+        return null;
+    }
+
+    /**
+     * Find folder by name (case-insensitive), searching top-level folders first
+     * then recursively into subfolders. Matches both the folder display name
+     * and the folder type name (e.g., "Business" matches the BUSINESS type folder).
+     * @param {Object} model - IArchimateModel
+     * @param {string} name - Folder name to find (case-insensitive)
+     * @returns {Object|null} Folder or null
+     */
+    function findFolderByName(model, name) {
+        if (!name) return null;
+        var lowerName = name.toLowerCase();
+        var folders = model.getFolders();
+        // First pass: check top-level folder names and type names
+        for (var i = 0; i < folders.size(); i++) {
+            var folder = folders.get(i);
+            if ((folder.getName() || '').toLowerCase() === lowerName) {
+                return folder;
+            }
+            var folderType = folder.getType();
+            if (folderType && folderType.getName().toLowerCase() === lowerName) {
+                return folder;
+            }
+        }
+        // Second pass: recurse into subfolders
+        function searchSubfolders(parentFolder) {
+            var subs = parentFolder.getFolders();
+            for (var j = 0; j < subs.size(); j++) {
+                var sub = subs.get(j);
+                if ((sub.getName() || '').toLowerCase() === lowerName) {
+                    return sub;
+                }
+                var found = searchSubfolders(sub);
+                if (found) return found;
+            }
+            return null;
+        }
+        for (var k = 0; k < folders.size(); k++) {
+            var found = searchSubfolders(folders.get(k));
+            if (found) return found;
         }
         return null;
     }
@@ -1438,10 +1482,12 @@
                 if (operation.parentVisualId) {
                     var parentVisual = idMap[operation.parentVisualId] || findVisualObjectInView(viewForAdd, operation.parentVisualId);
                     if (!parentVisual) {
-                        throw new Error("Cannot find parent visual object: " + operation.parentVisualId);
+                        throw new Error("addToView: cannot find parent visual object: " + operation.parentVisualId +
+                            ". Ensure this is a visual ID from the view, not a concept ID.");
                     }
                     if (typeof parentVisual.getChildren !== "function") {
-                        throw new Error("Visual object " + operation.parentVisualId + " cannot contain children");
+                        throw new Error("addToView: visual object " + operation.parentVisualId + " cannot contain children. " +
+                            "Only groups, containers, and compound elements support nesting.");
                     }
                     addContainer = parentVisual;
                     parentVisualIdForResult = parentVisual.getId();
@@ -1519,15 +1565,18 @@
 
                 var visualToNest = idMap[operation.visualId] || findVisualObjectInView(viewForNest, operation.visualId);
                 if (!visualToNest) {
-                    throw new Error("Cannot find visual object to nest: " + operation.visualId);
+                    throw new Error("nestInView: cannot find visual object to nest: " + operation.visualId +
+                        ". Ensure this is a visual ID from the view, not a concept ID.");
                 }
 
                 var nestParent = idMap[operation.parentVisualId] || findVisualObjectInView(viewForNest, operation.parentVisualId);
                 if (!nestParent) {
-                    throw new Error("Cannot find parent visual object: " + operation.parentVisualId);
+                    throw new Error("nestInView: cannot find parent visual object: " + operation.parentVisualId +
+                        ". Ensure this is a visual ID from the view, not a concept ID.");
                 }
                 if (typeof nestParent.getChildren !== "function") {
-                    throw new Error("Visual object " + operation.parentVisualId + " cannot contain children");
+                    throw new Error("nestInView: visual object " + operation.parentVisualId + " cannot contain children. " +
+                        "Only groups, containers, and compound elements support nesting.");
                 }
 
                 // Prevent nesting into self
@@ -2115,14 +2164,19 @@
             }
             else if (operation.op === "moveToFolder") {
                 // Move element to a different folder
-                var elemToMove = idMap[operation.id] || findElementById(model, operation.id);
+                // Accept 'id' or 'elementId' (agent-friendly alias)
+                var moveElemId = operation.id || operation.elementId;
+                var elemToMove = idMap[moveElemId] || findElementById(model, moveElemId);
                 if (!elemToMove) {
-                    throw new Error("Cannot find element to move: " + operation.id);
+                    throw new Error("moveToFolder: cannot find element (id/elementId): " + moveElemId
+                        + (operation.elementId && !operation.id ? " (hint: 'elementId' accepted as alias for 'id')" : ""));
                 }
 
-                var targetFolder = findFolderById(model, operation.folderId);
+                // Accept 'folderId' or 'folder' (agent-friendly alias)
+                var targetFolderId = operation.folderId || operation.folder;
+                var targetFolder = findFolderById(model, targetFolderId);
                 if (!targetFolder) {
-                    throw new Error("Cannot find target folder: " + operation.folderId);
+                    throw new Error("moveToFolder: cannot find target folder (folderId/folder): " + targetFolderId);
                 }
 
                 var sourceFolder = elemToMove.eContainer();
@@ -2157,18 +2211,24 @@
             }
             else if (operation.op === "createFolder") {
                 // Create a new folder
+                // Accept parentId, parentType, or parentFolder (name-based lookup)
                 var parentFolder = null;
-                if (operation.parentId) {
-                    parentFolder = findFolderById(model, operation.parentId);
+                var resolvedParentId = operation.parentId || operation.folder;
+                if (resolvedParentId) {
+                    parentFolder = findFolderById(model, resolvedParentId);
                     if (!parentFolder) {
-                        throw new Error("Cannot find parent folder: " + operation.parentId);
+                        throw new Error("createFolder: cannot find parent folder by ID (parentId/folder): " + resolvedParentId
+                            + ". Use parentType (e.g. 'BUSINESS') or parentFolder (name) as alternatives.");
                     }
                 } else if (operation.parentType) {
                     // Find folder by type (e.g., "BUSINESS", "APPLICATION")
                     parentFolder = getFolderByType(model, operation.parentType);
+                } else if (operation.parentFolder) {
+                    // Find folder by name (agent-friendly: accepts "Business", "Application", etc.)
+                    parentFolder = findFolderByName(model, operation.parentFolder);
                 }
                 if (!parentFolder) {
-                    throw new Error("Must specify parentId or parentType for createFolder");
+                    throw new Error("createFolder: must specify parentId, parentType (e.g. 'BUSINESS'), or parentFolder (name, e.g. 'Business')");
                 }
 
                 var newFolder = factory.createFolder();
@@ -2208,9 +2268,14 @@
                 // Style a visual object in a view
                 // Use viewObjectId (from API schema) or visualId (legacy)
                 var visualObjId = operation.viewObjectId || operation.visualId;
+                if (!visualObjId) {
+                    throw new Error("styleViewObject: missing viewObjectId or visualId. " +
+                        "Pass the visual object ID from addToView results (not the concept/element ID).");
+                }
                 var visualToStyle = idMap[visualObjId] || findVisualObjectInModel(model, visualObjId);
                 if (!visualToStyle) {
-                    throw new Error("Cannot find visual object: " + visualObjId);
+                    throw new Error("styleViewObject: cannot find visual object: " + visualObjId +
+                        ". Accepted fields: viewObjectId or visualId. Ensure this is a visual ID from a view, not a concept ID.");
                 }
 
                 var styleUpdated = [];
@@ -2395,9 +2460,14 @@
                 // Move/resize a visual object in a view
                 // Use viewObjectId (from API schema) or visualId (legacy)
                 var moveVisualId = operation.viewObjectId || operation.visualId;
+                if (!moveVisualId) {
+                    throw new Error("moveViewObject: missing viewObjectId or visualId. " +
+                        "Pass the visual object ID from addToView results (not the concept/element ID).");
+                }
                 var visualToMove = idMap[moveVisualId] || findVisualObjectInModel(model, moveVisualId);
                 if (!visualToMove) {
-                    throw new Error("Cannot find visual object: " + moveVisualId);
+                    throw new Error("moveViewObject: cannot find visual object: " + moveVisualId +
+                        ". Accepted fields: viewObjectId or visualId. Ensure this is a visual ID from a view, not a concept ID.");
                 }
 
                 var currentBounds = visualToMove.getBounds();
@@ -2443,7 +2513,8 @@
                 }
 
                 var note = factory.createDiagramModelNote();
-                note.setContent(operation.content || '');
+                // Accept 'content' or 'text' (agent-friendly alias)
+                note.setContent(operation.content || operation.text || '');
                 
                 var noteBounds = factory.createBounds();
                 noteBounds.setX(operation.x !== undefined ? operation.x : 100);
@@ -2643,6 +2714,35 @@
                 var dupNewView = EcoreUtil.copy(viewToDup);
                 var dupNewName = operation.name || (viewToDup.getName() + " (Copy)");
                 dupNewView.setName(dupNewName);
+
+                // Regenerate IDs for the copied view and all child objects/connections
+                // EcoreUtil.copy() preserves original IDs which causes duplicate ID conflicts
+                dupNewView.setId(UUID.randomUUID().toString());
+                (function regenerateChildIds(container) {
+                    var children = container.getChildren();
+                    if (children) {
+                        for (var ci = 0; ci < children.size(); ci++) {
+                            var child = children.get(ci);
+                            if (child.getId) {
+                                child.setId(UUID.randomUUID().toString());
+                            }
+                            // Regenerate IDs for source connections on this child
+                            if (typeof child.getSourceConnections === 'function') {
+                                var conns = child.getSourceConnections();
+                                for (var cc = 0; cc < conns.size(); cc++) {
+                                    var conn = conns.get(cc);
+                                    if (conn.getId) {
+                                        conn.setId(UUID.randomUUID().toString());
+                                    }
+                                }
+                            }
+                            // Recurse into nested children
+                            if (typeof child.getChildren === 'function') {
+                                regenerateChildIds(child);
+                            }
+                        }
+                    }
+                })(dupNewView);
 
                 var dupParent = viewToDup.eContainer();
 
