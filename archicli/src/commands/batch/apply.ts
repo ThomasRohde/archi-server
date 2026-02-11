@@ -5,6 +5,7 @@ import { validate } from '../../schemas/registry';
 import { post, ApiError } from '../../utils/api';
 import { ArgumentValidationError, parsePositiveInt, parseNonNegativeInt } from '../../utils/args';
 import {
+  buildIdFileRemediation,
   findDuplicateTempIds,
   loadBom,
   loadIdFilesWithDiagnostics,
@@ -160,7 +161,8 @@ export function batchApplyCommand(): Command {
     .argument('<file>', 'path to BOM JSON file')
     .option('-c, --chunk-size <n>', 'operations per API request (default 1 for atomic safety, max 1000)', '1')
     .option('--dry-run', 'validate BOM and show what would be submitted, without applying')
-    .option('--no-poll', 'skip polling — fire-and-forget (not recommended)')
+    .option('--no-poll', 'disable polling (polling is enabled by default)')
+    .option('--poll', '(deprecated) no-op alias; polling is already enabled by default')
     .option('--poll-timeout <ms>', 'polling timeout in ms per chunk', '60000')
     .option('--save-ids [path]', 'save tempId→realId map after apply (default: <file>.ids.json)')
     .option('--no-save-ids', 'skip saving the ID map after apply')
@@ -266,6 +268,12 @@ export function batchApplyCommand(): Command {
           }
 
           const warnings: string[] = [];
+          const pollValueSource = cmd.getOptionValueSource('poll');
+          if (pollValueSource === 'cli' && options.poll) {
+            warnings.push(
+              '`batch apply` already polls by default. `--poll` is deprecated; remove it or use `--no-poll` to disable polling.'
+            );
+          }
 
           // --fast mode: override to batch-oriented defaults for speed
           if (options.fast) {
@@ -296,12 +304,19 @@ export function batchApplyCommand(): Command {
             loadIdFilesWithDiagnostics(idFilePaths);
           const idFilesCompleteness = summarizeIdFileCompleteness(idFileDiagnostics);
           if (!options.allowIncompleteIdfiles && !idFilesCompleteness.complete) {
+            const remediation = buildIdFileRemediation(
+              idFileDiagnostics,
+              `archicli batch apply "${file}"`
+            );
             print(
               failure(
                 'IDFILES_INCOMPLETE',
                 'Declared idFiles could not be fully loaded; apply would run with incomplete tempId mappings',
                 {
                   idFiles: idFileDiagnostics,
+                  missingPaths: remediation.missingPaths,
+                  malformedPaths: remediation.malformedPaths,
+                  nextSteps: remediation.nextSteps,
                 }
               )
             );

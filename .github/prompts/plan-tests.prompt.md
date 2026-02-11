@@ -81,12 +81,12 @@ Tests (each spawns CLI process):
 7. `archicli verify fixtures/verify-valid.json` — exits 0, success
 8. `archicli verify fixtures/verify-invalid-schema.json` — exits non-zero, error with details
 9. `archicli verify fixtures/verify-duplicate-tempid.json` — exits non-zero, duplicate detection
-10. `archicli batch apply fixtures/smoke-elements.json --poll` — creates 3 elements, returns tempId→realId map, saves .ids.json
+10. `archicli batch apply fixtures/smoke-elements.json` — creates 3 elements, returns tempId→realId map, saves .ids.json
 11. `archicli model query` — counts show 3 elements
 12. `archicli model search --type business-actor --name <generated>` — finds created element
 13. `archicli model element <realId>` — returns element details
-14. `archicli batch apply fixtures/smoke-relationships.json --poll` — creates relationships using idFiles from step 10
-15. `archicli batch apply fixtures/smoke-view.json --poll --layout` — creates view, adds elements, auto-layouts
+14. `archicli batch apply fixtures/smoke-relationships.json` — creates relationships using idFiles from step 10
+15. `archicli batch apply fixtures/smoke-view.json --layout` — creates view, adds elements, auto-layouts
 16. `archicli view list` — shows 1 view
 17. `archicli view get <viewId>` — returns view with elements and connections
 18. `archicli view export <viewId>` — returns image data (or writes file)
@@ -143,20 +143,20 @@ Cleanup: `afterAll` cascade-deletes all test elements.
 Tests run **sequentially** (ordered dependency):
 
 1. **Phase 1 — Elements** (~200 elements):
-   - `archicli batch apply fixtures/bulk-01-elements.json --poll --chunk-size 20`
+   - `archicli batch apply fixtures/bulk-01-elements.json --chunk-size 20`
    - Verify: 200+ tempIds resolved, `.ids.json` saved with all mappings
    - `archicli model query` — element count ≥ 200
    - Spot-check: 10 random elements via `model element <id>`
 
 2. **Phase 2 — Relationships** (~300 relationships):
-   - `archicli batch apply fixtures/bulk-02-relationships.json --poll --chunk-size 20`
+   - `archicli batch apply fixtures/bulk-02-relationships.json --chunk-size 20`
    - Uses `idFiles` from phase 1
    - Verify: 300+ tempIds resolved
    - `archicli model query` — relationship count ≥ 300
    - Spot-check: 10 random elements have expected relationship counts
 
 3. **Phase 3 — Views** (6 views with visual objects and connections):
-   - `archicli batch apply fixtures/bulk-03-views.json --poll --chunk-size 20 --layout`
+   - `archicli batch apply fixtures/bulk-03-views.json --chunk-size 20 --layout`
    - Uses `idFiles` from phases 1+2
    - Verify: 6 views created, each with visual objects
    - `archicli view list` — 6 views
@@ -164,7 +164,7 @@ Tests run **sequentially** (ordered dependency):
    - For each view: `archicli view export <id>` — exports successfully (non-empty image)
 
 4. **Phase 4 — Styling & Annotations**:
-   - `archicli batch apply fixtures/bulk-04-styling.json --poll --chunk-size 20`
+   - `archicli batch apply fixtures/bulk-04-styling.json --chunk-size 20`
    - Verify: styling applied, notes and groups created
 
 5. **Phase 5 — Diagnostics & Consistency**:
@@ -173,7 +173,7 @@ Tests run **sequentially** (ordered dependency):
    - Timed performance assertion: total suite < 5 minutes (logged, not hard-fail)
 
 6. **Phase 6 — Idempotent Re-apply** (`--skip-existing`):
-   - Re-run `archicli batch apply fixtures/bulk-01-elements.json --poll --skip-existing --chunk-size 20`
+   - Re-run `archicli batch apply fixtures/bulk-01-elements.json --skip-existing --chunk-size 20`
    - Verify: all ops skipped (existing IDs recovered), no new elements created
    - `archicli model query` — counts unchanged
 
@@ -183,9 +183,9 @@ Tests run **sequentially** (ordered dependency):
 ## 9. Test suite: CLI error handling — `archicli/__tests__/error-handling.test.ts` ✅ DONE
 
 1. `archicli batch apply nonexistent.json` — file not found error, exits non-zero
-2. `archicli batch apply fixtures/verify-invalid-schema.json --poll` — schema validation error
-3. `archicli batch apply fixtures/empty.json --poll` — fails without `--allow-empty`
-4. `archicli batch apply fixtures/empty.json --poll --allow-empty` — succeeds
+2. `archicli batch apply fixtures/verify-invalid-schema.json` — schema validation error
+3. `archicli batch apply fixtures/empty.json` — fails without `--allow-empty`
+4. `archicli batch apply fixtures/empty.json --allow-empty` — succeeds
 5. `archicli model element id-nonexistent` — 404 error
 6. `archicli view get id-nonexistent` — 404 error
 7. `archicli view delete id-nonexistent` — 404 error
@@ -196,7 +196,7 @@ Tests run **sequentially** (ordered dependency):
 
 ## 10. Test suite: BOM composition — `archicli/__tests__/bom-composition.test.ts` ✅ DONE
 
-1. `archicli batch apply fixtures/includes-parent.json --poll` — verifies includes resolution, creates elements from both parent and child
+1. `archicli batch apply fixtures/includes-parent.json` — verifies includes resolution, creates elements from both parent and child
 2. `archicli verify fixtures/includes-parent.json` — passes validation with includes
 3. Create a temp BOM with circular include (A→B→A) — `archicli verify` catches cycle
 4. Create a temp BOM with `idFiles` referencing a generated `.ids.json` — verify cross-session tempId resolution works

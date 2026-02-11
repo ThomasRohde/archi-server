@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest';
 import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { cli, assertFailure, assertSuccess } from './helpers/cli';
+import { cli, assertSuccess } from './helpers/cli';
 
 describe('init command', () => {
   test('creates starter templates in target directory', async () => {
@@ -24,15 +24,22 @@ describe('init command', () => {
     }
   });
 
-  test('fails on non-empty directory without --force', async () => {
+  test('creates a starter-bom subdirectory when target is non-empty and --force is not set', async () => {
     const targetDir = mkdtempSync(join(tmpdir(), 'archicli-init-nonempty-'));
     try {
       writeFileSync(join(targetDir, 'existing.txt'), 'existing', 'utf-8');
-      const result = await cli('init', targetDir);
+      const result = await cli<{
+        directory: string;
+        requestedDirectory?: string;
+        warnings?: string[];
+      }>('init', targetDir);
+      const data = assertSuccess(result, 'init non-empty fallback');
 
-      expect(result.success).toBe(false);
-      const error = assertFailure(result, 'init non-empty');
-      expect(error.code).toBe('INIT_DIR_NOT_EMPTY');
+      expect(data.requestedDirectory).toBe(targetDir);
+      expect(data.directory).toMatch(/starter-bom/);
+      expect(existsSync(join(data.directory, '01-elements.json'))).toBe(true);
+      expect(Array.isArray(data.warnings)).toBe(true);
+      expect(data.warnings?.[0]).toMatch(/not empty/i);
     } finally {
       rmSync(targetDir, { recursive: true, force: true });
     }

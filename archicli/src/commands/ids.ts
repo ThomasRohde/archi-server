@@ -11,7 +11,7 @@ export function idsCommand(): Command {
   return new Command('ids')
     .description(
       'Look up a tempId in one or more .ids.json files.\n\n' +
-        'After "batch apply --poll", ID mappings are saved to <file>.ids.json.\n' +
+        'After "batch apply" (polling is default), ID mappings are saved to <file>.ids.json.\n' +
         'Use this command to quickly find the real Archi ID for a given tempId\n' +
         'without manually searching JSON files.\n\n' +
         'EXAMPLE:\n' +

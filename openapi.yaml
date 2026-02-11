@@ -356,7 +356,7 @@ paths:
         operation reports an error instead of falsely returning success.
 
         **Recommended**: Keep batches under 20 operations when creating relationships,
-        or use `archicli batch apply --poll` which handles chunking automatically.
+        or use `archicli batch apply` which handles chunking automatically and polls by default.
       operationId: postModelApply
       requestBody:
         required: true

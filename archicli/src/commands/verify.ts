@@ -3,6 +3,7 @@ import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { validate, detectSchema, SCHEMA_NAMES, type KnownSchema } from '../schemas/registry';
 import {
+  buildIdFileRemediation,
   findDuplicateTempIds,
   loadBom,
   loadIdFilesWithDiagnostics,
@@ -362,6 +363,10 @@ export function verifyCommand(): Command {
               });
               const idFilesCompleteness = summarizeIdFileCompleteness(semanticResult.idFiles);
               if (!options.allowIncompleteIdfiles && !idFilesCompleteness.complete) {
+                const remediation = buildIdFileRemediation(
+                  semanticResult.idFiles,
+                  `archicli verify "${file}" --semantic`
+                );
                 print(
                   failure(
                     'IDFILES_INCOMPLETE',
@@ -373,6 +378,9 @@ export function verifyCommand(): Command {
                       resolveNames: semanticResult.resolveNames,
                       idFilesLoaded: semanticResult.idFilesLoaded,
                       idFiles: semanticResult.idFiles,
+                      missingPaths: remediation.missingPaths,
+                      malformedPaths: remediation.malformedPaths,
+                      nextSteps: remediation.nextSteps,
                     }
                   )
                 );

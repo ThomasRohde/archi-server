@@ -36,10 +36,11 @@ export function createProgram(): Command {
         '  archicli model query                          # 3. inspect current model state\n' +
         '  archicli model search --type application-component  # 4. find elements\n' +
         '  archicli verify changes.json                  # 5. validate BOM before sending\n' +
-        '  archicli batch apply changes.json --poll      # 6. apply and wait for completion\n\n' +
+        '  archicli batch apply changes.json             # 6. apply and wait for completion\n\n' +
         'KEY CONCEPTS:\n' +
         'ASYNC MUTATIONS: /model/apply is async -- returns operationId immediately.\n' +
-        '    Always use --poll or "ops status <id>" to confirm success before proceeding.\n' +
+        '    "batch apply" polls by default (use --no-poll to disable).\n' +
+        '    For low-level apply flows, use --poll or "ops status <id>" before proceeding.\n' +
         '    If operation IDs are lost, use "ops list" to recover recent ones.\n' +
         '  TEMPIDS: Assign friendly names (e.g. "my-server") to new elements in BOM files.\n' +
         '    The server maps these to real Archi IDs. Later operations in the same batch\n' +

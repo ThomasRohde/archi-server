@@ -290,17 +290,18 @@ export function buildCompletionScript(
 }
 
 /**
- * Generate shell completion scripts (`--output text` prints raw script).
+ * Generate shell completion scripts (`--raw` prints script directly).
  */
 export function completionCommand(): Command {
   return new Command('completion')
     .description(
       'Generate shell completion script.\n\n' +
         'Shells: bash, zsh, fish, pwsh.\n' +
-        'Example: archicli --output text completion bash > ~/.local/share/bash-completion/completions/archicli'
+        'Example: archicli completion bash --raw > ~/.local/share/bash-completion/completions/archicli'
     )
     .argument('<shell>', 'target shell: bash, zsh, fish, pwsh')
-    .action((shellRaw: string, _options: unknown, cmd: Command) => {
+    .option('--raw', 'print raw completion script directly (recommended for shell redirection)')
+    .action((shellRaw: string, options: { raw?: boolean }, cmd: Command) => {
       try {
         const shell = shellRaw.toLowerCase() as CompletionShell;
         if (!COMPLETION_SHELLS.includes(shell)) {
@@ -315,10 +316,16 @@ export function completionCommand(): Command {
         }
         const vocabulary = deriveCompletionVocabulary(cmd.parent ?? undefined);
         const script = buildCompletionScript(shell, vocabulary);
-        if (getConfig().output === 'text') {
+        if (options.raw || getConfig().output === 'text') {
           process.stdout.write(script);
         } else {
-          print(success({ shell, script }));
+          print(
+            success({
+              shell,
+              script,
+              hint: 'Use --raw to emit script text without JSON/YAML envelopes.',
+            })
+          );
         }
       } catch (err) {
         if (isCommanderError(err)) throw err;

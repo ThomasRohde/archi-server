@@ -116,7 +116,7 @@ export function cleanupTempFiles(): void {
 }
 
 /**
- * Find the .ids.json file that `batch apply --poll` would have created
+ * Find the .ids.json file that `batch apply` would have created
  * alongside a given BOM file. Returns the path (may or may not exist).
  */
 export function idsFilePath(bomPath: string): string {
@@ -130,7 +130,7 @@ export function idsFilePath(bomPath: string): string {
 export function readIdsFile(bomPath: string): Record<string, string> {
   const p = idsFilePath(bomPath);
   if (!existsSync(p)) {
-    throw new Error(`IDs file not found: ${p} — did you forget --poll?`);
+    throw new Error(`IDs file not found: ${p} — did the apply operation complete with polling enabled (default)?`);
   }
   return JSON.parse(readFileSync(p, 'utf-8')) as Record<string, string>;
 }

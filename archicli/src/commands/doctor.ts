@@ -131,8 +131,8 @@ export function doctorCommand(): Command {
         },
         checks,
         examples: [
-          'archicli batch apply 01-elements.json --poll',
-          'archicli batch apply 02-view.json --poll --layout',
+          'archicli batch apply 01-elements.json',
+          'archicli batch apply 02-view.json --layout',
           'archicli view export --all --dir exports',
         ],
       };

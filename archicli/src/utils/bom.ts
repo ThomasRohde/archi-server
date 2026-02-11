@@ -46,6 +46,12 @@ export interface IdFileCompleteness {
   };
 }
 
+export interface IdFileRemediation {
+  missingPaths: string[];
+  malformedPaths: string[];
+  nextSteps: string[];
+}
+
 /**
  * Fully flattened BOM payload and supporting metadata.
  */
@@ -276,4 +282,28 @@ export function summarizeIdFileCompleteness(diagnostics: IdFileDiagnostics): IdF
       loadedFiles: diagnostics.loadedFiles,
     },
   };
+}
+
+/**
+ * Build actionable remediation guidance when declared idFiles are incomplete.
+ */
+export function buildIdFileRemediation(
+  diagnostics: IdFileDiagnostics,
+  retryCommand: string
+): IdFileRemediation {
+  const missingPaths = [...diagnostics.missing];
+  const malformedPaths = [...diagnostics.malformed];
+  const nextSteps = [
+    'Apply the producer BOM first so required *.ids.json mappings are generated.',
+    ...(missingPaths.length > 0
+      ? [`Missing idFiles: ${missingPaths.join(', ')}`]
+      : []),
+    ...(malformedPaths.length > 0
+      ? ['Malformed idFiles must be valid JSON objects: { "tempId": "id-..." }']
+      : []),
+    `Re-run the consumer command: ${retryCommand}`,
+    'Use --allow-incomplete-idfiles only when you intentionally want best-effort behavior.',
+  ];
+
+  return { missingPaths, malformedPaths, nextSteps };
 }

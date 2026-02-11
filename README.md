@@ -98,8 +98,9 @@ archicli init ./starter-bom
 cd starter-bom
 archicli doctor
 archicli verify 01-elements.json --semantic
-archicli batch apply 01-elements.json --poll
-archicli batch apply 02-view.json --poll --layout
+archicli batch apply 01-elements.json
+archicli verify 02-view.json --semantic
+archicli batch apply 02-view.json --layout
 archicli view export --all --dir exports
 ```
 
@@ -189,22 +190,28 @@ Use `archicli view create --help` for the full valid viewpoint list and examples
 
 ```bash
 # Bash
-archicli --output text completion bash > ~/.local/share/bash-completion/completions/archicli
+archicli completion bash --raw > ~/.local/share/bash-completion/completions/archicli
 
 # Zsh
-archicli --output text completion zsh > ~/.zfunc/_archicli
+archicli completion zsh --raw > ~/.zfunc/_archicli
 
 # Fish
-archicli --output text completion fish > ~/.config/fish/completions/archicli.fish
+archicli completion fish --raw > ~/.config/fish/completions/archicli.fish
 
 # PowerShell
-archicli --output text completion pwsh > archicli-completion.ps1
+archicli completion pwsh --raw > archicli-completion.ps1
 ```
 
 Completion scripts include `model search --type` ArchiMate type value suggestions.
 
 In `--output json` mode, command/usage errors (unknown command/flag, missing args, invalid global options) are emitted as JSON envelopes.
-`--output yaml` is also supported. Use `--quiet` / `-q` to print only essential success values.
+`--output yaml` is also supported. `--quiet` / `-q` prints data-only success payloads (no `{ success, data, metadata }` envelope).
+
+Representative `--output json --quiet` shapes:
+
+- `archicli health` -> `{ "status": "ok" }`
+- `archicli batch apply <file>` -> `{ "operationIds": ["op_..."] }`
+- `archicli ops status <opId>` -> `{ "operationId": "op_...", "status": "complete" }`
 
 ## Project Structure
 

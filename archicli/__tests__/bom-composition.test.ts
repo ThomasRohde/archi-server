@@ -237,6 +237,37 @@ describe('BOM composition — idFiles cross-session resolution', () => {
     expect(result.exitCode).not.toBe(0);
     const errCode = result.error?.code ?? '';
     expect(errCode).toBe('IDFILES_INCOMPLETE');
+    const details = (result.error?.details ?? {}) as {
+      missingPaths?: string[];
+      nextSteps?: string[];
+    };
+    expect(Array.isArray(details.missingPaths)).toBe(true);
+    expect(details.missingPaths?.[0]).toMatch(/nonexistent-ids-file\.ids\.json/i);
+    expect(Array.isArray(details.nextSteps)).toBe(true);
+    expect(details.nextSteps?.join(' ')).toMatch(/allow-incomplete-idfiles/i);
+  });
+
+  test('verify --semantic surfaces IDFILES_INCOMPLETE remediation steps', async () => {
+    const bomPath = writeTempBom(
+      [
+        { op: 'createElement', type: 'business-role', name: 'Verify Missing IdFile', tempId: 'vidf-1' },
+      ],
+      {
+        idFiles: ['nonexistent-semantic.ids.json'],
+      }
+    );
+
+    const result = await cli('verify', bomPath, '--semantic');
+    expect(result.success).toBe(false);
+    expect(result.exitCode).not.toBe(0);
+    const errCode = result.error?.code ?? '';
+    expect(errCode).toBe('IDFILES_INCOMPLETE');
+    const details = (result.error?.details ?? {}) as {
+      missingPaths?: string[];
+      nextSteps?: string[];
+    };
+    expect(details.missingPaths?.[0]).toMatch(/nonexistent-semantic\.ids\.json/i);
+    expect(details.nextSteps?.join(' ')).toMatch(/archicli verify/i);
   });
 
   // ── 6. --allow-incomplete-idfiles permits missing files ────────────────────

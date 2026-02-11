@@ -28,6 +28,33 @@ function normalizeCommanderMessage(message: string): string {
   return message.replace(/^error:\s*/i, '').trim();
 }
 
+function isBatchApplyInvocation(argv: string[]): boolean {
+  const args = argv.slice(2);
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] !== 'batch') continue;
+    for (let j = i + 1; j < args.length; j++) {
+      const token = args[j];
+      if (token.startsWith('-')) continue;
+      return token === 'apply';
+    }
+    return false;
+  }
+  return false;
+}
+
+function hasPollToken(argv: string[]): boolean {
+  return argv.slice(2).some((token) => token === '--poll' || token.startsWith('--poll='));
+}
+
+function withPollGuidanceIfNeeded(message: string, argv: string[]): string {
+  if (!/unknown option ['"]?--poll/i.test(message)) return message;
+  if (!isBatchApplyInvocation(argv) || !hasPollToken(argv)) return message;
+  const guidance =
+    '`batch apply` already polls by default. Remove `--poll` or use `--no-poll` to disable polling.';
+  if (message.includes(guidance)) return message;
+  return `${message}\nHint: ${guidance}`;
+}
+
 // Recursively override Commander output handlers to keep error rendering centralized.
 function configureCommander(command: Command): void {
   command.configureOutput({
@@ -71,7 +98,10 @@ async function main(): Promise<void> {
       
       const message = typeof err.message === 'string' ? err.message.trim() : '';
       if (message.length > 0) {
-        const normalizedMessage = normalizeCommanderMessage(message);
+        const normalizedMessage = withPollGuidanceIfNeeded(
+          normalizeCommanderMessage(message),
+          process.argv
+        );
         if (output !== 'text') {
           print(
             failure('CLI_USAGE_ERROR', normalizedMessage, {
