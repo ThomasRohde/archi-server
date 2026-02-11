@@ -1425,8 +1425,17 @@ async function populateViewWithRelationships(
   let relationshipsConsidered = 0;
   let connectionOpsQueued = 0;
 
-  if (autoConnect && uniqueElementIds.length >= 2) {
-    const { relationships } = await collectRelationshipsBetweenElements(api, uniqueElementIds, args.relationshipTypes);
+  if (autoConnect) {
+    // Include both requested elements AND pre-existing elements already on the view
+    // so autoConnect can resolve cross-connections (e.g., new element D has a
+    // relationship to pre-existing element A that's already visualized).
+    const allRelevantElementIds = uniqueStrings([
+      ...uniqueElementIds,
+      ...Array.from(existingVisualizedElementIds),
+    ]);
+
+    if (allRelevantElementIds.length >= 2) {
+    const { relationships } = await collectRelationshipsBetweenElements(api, allRelevantElementIds, args.relationshipTypes);
     relationshipsConsidered = relationships.length;
 
     for (const relationship of relationships) {
@@ -1442,6 +1451,7 @@ async function populateViewWithRelationships(
         autoResolveVisuals: true,
       });
       connectionOpsQueued += 1;
+    }
     }
   }
 
@@ -2064,6 +2074,19 @@ export function createArchiMcpServer(config: AppConfig): McpServer {
       annotations: DestructiveAnnotations,
     },
     async ({ changes }) => {
+      // Pre-validate batch size: GEF CompoundCommands with >20 operations often
+      // trigger silent rollbacks because each operation expands to 2-3 sub-commands,
+      // exceeding the maxSubCommandsPerBatch limit (50).  Reject early with a clear
+      // error instead of queueing for async execution and getting a cryptic rollback.
+      const MAX_RECOMMENDED_OPS = 20;
+      if (changes.length > MAX_RECOMMENDED_OPS) {
+        throw new Error(
+          `Batch contains ${changes.length} operations, which exceeds the recommended maximum of ${MAX_RECOMMENDED_OPS}. ` +
+            'Large batches risk silent GEF rollbacks because each operation expands to multiple sub-commands. ' +
+            `Split into batches of ≤${MAX_RECOMMENDED_OPS} operations and submit sequentially.`,
+        );
+      }
+
       const { changes: normalizedChanges, aliasesResolved } = normalizeApplyChanges(changes);
       const result = await api.postModelApply({ changes: normalizedChanges });
 
