@@ -1,6 +1,5 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { GetPromptResult } from '@modelcontextprotocol/sdk/types.js';
-import * as z from 'zod/v4';
 
 type PromptContext = Record<string, string | number | boolean | undefined>;
 
@@ -76,9 +75,11 @@ function formatInputRequirementLine(input: PromptInputRequirement, value: Prompt
 }
 
 function buildWorkflowPrompt(options: WorkflowPromptOptions): string {
-  const contextLines = Object.entries(options.context).map(([key, value]) => {
-    return `- ${key}: ${formatValue(value)}`;
-  });
+  const contextEntries = Object.entries(options.context);
+  const contextLines =
+    contextEntries.length > 0
+      ? contextEntries.map(([key, value]) => `- ${key}: ${formatValue(value)}`)
+      : ['- No prompt arguments were provided. Resolve intent using live model context and direct user questions.'];
   const inputRequirementLines = options.inputRequirements.map((input) =>
     formatInputRequirementLine(input, options.context[input.key]),
   );
@@ -94,11 +95,20 @@ function buildWorkflowPrompt(options: WorkflowPromptOptions): string {
     section('Context', contextLines),
     section('Input Requirements', inputRequirementLines),
     section(
+      'Question Tool Usage',
+      asBulletedList([
+        'Use the built-in client question tool for clarification (for example AskUserQuestionTool or askQuestions) instead of asking for all parameters upfront.',
+        'When the model context provides candidates, present 2-4 concrete options using real names/IDs from tool results, plus one explicit free-text alternative.',
+        'Ask one focused question at a time, then continue after the user responds.',
+      ]),
+    ),
+    section(
       'Clarification Workflow',
       asNumberedList([
         'Start with live model context by calling `archi_get_health` and `archi_query_model` before drafting changes.',
         'Use additional read-only tools (for example `archi_get_model_stats`, `archi_search_model`, and `archi_list_views`) to infer likely input values.',
-        'If required inputs are missing or ambiguous, ask the user concise follow-up questions and wait for their answers before running mutation tools.',
+        'If required inputs are missing or ambiguous, use the client question tool (for example AskUserQuestionTool or askQuestions) to ask concise follow-up questions and wait for the user response.',
+        'When presenting options, ground them in current model context and include concrete names/IDs from tool output instead of hypothetical values.',
         'State assumptions explicitly before planning or applying model changes.',
       ]),
     ),
@@ -135,31 +145,11 @@ export function registerArchiModelingPrompts(server: McpServer): void {
       title: 'Assess Current State',
       description:
         'Baseline the current architecture state with diagnostics, structure stats, and focused model discovery.',
-      argsSchema: {
-        scope: z
-          .string()
-          .min(1)
-          .max(500)
-          .optional()
-          .describe('Scope boundary such as domain, product line, or program.'),
-        focus: z
-          .enum(['business', 'application', 'technology', 'cross-layer', 'all'])
-          .optional()
-          .describe('Primary architecture focus for assessment.'),
-        detailLevel: z
-          .enum(['overview', 'coherence', 'detail'])
-          .optional()
-          .describe('Depth of analysis output.'),
-      },
     },
-    async ({ scope, focus, detailLevel }) => {
+    async () => {
       const text = buildWorkflowPrompt({
         goal: 'Establish a factual current-state baseline before any architecture changes.',
-        context: {
-          scope,
-          focus,
-          detailLevel,
-        },
+        context: {},
         inputRequirements: [
           {
             key: 'scope',
@@ -215,22 +205,11 @@ export function registerArchiModelingPrompts(server: McpServer): void {
       title: 'Design Capability Map',
       description:
         'Design or refine a capability map linked to strategic goals, with optional maturity heatmap guidance.',
-      argsSchema: {
-        businessDomain: z.string().min(1).max(500).optional().describe('Business domain to model capabilities for.'),
-        strategicGoal: z.string().min(1).max(500).optional().describe('Strategic goal this capability map should realize.'),
-        timeHorizon: z.string().min(1).max(200).optional().describe('Planning horizon, for example 12-18 months.'),
-        includeHeatmap: z.boolean().optional().describe('Include maturity heatmap metadata guidance.'),
-      },
     },
-    async ({ businessDomain, strategicGoal, timeHorizon, includeHeatmap }) => {
+    async () => {
       const text = buildWorkflowPrompt({
         goal: 'Create a capability map that clearly traces strategic goals to executable architecture elements.',
-        context: {
-          businessDomain,
-          strategicGoal,
-          timeHorizon,
-          includeHeatmap,
-        },
+        context: {},
         inputRequirements: [
           {
             key: 'businessDomain',
@@ -291,28 +270,11 @@ export function registerArchiModelingPrompts(server: McpServer): void {
       title: 'Model Business-Application Alignment',
       description:
         'Model service-mediated alignment between business processes and application services/components.',
-      argsSchema: {
-        businessProcessName: z
-          .string()
-          .min(1)
-          .max(500)
-          .optional()
-          .describe('Business process to align with supporting application architecture.'),
-        includeDataMapping: z
-          .boolean()
-          .optional()
-          .describe('Include business object to data object access and realization mappings.'),
-        targetViewName: z.string().min(1).max(500).optional().describe('Optional target view name to create or update.'),
-      },
     },
-    async ({ businessProcessName, includeDataMapping, targetViewName }) => {
+    async () => {
       const text = buildWorkflowPrompt({
         goal: 'Build explicit, service-oriented traceability from business behavior to application support.',
-        context: {
-          businessProcessName,
-          includeDataMapping,
-          targetViewName,
-        },
+        context: {},
         inputRequirements: [
           {
             key: 'businessProcessName',
@@ -366,30 +328,11 @@ export function registerArchiModelingPrompts(server: McpServer): void {
       title: 'Model Application Integration',
       description:
         'Design integration between source and target applications using simple, service-based, or full-detail patterns.',
-      argsSchema: {
-        sourceApp: z.string().min(1).max(500).optional().describe('Source application component name.'),
-        targetApp: z.string().min(1).max(500).optional().describe('Target application component name.'),
-        integrationPattern: z
-          .enum(['simple_flow', 'service_based', 'full_detail'])
-          .optional()
-          .describe('Integration modeling pattern to apply.'),
-        dataObjectName: z
-          .string()
-          .min(1)
-          .max(500)
-          .optional()
-          .describe('Optional data object name flowing across the integration boundary.'),
-      },
     },
-    async ({ sourceApp, targetApp, integrationPattern, dataObjectName }) => {
+    async () => {
       const text = buildWorkflowPrompt({
         goal: 'Model semantically correct application integration with the right level of architectural detail.',
-        context: {
-          sourceApp,
-          targetApp,
-          integrationPattern,
-          dataObjectName,
-        },
+        context: {},
         inputRequirements: [
           {
             key: 'sourceApp',
@@ -449,28 +392,11 @@ export function registerArchiModelingPrompts(server: McpServer): void {
       title: 'Map Technology Deployment',
       description:
         'Map application components to artifacts, runtime platforms, nodes, and optional network context.',
-      argsSchema: {
-        applicationComponentName: z
-          .string()
-          .min(1)
-          .max(500)
-          .optional()
-          .describe('Application component to map onto the technology layer.'),
-        environment: z
-          .enum(['dev', 'test', 'prod', 'all'])
-          .optional()
-          .describe('Environment scope for deployment mapping.'),
-        includeNetwork: z.boolean().optional().describe('Include communication network/path elements where relevant.'),
-      },
     },
-    async ({ applicationComponentName, environment, includeNetwork }) => {
+    async () => {
       const text = buildWorkflowPrompt({
         goal: 'Model accurate deployment traceability from application component to technology runtime and infrastructure.',
-        context: {
-          applicationComponentName,
-          environment,
-          includeNetwork,
-        },
+        context: {},
         inputRequirements: [
           {
             key: 'applicationComponentName',
@@ -525,22 +451,11 @@ export function registerArchiModelingPrompts(server: McpServer): void {
       title: 'Plan Gap Analysis Roadmap',
       description:
         'Define baseline-to-target architecture transitions using plateaus, gaps, and implementation work packages.',
-      argsSchema: {
-        baselinePlateauName: z.string().min(1).max(500).optional().describe('Name of the baseline plateau.'),
-        targetPlateauName: z.string().min(1).max(500).optional().describe('Name of the target plateau.'),
-        roadmapHorizon: z.string().min(1).max(200).optional().describe('Roadmap horizon such as Q1-Q4 FY2026.'),
-        includeWorkPackages: z.boolean().optional().describe('Include work packages and deliverables in roadmap design.'),
-      },
     },
-    async ({ baselinePlateauName, targetPlateauName, roadmapHorizon, includeWorkPackages }) => {
+    async () => {
       const text = buildWorkflowPrompt({
         goal: 'Create a migration-safe roadmap from baseline to target architecture with explicit transition logic.',
-        context: {
-          baselinePlateauName,
-          targetPlateauName,
-          roadmapHorizon,
-          includeWorkPackages,
-        },
+        context: {},
         inputRequirements: [
           {
             key: 'baselinePlateauName',
@@ -600,21 +515,11 @@ export function registerArchiModelingPrompts(server: McpServer): void {
       title: 'Run Model Quality Audit',
       description:
         'Run a read-only quality audit across naming, relationships, layering, and view hygiene.',
-      argsSchema: {
-        auditFocus: z
-          .enum(['naming', 'relationships', 'layering', 'views', 'all'])
-          .optional()
-          .describe('Primary audit dimension.'),
-        maxFindings: z.number().int().min(5).max(50).optional().describe('Maximum findings to report.'),
-      },
     },
-    async ({ auditFocus, maxFindings }) => {
+    async () => {
       const text = buildWorkflowPrompt({
         goal: 'Assess model quality and provide prioritized, evidence-backed remediation guidance.',
-        context: {
-          auditFocus,
-          maxFindings,
-        },
+        context: {},
         inputRequirements: [
           {
             key: 'auditFocus',
@@ -662,25 +567,11 @@ export function registerArchiModelingPrompts(server: McpServer): void {
       title: 'Curate and Export View',
       description:
         'Locate a view, validate it, apply router/layout settings, and export an image artifact.',
-      argsSchema: {
-        viewIdOrName: z.string().min(1).max(500).optional().describe('View identifier or exact view name to curate.'),
-        layoutDirection: z.enum(['TB', 'BT', 'LR', 'RL']).optional().describe('Layout direction for auto-layout.'),
-        routerType: z
-          .enum(['bendpoint', 'manhattan'])
-          .optional()
-          .describe('Connection router style to apply before export.'),
-        exportFormat: z.enum(['PNG', 'JPG']).optional().describe('Export image format.'),
-      },
     },
-    async ({ viewIdOrName, layoutDirection, routerType, exportFormat }) => {
+    async () => {
       const text = buildWorkflowPrompt({
         goal: 'Produce a validated, readable architecture view image for communication and review.',
-        context: {
-          viewIdOrName,
-          layoutDirection,
-          routerType,
-          exportFormat,
-        },
+        context: {},
         inputRequirements: [
           {
             key: 'viewIdOrName',

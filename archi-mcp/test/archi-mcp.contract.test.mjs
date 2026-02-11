@@ -250,6 +250,72 @@ test('diagnostics tool accepts live diagnostics payload shape', async () => {
   }
 });
 
+test('archi_get_element accepts incoming/outgoing relationship payload shape', async () => {
+  const elementId = 'id-b27d66b1f5324c9a9dea1af5416c6be8';
+  const { server, baseUrl } = await startMockServer((req, res) => {
+    if (req.method === 'GET' && req.url === `/model/element/${elementId}`) {
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(
+        JSON.stringify({
+          id: elementId,
+          name: 'Customer Service',
+          type: 'ApplicationService',
+          documentation: 'Sample element detail payload',
+          properties: { owner: 'EA Team' },
+          relationships: {
+            incoming: [
+              {
+                id: 'rel-in-1',
+                type: 'ServingRelationship',
+                name: 'Served by',
+                otherEndId: 'id-source-1',
+                otherEndName: 'Customer Portal',
+                otherEndType: 'ApplicationComponent',
+              },
+            ],
+            outgoing: [
+              {
+                id: 'rel-out-1',
+                type: 'ServingRelationship',
+                name: 'Serves',
+                otherEndId: 'id-target-1',
+                otherEndName: 'Claims API',
+                otherEndType: 'ApplicationService',
+              },
+            ],
+          },
+          views: [{ id: 'view-1', name: 'Application Landscape' }],
+          requestId: 'element-1',
+        }),
+      );
+      return;
+    }
+
+    res.writeHead(404, { 'content-type': 'application/json' });
+    res.end(JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Not found' } }));
+  });
+
+  try {
+    await withMcpClient(baseUrl, async (client) => {
+      const result = await client.callTool({
+        name: 'archi_get_element',
+        arguments: { elementId },
+      });
+
+      assert.equal(result.isError, undefined);
+      assert.equal(result.structuredContent.ok, true);
+      assert.equal(result.structuredContent.operation, 'archi_get_element');
+      assert.equal(result.structuredContent.data.id, elementId);
+      assert.ok(Array.isArray(result.structuredContent.data.relationships.incoming));
+      assert.ok(Array.isArray(result.structuredContent.data.relationships.outgoing));
+      assert.equal(result.structuredContent.data.relationships.incoming[0].id, 'rel-in-1');
+      assert.equal(result.structuredContent.data.relationships.outgoing[0].id, 'rel-out-1');
+    });
+  } finally {
+    await closeServer(server);
+  }
+});
+
 test('operation tools expose operationId in structured output', async () => {
   const opId = 'op-test-123';
   const { server, baseUrl } = await startMockServer((req, res) => {

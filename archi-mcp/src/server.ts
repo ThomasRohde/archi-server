@@ -298,13 +298,21 @@ const SearchDataSchema = z
   })
   .passthrough();
 
+const ElementRelationshipsDataSchema = z
+  .object({
+    incoming: LooseObjectArraySchema.optional(),
+    outgoing: LooseObjectArraySchema.optional(),
+  })
+  .passthrough();
+
 const ElementDataSchema = z
   .object({
-    id: z.string(),
-    type: z.string(),
+    id: z.string().optional(),
     name: z.string().optional(),
+    type: z.string().optional(),
+    documentation: z.string().optional(),
     properties: LooseObjectSchema.optional(),
-    relationships: LooseObjectArraySchema.optional(),
+    relationships: ElementRelationshipsDataSchema.optional(),
     views: LooseObjectArraySchema.optional(),
     requestId: z.string().optional(),
   })
@@ -676,7 +684,7 @@ export function createArchiMcpServer(config: AppConfig): McpServer {
         tools: {},
       },
       instructions:
-        'Use these tools to inspect and mutate an Archi model through the local Archi Server API. Prefer read tools before write tools, and confirm intent before destructive operations. If prompt inputs are missing, gather live context with read-only tools and ask the user targeted follow-up questions before mutating the model. Modeling workflow templates are available as MCP prompts.',
+        'Use these tools to inspect and mutate an Archi model through the local Archi Server API. Prefer read tools before write tools, and confirm intent before destructive operations. Workflow prompts are clarification-first: gather live context with read-only tools, then ask targeted user questions with the client question tool (for example AskUserQuestionTool or askQuestions), and only then run mutation tools.',
     },
   );
 
