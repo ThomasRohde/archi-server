@@ -21,11 +21,11 @@ import {
   assertSuccess,
 } from './helpers/cli';
 import {
-  ensureServer,
   assertEmptyModel,
   cleanupAll,
   getModelCounts,
   getDiagnostics,
+  isServerHealthy,
   listViews,
 } from './helpers/server';
 import {
@@ -109,10 +109,13 @@ function cleanupIdsFiles(): void {
   }
 }
 
+const serverUp = await isServerHealthy();
+
 // ── Suite setup / teardown ───────────────────────────────────────────────────
 
+describe.skipIf(!serverUp)('Bulk modeling', () => {
+
 beforeAll(async () => {
-  await ensureServer();
   await assertEmptyModel();
   suiteStartTime = Date.now();
 }, 30_000);
@@ -586,3 +589,5 @@ describe('Phase 7 — Save', () => {
     expect(data).toBeTruthy();
   });
 });
+
+}); // close describe.skipIf

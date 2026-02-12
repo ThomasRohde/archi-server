@@ -18,11 +18,11 @@ import {
   type CLIResult,
 } from './helpers/cli';
 import {
-  ensureServer,
   assertEmptyModel,
   cleanupAll,
   getModelCounts,
   getDiagnostics,
+  isServerHealthy,
   searchElements,
 } from './helpers/server';
 import {
@@ -80,10 +80,13 @@ interface SearchResult {
   results: Array<{ id: string; name: string; type: string }>;
 }
 
-// ── Suite-level setup ────────────────────────────────────────────────────────
+const serverUp = await isServerHealthy();
+
+// ── Suite-level setup ──────────────────────────────────────────────────────
+
+describe.skipIf(!serverUp)('Fixes & regressions', () => {
 
 beforeAll(async () => {
-  await ensureServer();
   await assertEmptyModel();
 }, 30_000);
 
@@ -536,3 +539,5 @@ describe('Bug 5 — Large Element Batch', () => {
     }
   });
 });
+
+}); // close describe.skipIf

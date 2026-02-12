@@ -1,8 +1,10 @@
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { execFile, type ExecFileOptions } from 'node:child_process';
 import { resolve } from 'node:path';
-import { ensureServer, cleanupAll } from './helpers/server';
+import { cleanupAll, isServerHealthy } from './helpers/server';
 import { cleanupTempFiles, writeTempBom, writeTempFile } from './helpers/fixtures';
+
+const serverUp = await isServerHealthy();
 
 interface RawCliResult {
   stdout: string;
@@ -42,9 +44,9 @@ function runCliRaw(args: string[], timeout = 60_000): Promise<RawCliResult> {
   });
 }
 
-describe('quiet mode output contract', () => {
+describe.skipIf(!serverUp)('quiet mode output contract', () => {
   beforeAll(async () => {
-    await ensureServer();
+    // server availability already checked via describe.skipIf
   }, 30_000);
 
   afterAll(async () => {

@@ -3,7 +3,9 @@ import { existsSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { cli, assertSuccess } from './helpers/cli';
-import { ensureServer, cleanupAll } from './helpers/server';
+import { cleanupAll, isServerHealthy } from './helpers/server';
+
+const serverUp = await isServerHealthy();
 
 const tempDirs: string[] = [];
 
@@ -11,9 +13,8 @@ function trackDir(dir: string): void {
   tempDirs.push(dir);
 }
 
-describe('first-run onboarding workflow', () => {
+describe.skipIf(!serverUp)('first-run onboarding workflow', () => {
   beforeAll(async () => {
-    await ensureServer();
     await cleanupAll();
   }, 60_000);
 

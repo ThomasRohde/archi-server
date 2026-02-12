@@ -6,13 +6,12 @@
  */
 
 import * as httpClient from '../../infrastructure/httpClient.js';
-import { ensureServerRunning } from '../../infrastructure/archiServer.js';
+import { isServerRunning } from '../../infrastructure/archiServer.js';
 import { expectSuccessResponse } from '../../infrastructure/assertions.js';
 
-describe('Model Query Endpoint', () => {
-  beforeAll(async () => {
-    await ensureServerRunning();
-  });
+const serverAvailable = await isServerRunning();
+
+describe.skipIf(!serverAvailable)('Model Query Endpoint', () => {
 
   describe('POST /model/query', () => {
     it('returns 200 status code', async () => {

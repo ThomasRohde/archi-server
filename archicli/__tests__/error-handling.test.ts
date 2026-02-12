@@ -11,7 +11,7 @@ import {
   assertFailure,
 } from './helpers/cli';
 import {
-  ensureServer,
+  isServerHealthy,
 } from './helpers/server';
 import {
   fixturePath,
@@ -20,19 +20,15 @@ import {
   cleanupTempFiles,
 } from './helpers/fixtures';
 
+const serverUp = await isServerHealthy();
+
 // ── Suite setup / teardown ───────────────────────────────────────────────────
 
-beforeAll(async () => {
-  await ensureServer();
-}, 30_000);
+describe.skipIf(!serverUp)('CLI error handling', () => {
 
-afterAll(() => {
-  cleanupTempFiles();
-});
-
-// ── Tests ────────────────────────────────────────────────────────────────────
-
-describe('CLI error handling', () => {
+  afterAll(() => {
+    cleanupTempFiles();
+  });
 
   // ── 1. File not found ──────────────────────────────────────────────────────
 

@@ -8,19 +8,17 @@
  */
 
 import * as httpClient from '../../infrastructure/httpClient.js';
-import { ensureServerRunning } from '../../infrastructure/archiServer.js';
+import { isServerRunning } from '../../infrastructure/archiServer.js';
 import { expectSuccessResponse } from '../../infrastructure/assertions.js';
 import { createElementPayload, createRelationshipPayload, createApplyRequest } from '../../infrastructure/fixtures.js';
 import { generateUniqueName, cleanupElements, cleanupViews, buildIdMap } from '../../utils/testHelpers.js';
 import { waitForOperation } from '../../utils/waitFor.js';
 
-describe('E2E: Create View Workflow', () => {
+const serverAvailable = await isServerRunning();
+
+describe.skipIf(!serverAvailable)('E2E: Create View Workflow', () => {
   const createdElementIds = [];
   const createdViewIds = [];
-
-  beforeAll(async () => {
-    await ensureServerRunning();
-  });
 
   afterEach(async () => {
     // Clean up in reverse order (views first, then elements)

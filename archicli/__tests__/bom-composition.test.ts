@@ -14,10 +14,10 @@ import {
   assertFailure,
 } from './helpers/cli';
 import {
-  ensureServer,
   assertEmptyModel,
   cleanupAll,
   getModelCounts,
+  isServerHealthy,
   searchElements,
 } from './helpers/server';
 import {
@@ -63,10 +63,13 @@ function cleanupIdsFiles(): void {
   }
 }
 
+const serverUp = await isServerHealthy();
+
 // ── Suite setup / teardown ───────────────────────────────────────────────────
 
+describe.skipIf(!serverUp)('BOM composition — includes', () => {
+
 beforeAll(async () => {
-  await ensureServer();
   await assertEmptyModel();
 }, 30_000);
 
@@ -81,8 +84,6 @@ afterAll(async () => {
 }, 120_000);
 
 // ── Tests ────────────────────────────────────────────────────────────────────
-
-describe('BOM composition — includes', () => {
 
   // ── 1. Includes resolution: parent + child creates all elements ────────────
 

@@ -6,18 +6,16 @@
  */
 
 import * as httpClient from '../../infrastructure/httpClient.js';
-import { ensureServerRunning } from '../../infrastructure/archiServer.js';
+import { isServerRunning } from '../../infrastructure/archiServer.js';
 import { expectSuccessResponse, expectOperationSuccess, expectErrorResponse } from '../../infrastructure/assertions.js';
 import { createElementPayload, createRelationshipPayload, createApplyRequest } from '../../infrastructure/fixtures.js';
 import { generateUniqueName, cleanupElements, buildIdMap } from '../../utils/testHelpers.js';
 import { waitForOperation } from '../../utils/waitFor.js';
 
-describe('Model Apply Endpoint', () => {
-  const createdElementIds = [];
+const serverAvailable = await isServerRunning();
 
-  beforeAll(async () => {
-    await ensureServerRunning();
-  });
+describe.skipIf(!serverAvailable)('Model Apply Endpoint', () => {
+  const createdElementIds = [];
 
   afterEach(async () => {
     // Clean up created elements

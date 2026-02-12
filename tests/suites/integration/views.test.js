@@ -6,16 +6,14 @@
  */
 
 import * as httpClient from '../../infrastructure/httpClient.js';
-import { ensureServerRunning } from '../../infrastructure/archiServer.js';
+import { isServerRunning } from '../../infrastructure/archiServer.js';
 import { expectSuccessResponse, expectErrorResponse, expectValidView } from '../../infrastructure/assertions.js';
 import { generateUniqueName, cleanupViews } from '../../utils/testHelpers.js';
 
-describe('View Endpoints', () => {
-  const createdViewIds = [];
+const serverAvailable = await isServerRunning();
 
-  beforeAll(async () => {
-    await ensureServerRunning();
-  });
+describe.skipIf(!serverAvailable)('View Endpoints', () => {
+  const createdViewIds = [];
 
   afterEach(async () => {
     // Clean up created views

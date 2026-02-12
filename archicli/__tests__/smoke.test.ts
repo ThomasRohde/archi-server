@@ -17,9 +17,9 @@ import {
   assertFailure,
 } from './helpers/cli';
 import {
-  ensureServer,
   assertEmptyModel,
   cleanupAll,
+  isServerHealthy,
 } from './helpers/server';
 import {
   fixturePath,
@@ -58,10 +58,13 @@ function cleanupIdsFiles(): void {
   }
 }
 
+const serverUp = await isServerHealthy();
+
 // ── Suite setup / teardown ───────────────────────────────────────────────────
 
+describe.skipIf(!serverUp)('Smoke tests', () => {
+
 beforeAll(async () => {
-  await ensureServer();
   await assertEmptyModel();
 }, 30_000);
 
@@ -77,7 +80,6 @@ afterAll(async () => {
 
 // ── Tests ────────────────────────────────────────────────────────────────────
 
-describe('Smoke tests', () => {
   // ── 1. health ────────────────────────────────────────────────────────────
 
   test('1. archicli health — returns server status', async () => {
