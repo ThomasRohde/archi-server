@@ -1,0 +1,2 @@
+This skill is distributed under the same license as this repository.
+See ../../../LICENSE for full terms.
