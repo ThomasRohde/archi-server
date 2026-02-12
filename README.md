@@ -605,18 +605,6 @@ queryModel();
 **Problem:** "Cannot find lib/..." errors  
 **Solution:** Verify all files are in correct relative paths. The `lib/` folder must be at `scripts/lib/`.
 
-## AI Agent Skills
-
-This project includes portable AI agent skills that enable automated ArchiMate modeling through the API. Skills follow the open [Agent Skills](https://agentskills.io) standard and work with both **Claude Code** and **GitHub Copilot**.
-
-### Install from this repository
-
-Install skills from `.agent/skills/` (including `archimate-modeling`) with:
-
-```bash
-npx skills add ThomasRohde/archi-server
-```
-
 ## Development
 
 ### Architecture
