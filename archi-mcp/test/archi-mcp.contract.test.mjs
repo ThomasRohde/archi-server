@@ -511,6 +511,129 @@ test('archi_populate_view batches addToView plus auto-connected relationships', 
   }
 });
 
+test('archi_populate_view returns explicit no-op when nothing needs to change', async () => {
+  let applyCalled = false;
+
+  const { server, baseUrl } = await startMockServer((req, res) => {
+    if (req.method === 'GET' && req.url === '/views/view-1') {
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(
+        JSON.stringify({
+          id: 'view-1',
+          elements: [{ id: 'vo-existing', conceptId: 'e1', conceptType: 'ApplicationComponent' }],
+          connections: [{ id: 'vc-existing', conceptId: 'r1', conceptType: 'ServingRelationship' }],
+        }),
+      );
+      return;
+    }
+
+    if (req.method === 'GET' && req.url === '/model/element/e1') {
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(
+        JSON.stringify({
+          id: 'e1',
+          relationships: {
+            outgoing: [{ id: 'r1', type: 'ServingRelationship', otherEndId: 'e2' }],
+          },
+        }),
+      );
+      return;
+    }
+
+    if (req.method === 'GET' && req.url === '/model/element/e2') {
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(
+        JSON.stringify({
+          id: 'e2',
+          relationships: {
+            incoming: [{ id: 'r1', type: 'ServingRelationship', otherEndId: 'e1' }],
+          },
+        }),
+      );
+      return;
+    }
+
+    if (req.method === 'POST' && req.url === '/model/apply') {
+      applyCalled = true;
+      req.resume();
+      req.on('end', () => {
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({ operationId: 'op-should-not-run', status: 'queued' }));
+      });
+      return;
+    }
+
+    res.writeHead(404, { 'content-type': 'application/json' });
+    res.end(JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Not found' } }));
+  });
+
+  try {
+    await withMcpClient(baseUrl, async (client) => {
+      const result = await client.callTool({
+        name: 'archi_populate_view',
+        arguments: {
+          viewId: 'view-1',
+          elementIds: ['e1'],
+        },
+      });
+
+      assert.equal(result.isError, undefined);
+      assert.equal(result.structuredContent.data.status, 'no-op');
+      assert.equal(result.structuredContent.data.operationId, null);
+      assert.equal(result.structuredContent.data.changesQueued, 0);
+      assert.equal(applyCalled, false);
+    });
+  } finally {
+    await closeServer(server);
+  }
+});
+
+test('archi_export_view normalizes lowercase format values before API call', async () => {
+  let capturedBody;
+
+  const { server, baseUrl } = await startMockServer((req, res) => {
+    if (req.method === 'POST' && req.url === '/views/view-1/export') {
+      let body = '';
+      req.on('data', (chunk) => {
+        body += chunk;
+      });
+      req.on('end', () => {
+        capturedBody = JSON.parse(body || '{}');
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(
+          JSON.stringify({
+            outputPath: '/tmp/view-1.png',
+            format: capturedBody.format,
+            requestId: 'export-1',
+          }),
+        );
+      });
+      return;
+    }
+
+    res.writeHead(404, { 'content-type': 'application/json' });
+    res.end(JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Not found' } }));
+  });
+
+  try {
+    await withMcpClient(baseUrl, async (client) => {
+      const result = await client.callTool({
+        name: 'archi_export_view',
+        arguments: {
+          viewId: 'view-1',
+          format: 'png',
+        },
+      });
+
+      assert.equal(result.isError, undefined);
+      assert.equal(capturedBody.format, 'PNG');
+      assert.equal(result.structuredContent.data.format, 'PNG');
+    });
+  } finally {
+    await closeServer(server);
+  }
+});
+
 test('tool metadata exposes prompts/resources and aligned schemas', async () => {
   await withMcpClient('http://127.0.0.1:9999', async (client) => {
     const { tools } = await client.listTools();

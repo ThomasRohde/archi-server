@@ -557,6 +557,15 @@
                     name: elementName,
                     tempId: "t1"
                 });
+            } else {
+                response.statusCode = 400;
+                response.body = {
+                    error: {
+                        code: "BadRequest",
+                        message: "Unsupported planning action: " + action
+                    }
+                };
+                return;
             }
 
             if (typeof loggingQueue !== "undefined" && loggingQueue) {

@@ -794,6 +794,26 @@
                     "Change " + index + " (moveViewObject): missing 'viewObjectId' field"
                 );
             }
+            if (change.x !== undefined && typeof change.x !== 'number') {
+                throw this.createValidationError(
+                    "Change " + index + " (moveViewObject): 'x' must be a number"
+                );
+            }
+            if (change.y !== undefined && typeof change.y !== 'number') {
+                throw this.createValidationError(
+                    "Change " + index + " (moveViewObject): 'y' must be a number"
+                );
+            }
+            if (change.width !== undefined && typeof change.width !== 'number') {
+                throw this.createValidationError(
+                    "Change " + index + " (moveViewObject): 'width' must be a number"
+                );
+            }
+            if (change.height !== undefined && typeof change.height !== 'number') {
+                throw this.createValidationError(
+                    "Change " + index + " (moveViewObject): 'height' must be a number"
+                );
+            }
             // At least one dimension should be provided
             var hasDimension = (
                 change.x !== undefined ||
@@ -823,6 +843,26 @@
             if (!change.content) {
                 throw this.createValidationError(
                     "Change " + index + " (createNote): missing 'content' field"
+                );
+            }
+            if (change.x !== undefined && typeof change.x !== 'number') {
+                throw this.createValidationError(
+                    "Change " + index + " (createNote): 'x' must be a number"
+                );
+            }
+            if (change.y !== undefined && typeof change.y !== 'number') {
+                throw this.createValidationError(
+                    "Change " + index + " (createNote): 'y' must be a number"
+                );
+            }
+            if (change.width !== undefined && typeof change.width !== 'number') {
+                throw this.createValidationError(
+                    "Change " + index + " (createNote): 'width' must be a number"
+                );
+            }
+            if (change.height !== undefined && typeof change.height !== 'number') {
+                throw this.createValidationError(
+                    "Change " + index + " (createNote): 'height' must be a number"
                 );
             }
         },

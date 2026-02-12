@@ -2226,9 +2226,10 @@
 
                 // Accept 'folderId' or 'folder' (agent-friendly alias)
                 var targetFolderId = operation.folderId || operation.folder;
-                var targetFolder = findFolderById(model, targetFolderId);
+                var targetFolder = idMap[targetFolderId] || findFolderById(model, targetFolderId);
                 if (!targetFolder) {
-                    throw new Error("moveToFolder: cannot find target folder (folderId/folder): " + targetFolderId);
+                    throw new Error("moveToFolder: cannot find target folder (folderId/folder): " + targetFolderId +
+                        ". If this folder was created in the same batch, ensure moveToFolder.folderId references that createFolder tempId.");
                 }
 
                 var sourceFolder = elemToMove.eContainer();

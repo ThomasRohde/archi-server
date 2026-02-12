@@ -1560,14 +1560,17 @@ components:
           description: Element, relationship, or view ID to move
         folderId:
           type: string
-          description: Target folder ID
+          description: Target folder ID, or a createFolder tempId from an earlier operation in the same batch
 
     CreateFolderOp:
       type: object
       required:
         - op
         - name
-        - parentId
+      anyOf:
+        - required: [parentId]
+        - required: [parentType]
+        - required: [parentFolder]
       properties:
         op:
           type: string
@@ -1578,6 +1581,15 @@ components:
         parentId:
           type: string
           description: Parent folder ID
+        parentType:
+          type: string
+          description: Parent top-level folder type token (for example BUSINESS, APPLICATION, TECHNOLOGY, VIEWS)
+        parentFolder:
+          type: string
+          description: Parent folder display name (for example Business, Application, Views)
+        documentation:
+          type: string
+          description: Optional folder documentation
         tempId:
           type: string
           description: Temporary ID for referencing in subsequent operations

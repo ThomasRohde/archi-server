@@ -203,6 +203,14 @@ archicli batch apply model/index.json              # apply atomically (chunk-siz
 archicli batch apply model/index.json --fast       # fast mode: chunk-size 20, no validation
 ```
 
+### OpenAPI Source of Truth
+
+- Use the root spec at `openapi.yaml` as the **only** OpenAPI source of truth.
+- Do **not** create or update duplicate OpenAPI files in sub-packages.
+- After any OpenAPI change, regenerate clients in both packages:
+    - `cd archi-mcp && npm run codegen && npm run build`
+    - `cd archicli && npm run codegen && npm run build`
+
 ### BOM File Format
 
 ```json

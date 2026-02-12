@@ -458,12 +458,12 @@ export type MoveToFolderOp = {
      */
     id: string;
     /**
-     * Target folder ID
+     * Target folder ID, or a createFolder tempId from an earlier operation in the same batch
      */
     folderId: string;
 };
 
-export type CreateFolderOp = {
+export type CreateFolderOp = unknown & {
     op: 'createFolder';
     /**
      * Folder name
@@ -472,7 +472,19 @@ export type CreateFolderOp = {
     /**
      * Parent folder ID
      */
-    parentId: string;
+    parentId?: string;
+    /**
+     * Parent top-level folder type token (for example BUSINESS, APPLICATION, TECHNOLOGY, VIEWS)
+     */
+    parentType?: string;
+    /**
+     * Parent folder display name (for example Business, Application, Views)
+     */
+    parentFolder?: string;
+    /**
+     * Optional folder documentation
+     */
+    documentation?: string;
     /**
      * Temporary ID for referencing in subsequent operations
      */

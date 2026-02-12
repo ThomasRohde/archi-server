@@ -1,10 +1,10 @@
 # archi-mcp
 
-TypeScript [Model Context Protocol](https://modelcontextprotocol.io/) server for the Archi Server API, generated from the local `openapi.yaml` using `@hey-api/openapi-ts`. Compatible with GitHub Copilot, Claude Desktop, Codex, and any MCP client.
+TypeScript [Model Context Protocol](https://modelcontextprotocol.io/) server for the Archi Server API, generated from the root `../openapi.yaml` using `@hey-api/openapi-ts`. Compatible with GitHub Copilot, Claude Desktop, Codex, and any MCP client.
 
 ## What this includes
 
-- Fully self-contained codebase in this folder (`openapi.yaml`, generated client, MCP server).
+- MCP server code in this folder, with generated client sourced from the root API spec (`../openapi.yaml`).
 - MCP tools covering health, model, operations, scripts, folders, and views endpoints.
 - `stdio` MCP transport for local agent integration.
 
@@ -83,6 +83,14 @@ Mutation tools:
 - `archi_get_operation_status` accepts both `operationId` and `opId` for compatibility.
 - `archi_list_views` supports name/type/viewpoint filtering plus pagination metadata to reduce context bloat.
 - MCP resources `archi://server/defaults` (runtime config) and `archi://agent/quickstart` (recommended workflow) provide agent bootstrapping context.
+
+## Correctness notes
+
+- Async writes: prefer `archi_apply_model_changes` → `archi_wait_for_operation` as the default completion flow.
+- Export format: `archi_export_view` accepts `PNG/JPG/JPEG` and also normalizes lowercase `png/jpg/jpeg`.
+- Geometry typing: `x`, `y`, `width`, and `height` must be numeric values (not quoted strings).
+- Folder operations: `createFolder` supports `parentId`, `parentType`, or `parentFolder`; same-batch `moveToFolder.folderId` can reference a `createFolder` `tempId`.
+- `archi_populate_view` may return `status: "no-op"` with no `operationId` when nothing needs to change.
  
 ## Prompt Templates (Modeling Activities)
 

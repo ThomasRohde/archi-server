@@ -704,4 +704,40 @@ describe('operationValidation', () => {
         .toThrow("'parentVisualId' must be a string");
     });
   });
+
+  describe('strict geometry typing', () => {
+    it('rejects moveViewObject with non-numeric x', () => {
+      const change = { op: 'moveViewObject', viewObjectId: 'vo-1', x: '10' };
+      expect(() => operationValidation.validateMoveViewObject(change, 0))
+        .toThrow("'x' must be a number");
+    });
+
+    it('rejects moveViewObject with non-numeric width', () => {
+      const change = { op: 'moveViewObject', viewObjectId: 'vo-1', width: '200' };
+      expect(() => operationValidation.validateMoveViewObject(change, 0))
+        .toThrow("'width' must be a number");
+    });
+
+    it('accepts moveViewObject with numeric geometry fields', () => {
+      const change = { op: 'moveViewObject', viewObjectId: 'vo-1', x: 10, y: 20, width: 300, height: 150 };
+      expect(() => operationValidation.validateMoveViewObject(change, 0)).not.toThrow();
+    });
+
+    it('rejects createNote with non-numeric y', () => {
+      const change = { op: 'createNote', viewId: 'view-1', content: 'note', y: '20' };
+      expect(() => operationValidation.validateCreateNote(change, 0))
+        .toThrow("'y' must be a number");
+    });
+
+    it('rejects createNote with non-numeric height', () => {
+      const change = { op: 'createNote', viewId: 'view-1', content: 'note', height: '120' };
+      expect(() => operationValidation.validateCreateNote(change, 0))
+        .toThrow("'height' must be a number");
+    });
+
+    it('accepts createNote with numeric geometry fields', () => {
+      const change = { op: 'createNote', viewId: 'view-1', content: 'note', x: 10, y: 30, width: 260, height: 120 };
+      expect(() => operationValidation.validateCreateNote(change, 0)).not.toThrow();
+    });
+  });
 });

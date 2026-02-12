@@ -128,7 +128,7 @@ const GetElementSchema = z
         message: `Likely malformed Archi ID. Expected "id-" followed by ${ARCHI_ID_HEX_LENGTH} hex characters (${ARCHI_ID_TOTAL_LENGTH} total characters).`,
       })
       .describe(
-        'Element identifier to retrieve (model concept ID; use conceptId from archi_get_view elements/connections).',
+        'Element or relationship identifier to retrieve (model concept ID; use conceptId from archi_get_view elements/connections).',
       ),
   })
   .strict();
@@ -431,7 +431,11 @@ const PopulateViewSchema = z
 const ExportViewSchema = z
   .object({
     viewId: z.string().min(1).describe('View ID to export.'),
-    format: z.enum(['PNG', 'JPG', 'JPEG']).optional().describe('Export format.'),
+    format: z
+      .enum(['PNG', 'JPG', 'JPEG', 'png', 'jpg', 'jpeg'])
+      .transform((value) => value.toUpperCase() as 'PNG' | 'JPG' | 'JPEG')
+      .optional()
+      .describe('Export format. Lowercase values are accepted and normalized.'),
     outputPath: z.string().min(1).optional().describe('Optional output file path.'),
     scale: z.number().min(0.5).max(4).optional().describe('Image scale factor.'),
     margin: z.number().int().min(0).optional().describe('Optional margin in pixels.'),
@@ -1640,23 +1644,23 @@ async function populateViewWithRelationships(
     ]);
 
     if (allRelevantElementIds.length >= 2) {
-    const { relationships } = await collectRelationshipsBetweenElements(api, allRelevantElementIds, args.relationshipTypes);
-    relationshipsConsidered = relationships.length;
+      const { relationships } = await collectRelationshipsBetweenElements(api, allRelevantElementIds, args.relationshipTypes);
+      relationshipsConsidered = relationships.length;
 
-    for (const relationship of relationships) {
-      if (skipExistingConnections && existingVisualizedRelationshipIds.has(relationship.id)) {
-        skippedRelationshipIds.push(relationship.id);
-        continue;
+      for (const relationship of relationships) {
+        if (skipExistingConnections && existingVisualizedRelationshipIds.has(relationship.id)) {
+          skippedRelationshipIds.push(relationship.id);
+          continue;
+        }
+
+        changes.push({
+          op: 'addConnectionToView',
+          viewId: args.viewId,
+          relationshipId: relationship.id,
+          autoResolveVisuals: true,
+        });
+        connectionOpsQueued += 1;
       }
-
-      changes.push({
-        op: 'addConnectionToView',
-        viewId: args.viewId,
-        relationshipId: relationship.id,
-        autoResolveVisuals: true,
-      });
-      connectionOpsQueued += 1;
-    }
     }
   }
 
@@ -2112,7 +2116,8 @@ function registerResources(server: McpServer, config: AppConfig): void {
         '4. Resolve target views with `archi_list_views` filters (`exactName`/`nameContains`).',
         '5. Use `archi_get_view_summary` when you need concept IDs from visual objects.',
         '6. Run plan/mutation tools only after ambiguity is resolved.',
-        '7. For async writes, call `archi_wait_for_operation` (or poll `archi_get_operation_status`).',
+        '7. For async writes, call `archi_wait_for_operation` as the default completion path.',
+        '8. Use `archi_get_operation_status` or `archi_list_operations` only for diagnostics/history.',
         '',
         'ID safety:',
         '- `archi_get_view` returns visual IDs and concept IDs.',
@@ -2248,7 +2253,7 @@ export function createArchiMcpServer(config: AppConfig): McpServer {
     'archi_get_element',
     {
       title: 'Get Element Details',
-      description: 'Returns full details for one element by ID, including relationships and views.',
+      description: 'Returns full details for one element (or relationship) by ID, including relationships and views.',
       inputSchema: GetElementSchema,
       outputDataSchema: ElementDataSchema,
       annotations: ReadOnlyAnnotations,
@@ -2433,7 +2438,7 @@ export function createArchiMcpServer(config: AppConfig): McpServer {
       title: 'Apply Model Changes',
       description:
         'Queues model changes for async execution. For batches of ≤20 operations, returns an operationId ' +
-        'for polling via archi_wait_for_operation. Batches exceeding 20 operations are auto-chunked: the ' +
+        'for completion via archi_wait_for_operation. Batches exceeding 20 operations are auto-chunked: the ' +
         'MCP layer splits, submits sequentially, polls each chunk, resolves tempIds across chunks, and ' +
         'returns merged results directly (no separate archi_wait_for_operation call needed).\n\n' +
         'Operation field reference (aliases auto-normalized):\n' +
@@ -2444,7 +2449,7 @@ export function createArchiMcpServer(config: AppConfig): McpServer {
         '- deleteElement: id (or elementId)\n' +
         '- deleteRelationship: id (or relationshipId)\n' +
         '- setProperty: id (or elementId/relationshipId), key, value\n' +
-        '- moveToFolder: id (or elementId), folderId\n' +
+        '- moveToFolder: id (or elementId), folderId (real ID or prior createFolder tempId in the same batch)\n' +
         '- createFolder: name, parentId | parentType (e.g. BUSINESS) | parentFolder (e.g. Views)\n' +
         '- addToView: viewId, elementId, tempId?, x?, y?, width? (or w), height? (or h), parentVisualId?\n' +
         '- addConnectionToView: viewId, relationshipId, sourceVisualId, targetVisualId, tempId?\n' +
@@ -2456,7 +2461,8 @@ export function createArchiMcpServer(config: AppConfig): McpServer {
         '- createNote: viewId, content (or text), x?, y?, width? (or w), height? (or h), tempId?\n' +
         '- createGroup: viewId, name, x?, y?, width? (or w), height? (or h), tempId?\n' +
         '- createView: name, viewpoint?, documentation?, folder?, tempId?\n' +
-        '- deleteView: viewId',
+        '- deleteView: viewId\n\n' +
+        'Typing notes: geometry fields (`x`, `y`, `width`, `height`, `w`, `h`) must be numbers, not strings.',
       inputSchema: ApplySchema,
       outputDataSchema: ApplyDataSchema,
       annotations: DestructiveAnnotations,
