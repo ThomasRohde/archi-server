@@ -1153,6 +1153,27 @@ function normalizeApplyChanges(changes: Array<Record<string, unknown>>): {
     'nestInView',
   ]);
 
+  // Operations where agents commonly send `w`/`h` but the Archi server
+  // expects `width`/`height`.
+  const opsAcceptingWidthHeightAlias = new Set([
+    'addToView',
+    'moveViewObject',
+    'createNote',
+    'createGroup',
+  ]);
+
+  // Operations where agents commonly send `text` but the Archi server
+  // expects `content`.
+  const opsAcceptingContentAlias = new Set([
+    'createNote',
+  ]);
+
+  // Operations where agents commonly send `fontStyle` but the Archi server
+  // expects `font` (format: "fontName|height|style", e.g. "Arial|10|1" for bold).
+  const opsAcceptingFontAlias = new Set([
+    'styleViewObject',
+  ]);
+
   let aliasesResolved = 0;
 
   const normalized = changes.map((change, index) => {
@@ -1255,6 +1276,59 @@ function normalizeApplyChanges(changes: Array<Record<string, unknown>>): {
         result.visualId = viewObjectId;
         delete result.viewObjectId;
         aliasesResolved += 1;
+      }
+    }
+
+    // --- Normalize w → width, h → height ---
+    if (opsAcceptingWidthHeightAlias.has(op)) {
+      if (result.w !== undefined && result.width === undefined) {
+        result.width = result.w;
+        delete result.w;
+        aliasesResolved += 1;
+      }
+      if (result.h !== undefined && result.height === undefined) {
+        result.height = result.h;
+        delete result.h;
+        aliasesResolved += 1;
+      }
+    }
+
+    // --- Normalize text → content (for createNote) ---
+    if (opsAcceptingContentAlias.has(op)) {
+      if (result.text !== undefined && result.content === undefined) {
+        result.content = result.text;
+        delete result.text;
+        aliasesResolved += 1;
+      }
+    }
+
+    // --- Normalize fontStyle → font (for styleViewObject) ---
+    // The Archi server expects `font` in format "fontName|height|style"
+    // (e.g., "Arial|10|1" for bold). When an agent sends `fontStyle` as a
+    // convenience alias, convert common string values to the font format.
+    if (opsAcceptingFontAlias.has(op)) {
+      if (result.fontStyle !== undefined && result.font === undefined) {
+        const fontStyle = result.fontStyle;
+        // Map known string aliases to SWT font style constants:
+        //   normal=0, bold=1, italic=2, bold|italic=3
+        const fontStyleMap: Record<string, number> = {
+          normal: 0,
+          bold: 1,
+          italic: 2,
+          'bold|italic': 3,
+          'italic|bold': 3,
+        };
+        if (typeof fontStyle === 'string' && fontStyleMap[fontStyle.toLowerCase()] !== undefined) {
+          result.font = `|0|${fontStyleMap[fontStyle.toLowerCase()]}`;
+          delete result.fontStyle;
+          aliasesResolved += 1;
+        } else if (typeof fontStyle === 'number') {
+          result.font = `|0|${fontStyle}`;
+          delete result.fontStyle;
+          aliasesResolved += 1;
+        }
+        // If fontStyle is an unrecognized value, leave it as-is for the server
+        // to handle (it will be silently ignored, same as before).
       }
     }
 
@@ -2134,15 +2208,15 @@ export function createArchiMcpServer(config: AppConfig): McpServer {
         '- setProperty: id (or elementId/relationshipId), key, value\n' +
         '- moveToFolder: id (or elementId), folderId\n' +
         '- createFolder: name, parentId | parentType (e.g. BUSINESS) | parentFolder (e.g. Views)\n' +
-        '- addToView: viewId, elementId, tempId?, x?, y?, w?, h?, parentVisualId?\n' +
+        '- addToView: viewId, elementId, tempId?, x?, y?, width? (or w), height? (or h), parentVisualId?\n' +
         '- addConnectionToView: viewId, relationshipId, sourceVisualId, targetVisualId, tempId?\n' +
         '- nestInView: viewId, visualId (or viewObjectId), parentVisualId, x?, y?\n' +
         '- deleteConnectionFromView: viewId, connectionId (or viewConnectionId)\n' +
-        '- styleViewObject: viewId, viewObjectId (or visualId), fillColor?, fontColor?, fontStyle?, opacity?, outlineOpacity?\n' +
-        '- styleConnection: viewId, connectionId (or viewConnectionId), lineColor?, lineWidth?, fontColor?, fontStyle?\n' +
-        '- moveViewObject: viewId, viewObjectId (or visualId), x, y, w?, h?\n' +
-        '- createNote: viewId, text, x?, y?, w?, h?, tempId?\n' +
-        '- createGroup: viewId, name, x?, y?, w?, h?, tempId?\n' +
+        '- styleViewObject: viewId, viewObjectId (or visualId), fillColor? (#rrggbb hex), fontColor? (#rrggbb hex), font? ("name|size|style" e.g. "Arial|10|1"), fontStyle? ("bold","italic","bold|italic"), opacity? (0-255), outlineOpacity? (0-255)\n' +
+        '- styleConnection: viewId, connectionId (or viewConnectionId), lineColor? (#rrggbb hex), lineWidth? (1-3), fontColor? (#rrggbb hex), textPosition? (0=source,1=middle,2=target)\n' +
+        '- moveViewObject: viewId, viewObjectId (or visualId), x?, y?, width? (or w), height? (or h)\n' +
+        '- createNote: viewId, content (or text), x?, y?, width? (or w), height? (or h), tempId?\n' +
+        '- createGroup: viewId, name, x?, y?, width? (or w), height? (or h), tempId?\n' +
         '- createView: name, viewpoint?, documentation?, folder?, tempId?\n' +
         '- deleteView: viewId',
       inputSchema: ApplySchema,
