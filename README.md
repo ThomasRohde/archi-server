@@ -218,7 +218,7 @@ Representative `--output json --quiet` shapes:
 
 ## MCP Server (archi-mcp)
 
-`archi-mcp` is a TypeScript MCP server in the `archi-mcp/` directory. It uses the local `openapi.yaml` with `@hey-api/openapi-ts` generated client code and exposes the Archi API as MCP tools for agent clients (including Codex).
+`archi-mcp` is a TypeScript [Model Context Protocol](https://modelcontextprotocol.io/) server in the `archi-mcp/` directory. It uses the local `openapi.yaml` with `@hey-api/openapi-ts` generated client code and exposes the Archi API as MCP tools for AI agents — compatible with GitHub Copilot, Claude Desktop, Codex, and any MCP client.
 
 ### Install globally
 
@@ -234,16 +234,41 @@ This installs:
 - `archi-mcp-server`
 - `archi-mcp`
 
-### Configure Codex
+### Configure your MCP client
 
-Add this to `~/.codex/config.toml` (Windows: `C:\Users\<you>\.codex\config.toml`):
+**GitHub Copilot (VS Code)** — add to `.vscode/mcp.json` in your workspace:
+
+```json
+{
+  "servers": {
+    "archi": {
+      "type": "stdio",
+      "command": "archi-mcp-server"
+    }
+  }
+}
+```
+
+**Claude Desktop** — add to `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "archi": {
+      "command": "archi-mcp-server"
+    }
+  }
+}
+```
+
+**Codex** — add to `~/.codex/config.toml` (Windows: `C:\Users\<you>\.codex\config.toml`):
 
 ```toml
 [mcp_servers.archi]
 command = "archi-mcp-server"
 ```
 
-Then restart Codex.
+Restart your client after configuration.
 
 ### Implemented MCP capabilities
 
@@ -256,43 +281,58 @@ Then restart Codex.
 
 ### Implemented MCP tools
 
-Read-only tools:
+Read-only tools (17):
 
-- `archi_get_health`
-- `archi_get_test`
-- `archi_get_model_diagnostics`
-- `archi_query_model`
-- `archi_plan_model_changes`
-- `archi_search_model`
-- `archi_get_element`
-- `archi_get_model_stats`
-- `archi_list_folders`
-- `archi_get_operation_status`
-- `archi_list_operations`
-- `archi_list_views`
-- `archi_get_view`
-- `archi_validate_view`
+- `archi_get_health` — server health, uptime, queue stats, model summary
+- `archi_get_test` — verify UI thread handler
+- `archi_get_model_diagnostics` — orphan/ghost object checks
+- `archi_query_model` — model summary with sampled elements and relationships
+- `archi_plan_model_changes` — dry-run plan preview without mutations
+- `archi_search_model` — search by type, name pattern, or properties
+- `archi_get_element` — full element detail with relationships and views
+- `archi_get_model_stats` — type-level counts for elements, relationships, views
+- `archi_get_relationships_between_elements` — relationships within an element set
+- `archi_list_folders` — full model folder hierarchy
+- `archi_get_operation_status` — check async operation status
+- `archi_wait_for_operation` — poll until complete/error/timeout
+- `archi_list_operations` — list recent operations with optional status filter
+- `archi_list_views` — filtered, sorted, paginated view listing
+- `archi_get_view` — full view detail with visual elements and connections
+- `archi_get_view_summary` — compact view summary for faster agent reasoning
+- `archi_validate_view` — connection integrity checks with violation details
 
-Mutation/destructive tools:
+Mutation/destructive tools (11):
 
-- `archi_save_model`
-- `archi_apply_model_changes`
-- `archi_run_script`
-- `archi_create_view`
-- `archi_delete_view`
-- `archi_export_view`
-- `archi_duplicate_view`
-- `archi_set_view_router`
-- `archi_layout_view`
-- `archi_shutdown_server`
+- `archi_apply_model_changes` — create/update/delete elements, relationships, views (auto-chunks >20 ops)
+- `archi_populate_view` — add elements to a view with auto-connect
+- `archi_save_model` — persist model to disk
+- `archi_run_script` — execute JavaScript inside Archi (GraalVM)
+- `archi_create_view` — create a new view
+- `archi_delete_view` — delete a view by ID
+- `archi_export_view` — export view as PNG/JPEG
+- `archi_duplicate_view` — duplicate an existing view
+- `archi_set_view_router` — set connection routing (bendpoint/manhattan)
+- `archi_layout_view` — auto-layout with Dagre
+- `archi_shutdown_server` — graceful server shutdown
 
 ### Implemented MCP resources
 
-- `archi_server_defaults` (`archi://server/defaults`) - Serves runtime defaults (API base URL and timeout).
+- `archi_server_defaults` (`archi://server/defaults`) — runtime defaults (API base URL and timeout)
+- `archi_agent_quickstart` (`archi://agent/quickstart`) — recommended read-first workflow and ID-handling tips
 
-### Implemented MCP prompts
+### Implemented MCP prompts (9)
 
-- No MCP prompts are currently registered (`registerPrompt` is not yet used in `archi-mcp`).
+Reusable prompt templates for common ArchiMate modeling workflows. Prompts are guidance templates — model mutations still happen through explicit tool calls.
+
+- `archi_assess_current_state` — baseline health, structure, and diagnostics
+- `archi_general_archimate_modeling` — general-purpose scoped modeling workflow
+- `archi_design_capability_map` — capability maps with strategy traceability
+- `archi_model_business_application_alignment` — business-to-application alignment
+- `archi_model_application_integration` — application integration patterns
+- `archi_map_technology_deployment` — infrastructure and deployment mapping
+- `archi_plan_gap_analysis_roadmap` — baseline-target gap analysis with roadmap
+- `archi_run_model_quality_audit` — read-only quality audit
+- `archi_curate_and_export_view` — validate, layout, and export views
 
 ## Project Structure
 
@@ -338,7 +378,10 @@ archi-server/
 ├── archi-mcp/                     # TypeScript MCP server (stdio)
 │   ├── src/
 │   │   ├── index.ts               # MCP stdio bootstrap
-│   │   ├── server.ts              # MCP tool/resource registration
+│   │   ├── server.ts              # MCP tool/resource/prompt registration
+│   │   ├── archi-api.ts           # API client wrapper
+│   │   ├── config.ts              # Environment config
+│   │   ├── prompts.ts             # 9 modeling prompt templates
 │   │   └── client/                # Generated OpenAPI client
 │   ├── package.json
 │   └── README.md
@@ -605,6 +648,7 @@ Quick start:
 - **Script Development Guide:** [context/Script Development Guide for Agents.md](context/Script%20Development%20Guide%20for%20Agents.md)
 - **jArchi API Reference:** [context/jarchi-1.11-api-reference.md](context/jarchi-1.11-api-reference.md)
 - **GraalJS Compatibility:** [context/graalJS-compatibility.md](context/graalJS-compatibility.md)
+- **MCP Agent Experience Report:** [MCP.md](MCP.md)
 - **Agent Skills Standard:** [agentskills.io](https://agentskills.io)
 
 ## License

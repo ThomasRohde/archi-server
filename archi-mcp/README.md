@@ -1,6 +1,6 @@
 # archi-mcp
 
-TypeScript MCP server for the Archi Server API, generated from the local `openapi.yaml` using `@hey-api/openapi-ts`.
+TypeScript [Model Context Protocol](https://modelcontextprotocol.io/) server for the Archi Server API, generated from the local `openapi.yaml` using `@hey-api/openapi-ts`. Compatible with GitHub Copilot, Claude Desktop, Codex, and any MCP client.
 
 ## What this includes
 
@@ -82,7 +82,7 @@ Mutation tools:
 - `archi_wait_for_operation` removes client-side polling loops by waiting until an async operation reaches `complete`/`error` or timeout.
 - `archi_get_operation_status` accepts both `operationId` and `opId` for compatibility.
 - `archi_list_views` supports name/type/viewpoint filtering plus pagination metadata to reduce context bloat.
-- MCP resource `archi://agent/quickstart` provides a recommended read-first workflow and ID safety tips for agents.
+- MCP resources `archi://server/defaults` (runtime config) and `archi://agent/quickstart` (recommended workflow) provide agent bootstrapping context.
  
 ## Prompt Templates (Modeling Activities)
 
