@@ -337,7 +337,7 @@ export function registerArchiModelingPrompts(server: McpServer): void {
           'Call `archi_search_model` to find existing elements/relationships in the requested scope and prevent duplicates.',
           'Call `archi_list_folders` and `archi_list_views`; if a target view is involved, call `archi_get_view_summary` or `archi_get_view` for concept/visual ID mapping.',
           'Call `archi_plan_model_changes` as semantic preflight before any mutation proposal.',
-          'If `applyChanges=true` and user confirms, call `archi_apply_model_changes` in batches of 20 or fewer operations, then complete with `archi_wait_for_operation` (use `archi_get_operation_status` only for diagnostics).',
+          'If `applyChanges=true` and user confirms, call `archi_apply_model_changes` in batches of 8 or fewer operations, run apply → wait → verify for each batch, and stop at first failure to switch to targeted recovery (use `archi_get_operation_status` only for diagnostics).',
           'When view updates are required, use `archi_create_view`/`archi_populate_view`, then `archi_layout_view`, `archi_set_view_router`, and `archi_validate_view`.',
           'Optionally call `archi_export_view` for deliverables and `archi_save_model` for persistence when explicitly requested.',
         ],

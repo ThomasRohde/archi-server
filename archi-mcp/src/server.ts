@@ -716,14 +716,14 @@ const SaveDataSchema = z
 
 const ApplyDataSchema = z
   .object({
-    // Standard async response fields (≤20 ops)
+    // Standard async response fields (≤8 ops)
     operationId: z.string().optional(),
     opId: z.string().optional(),
     status: z.string().optional(),
     message: z.string().optional(),
     queuedAt: z.string().optional(),
     requestId: z.string().optional(),
-    // Auto-chunked response fields (>20 ops)
+    // Auto-chunked response fields (>8 ops)
     totalOperations: z.number().int().optional(),
     chunksSubmitted: z.number().int().optional(),
     chunksCompleted: z.number().int().optional(),
@@ -1135,6 +1135,10 @@ function prepareSearchRequest(args: z.infer<typeof SearchSchema>): {
 // ---------------------------------------------------------------------------
 // Auto-chunking helpers: tempId resolution across sequential chunks
 // ---------------------------------------------------------------------------
+
+const RELIABLE_BATCH_SIZE = 8;
+const CHUNK_POLL_INTERVAL_MS = 500;
+const CHUNK_POLL_TIMEOUT_MS = 120_000;
 
 /** Fields that may contain tempId references needing substitution across chunks. */
 const REFERENCE_ID_FIELDS = [
@@ -1793,6 +1797,46 @@ interface ChunkedApplyResult {
   mcp?: Record<string, unknown>;
 }
 
+async function buildRecoverySnapshot(
+  api: ArchiApiClient,
+  params: {
+    failedChunkIndex: number;
+    operationId?: string;
+    error?: string;
+    errorDetails?: Record<string, unknown>;
+    chunksCompleted: number;
+    tempIdMap: Record<string, string>;
+    totalOperations: number;
+  },
+): Promise<Record<string, unknown>> {
+  const snapshot: Record<string, unknown> = {
+    mode: 'targeted_recovery',
+    failedChunk: params.failedChunkIndex + 1,
+    operationId: params.operationId,
+    error: params.error,
+    errorDetails: params.errorDetails,
+    chunksCompleted: params.chunksCompleted,
+    resolvedTempIds: Object.keys(params.tempIdMap).length,
+    totalOperations: params.totalOperations,
+    nextStep:
+      'Re-read model state, reconcile expected vs actual deltas, and resume with minimal targeted batches.',
+  };
+
+  try {
+    snapshot.model = await api.postModelQuery();
+  } catch (error) {
+    snapshot.modelReadError = error instanceof Error ? error.message : String(error);
+  }
+
+  try {
+    snapshot.diagnostics = await api.getModelDiagnostics();
+  } catch (error) {
+    snapshot.diagnosticsReadError = error instanceof Error ? error.message : String(error);
+  }
+
+  return snapshot;
+}
+
 /**
  * Split a large batch of changes into chunks of ≤MAX_CHUNK_SIZE, submit each
  * sequentially, poll until complete, resolve tempIds across chunks, and return
@@ -1802,9 +1846,7 @@ async function executeChunkedApply(
   api: ArchiApiClient,
   allChanges: Array<Record<string, unknown>>,
 ): Promise<ChunkedApplyResult> {
-  const MAX_CHUNK_SIZE = 20;
-  const POLL_INTERVAL_MS = 500;
-  const POLL_TIMEOUT_MS = 120_000;
+  const MAX_CHUNK_SIZE = RELIABLE_BATCH_SIZE;
 
   // Split into chunks
   const rawChunks: Array<Array<Record<string, unknown>>> = [];
@@ -1818,6 +1860,7 @@ async function executeChunkedApply(
   const chunkSummaries: ChunkSummary[] = [];
   let chunksFailed = 0;
   let totalAliasesResolved = 0;
+  let recoverySnapshot: Record<string, unknown> | undefined;
 
   for (let i = 0; i < rawChunks.length; i++) {
     // Substitute tempIds resolved from prior chunks
@@ -1844,31 +1887,50 @@ async function executeChunkedApply(
       // Poll until complete
       const pollResult = await waitForOperationCompletion(api, {
         operationId,
-        timeoutMs: POLL_TIMEOUT_MS,
-        pollIntervalMs: POLL_INTERVAL_MS,
+        timeoutMs: CHUNK_POLL_TIMEOUT_MS,
+        pollIntervalMs: CHUNK_POLL_INTERVAL_MS,
       });
 
       if (pollResult.status === 'error') {
         chunksFailed++;
-        chunkSummaries.push({
+        const failedChunkSummary: ChunkSummary = {
           chunkIndex: i,
           operationId,
           status: 'error',
           operationCount: normalizedChunk.length,
           error: pollResult.error,
           errorDetails: pollResult.errorDetails as Record<string, unknown> | undefined,
+        };
+        chunkSummaries.push(failedChunkSummary);
+        recoverySnapshot = await buildRecoverySnapshot(api, {
+          failedChunkIndex: i,
+          operationId,
+          error: pollResult.error,
+          errorDetails: pollResult.errorDetails as Record<string, unknown> | undefined,
+          chunksCompleted: chunkSummaries.filter((chunk) => chunk.status === 'complete').length,
+          tempIdMap,
+          totalOperations: allChanges.length,
         });
         break;
       }
 
       if (pollResult.timedOut) {
         chunksFailed++;
-        chunkSummaries.push({
+        const timedOutChunkSummary: ChunkSummary = {
           chunkIndex: i,
           operationId,
           status: 'timeout',
           operationCount: normalizedChunk.length,
-          error: 'Polling timed out after ' + POLL_TIMEOUT_MS + 'ms',
+          error: 'Polling timed out after ' + CHUNK_POLL_TIMEOUT_MS + 'ms',
+        };
+        chunkSummaries.push(timedOutChunkSummary);
+        recoverySnapshot = await buildRecoverySnapshot(api, {
+          failedChunkIndex: i,
+          operationId,
+          error: timedOutChunkSummary.error,
+          chunksCompleted: chunkSummaries.filter((chunk) => chunk.status === 'complete').length,
+          tempIdMap,
+          totalOperations: allChanges.length,
         });
         break;
       }
@@ -1888,11 +1950,19 @@ async function executeChunkedApply(
       });
     } catch (err) {
       chunksFailed++;
-      chunkSummaries.push({
+      const failedChunkSummary: ChunkSummary = {
         chunkIndex: i,
         status: 'error',
         operationCount: normalizedChunk.length,
         error: err instanceof Error ? err.message : String(err),
+      };
+      chunkSummaries.push(failedChunkSummary);
+      recoverySnapshot = await buildRecoverySnapshot(api, {
+        failedChunkIndex: i,
+        error: failedChunkSummary.error,
+        chunksCompleted: chunkSummaries.filter((chunk) => chunk.status === 'complete').length,
+        tempIdMap,
+        totalOperations: allChanges.length,
       });
       break;
     }
@@ -1912,11 +1982,16 @@ async function executeChunkedApply(
     chunks: chunkSummaries,
   };
 
+  const mcpMetadata: Record<string, unknown> = {};
   if (totalAliasesResolved > 0) {
-    response.mcp = {
-      aliasesResolved: totalAliasesResolved,
-      note: 'Normalized alias fields before chunked submission.',
-    };
+    mcpMetadata.aliasesResolved = totalAliasesResolved;
+    mcpMetadata.note = 'Normalized alias fields before chunked submission.';
+  }
+  if (recoverySnapshot) {
+    mcpMetadata.recovery = recoverySnapshot;
+  }
+  if (Object.keys(mcpMetadata).length > 0) {
+    response.mcp = mcpMetadata;
   }
 
   return response;
@@ -2437,8 +2512,8 @@ export function createArchiMcpServer(config: AppConfig): McpServer {
     {
       title: 'Apply Model Changes',
       description:
-        'Queues model changes for async execution. For batches of ≤20 operations, returns an operationId ' +
-        'for completion via archi_wait_for_operation. Batches exceeding 20 operations are auto-chunked: the ' +
+        'Queues model changes for async execution. For batches of ≤8 operations, returns an operationId ' +
+        'for completion via archi_wait_for_operation. Batches exceeding 8 operations are auto-chunked: the ' +
         'MCP layer splits, submits sequentially, polls each chunk, resolves tempIds across chunks, and ' +
         'returns merged results directly (no separate archi_wait_for_operation call needed).\n\n' +
         'Operation field reference (aliases auto-normalized):\n' +
@@ -2468,9 +2543,9 @@ export function createArchiMcpServer(config: AppConfig): McpServer {
       annotations: DestructiveAnnotations,
     },
     async ({ changes }) => {
-      const MAX_CHUNK_SIZE = 20;
+      const MAX_CHUNK_SIZE = RELIABLE_BATCH_SIZE;
 
-      // Small batches (≤20 ops): keep existing async behavior — return operationId
+      // Small batches (≤8 ops): keep existing async behavior — return operationId
       // for the agent to poll via archi_wait_for_operation.
       if (changes.length <= MAX_CHUNK_SIZE) {
         const { changes: normalizedChanges, aliasesResolved } = normalizeApplyChanges(changes);
@@ -2489,7 +2564,7 @@ export function createArchiMcpServer(config: AppConfig): McpServer {
         };
       }
 
-      // Large batches (>20 ops): auto-chunk, submit sequentially, poll each
+      // Large batches (>8 ops): auto-chunk, submit sequentially, poll each
       // to completion, resolve tempIds across chunks, return merged results.
       return executeChunkedApply(api, changes);
     },

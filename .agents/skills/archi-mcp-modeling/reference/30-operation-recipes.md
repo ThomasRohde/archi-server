@@ -35,12 +35,12 @@ Use these recipes for deterministic execution.
 
 ## Recipe 4: Controlled Large Change Set
 
-1. Partition changes into coherent chunks (prefer ≤20 operations for relationship-heavy work).
+1. Partition changes into coherent chunks (prefer ≤8 operations, especially for relationship-heavy work).
 2. For each chunk:
    - `archi_apply_model_changes`
    - `archi_wait_for_operation`
    - Optional `archi_get_model_diagnostics`
-3. On any failure, stop and report exact failing chunk + operation context.
+3. On any failure, stop immediately, capture diagnostics/model snapshot, and report exact failing chunk + operation context.
 4. Continue only when prior chunk is complete and clean.
 
 ## Recipe 5: Read-Only Audit

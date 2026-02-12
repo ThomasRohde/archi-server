@@ -247,6 +247,182 @@ test('archi_apply_model_changes rejects conflicting setProperty id aliases', asy
   });
 });
 
+test('archi_apply_model_changes auto-chunks at 8 operations and merges results', async () => {
+  const applyPayloads = [];
+  const opResults = new Map();
+  let submitCount = 0;
+
+  const { server, baseUrl } = await startMockServer((req, res) => {
+    if (req.method === 'POST' && req.url === '/model/apply') {
+      let body = '';
+      req.on('data', (chunk) => {
+        body += chunk;
+      });
+      req.on('end', () => {
+        const payload = JSON.parse(body || '{}');
+        applyPayloads.push(payload);
+        submitCount += 1;
+        const opId = `op-chunk-${submitCount}`;
+        const changes = Array.isArray(payload.changes) ? payload.changes : [];
+        opResults.set(
+          opId,
+          changes.map((change, index) => ({
+            op: change.op,
+            tempId: change.tempId,
+            realId: `id-${submitCount}-${index + 1}`,
+          })),
+        );
+
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({ operationId: opId, status: 'queued' }));
+      });
+      return;
+    }
+
+    if (req.method === 'GET' && req.url?.startsWith('/ops/status')) {
+      const url = new URL(req.url, 'http://127.0.0.1');
+      const opId = url.searchParams.get('opId');
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(
+        JSON.stringify({
+          operationId: opId,
+          status: 'complete',
+          result: opResults.get(opId) ?? [],
+        }),
+      );
+      return;
+    }
+
+    res.writeHead(404, { 'content-type': 'application/json' });
+    res.end(JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Not found' } }));
+  });
+
+  try {
+    await withMcpClient(baseUrl, async (client) => {
+      const changes = Array.from({ length: 9 }, (_, index) => ({
+        op: 'createElement',
+        type: 'business-actor',
+        name: `Actor ${index + 1}`,
+        tempId: `e-${index + 1}`,
+      }));
+
+      const result = await client.callTool({
+        name: 'archi_apply_model_changes',
+        arguments: { changes },
+      });
+
+      assert.equal(result.isError, undefined);
+      assert.equal(result.structuredContent.data.status, 'complete');
+      assert.equal(result.structuredContent.data.chunksSubmitted, 2);
+      assert.equal(result.structuredContent.data.chunksCompleted, 2);
+      assert.equal(result.structuredContent.data.chunksFailed, 0);
+      assert.equal(result.structuredContent.data.result.length, 9);
+      assert.equal(applyPayloads.length, 2);
+      assert.equal(applyPayloads[0].changes.length, 8);
+      assert.equal(applyPayloads[1].changes.length, 1);
+    });
+  } finally {
+    await closeServer(server);
+  }
+});
+
+test('archi_apply_model_changes includes targeted recovery snapshot on chunk failure', async () => {
+  let submitCount = 0;
+
+  const { server, baseUrl } = await startMockServer((req, res) => {
+    if (req.method === 'POST' && req.url === '/model/apply') {
+      req.resume();
+      req.on('end', () => {
+        submitCount += 1;
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(
+          JSON.stringify({
+            operationId: `op-fail-${submitCount}`,
+            status: 'queued',
+          }),
+        );
+      });
+      return;
+    }
+
+    if (req.method === 'GET' && req.url?.startsWith('/ops/status')) {
+      const url = new URL(req.url, 'http://127.0.0.1');
+      const opId = url.searchParams.get('opId');
+
+      if (opId === 'op-fail-1') {
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(
+          JSON.stringify({
+            operationId: opId,
+            status: 'complete',
+            result: [{ op: 'createElement', tempId: 'e-1', realId: 'id-1' }],
+          }),
+        );
+        return;
+      }
+
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(
+        JSON.stringify({
+          operationId: opId,
+          status: 'error',
+          error: 'simulated chunk failure',
+          errorDetails: {
+            opNumber: 2,
+            op: 'createRelationship',
+            message: 'Duplicate relationship',
+          },
+        }),
+      );
+      return;
+    }
+
+    if (req.method === 'POST' && req.url === '/model/query') {
+      req.resume();
+      req.on('end', () => {
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({ summary: { elements: 1, relationships: 0 } }));
+      });
+      return;
+    }
+
+    if (req.method === 'GET' && req.url === '/model/diagnostics') {
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({ hasOrphans: false, orphanElements: [], orphanRelationships: [] }));
+      return;
+    }
+
+    res.writeHead(404, { 'content-type': 'application/json' });
+    res.end(JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Not found' } }));
+  });
+
+  try {
+    await withMcpClient(baseUrl, async (client) => {
+      const changes = Array.from({ length: 9 }, (_, index) => ({
+        op: 'createElement',
+        type: 'business-actor',
+        name: `Actor ${index + 1}`,
+        tempId: `e-${index + 1}`,
+      }));
+
+      const result = await client.callTool({
+        name: 'archi_apply_model_changes',
+        arguments: { changes },
+      });
+
+      assert.equal(result.isError, undefined);
+      assert.equal(result.structuredContent.data.status, 'partial_error');
+      assert.equal(result.structuredContent.data.chunksFailed, 1);
+      assert.equal(result.structuredContent.data.mcp.recovery.mode, 'targeted_recovery');
+      assert.equal(result.structuredContent.data.mcp.recovery.failedChunk, 2);
+      assert.equal(result.structuredContent.data.mcp.recovery.model.summary.elements, 1);
+      assert.equal(result.structuredContent.data.mcp.recovery.diagnostics.hasOrphans, false);
+    });
+  } finally {
+    await closeServer(server);
+  }
+});
+
 test('archi_get_view_summary returns compact concept to visual mappings', async () => {
   const { server, baseUrl } = await startMockServer((req, res) => {
     if (req.method === 'GET' && req.url === '/views/view-1') {

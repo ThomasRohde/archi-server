@@ -2,7 +2,7 @@ import { Command } from 'commander';
 import { readFileSync, writeFileSync } from 'fs';
 import { basename, dirname, extname, resolve } from 'path';
 import { validate } from '../../schemas/registry';
-import { post, ApiError } from '../../utils/api';
+import { post, get, ApiError } from '../../utils/api';
 import { ArgumentValidationError, parsePositiveInt, parseNonNegativeInt } from '../../utils/args';
 import {
   buildIdFileRemediation,
@@ -130,6 +130,28 @@ function buildChunkFailureMessage(results: Array<Record<string, unknown>>): stri
     .join('\n');
 }
 
+async function collectRecoverySnapshot(): Promise<Record<string, unknown>> {
+  const recovery: Record<string, unknown> = {
+    mode: 'targeted_recovery',
+    nextStep:
+      'Re-read current state, reconcile expected vs actual deltas, and retry only minimal missing operations.',
+  };
+
+  try {
+    recovery['model'] = await post<Record<string, unknown>>('/model/query', {});
+  } catch (error) {
+    recovery['modelReadError'] = error instanceof Error ? error.message : String(error);
+  }
+
+  try {
+    recovery['diagnostics'] = await get<Record<string, unknown>>('/model/diagnostics');
+  } catch (error) {
+    recovery['diagnosticsReadError'] = error instanceof Error ? error.message : String(error);
+  }
+
+  return recovery;
+}
+
 /**
  * High-level BOM apply pipeline:
  * validate -> flatten -> resolve tempIds -> submit/poll chunks -> persist ids.
@@ -138,9 +160,9 @@ export function batchApplyCommand(): Command {
   return new Command('apply')
     .description(
       'Apply a BOM file to the ArchiMate model.\n\n' +
-        'CORRECTNESS-FIRST: Each operation is submitted individually (chunk-size 1)\n' +
-        'and verified via polling by default. This eliminates GEF CompoundCommand\n' +
-        'rollbacks at the cost of speed. Use --fast for larger chunk sizes.\n\n' +
+        'CORRECTNESS-FIRST: Operations are submitted in small deterministic batches\n' +
+        '(default chunk-size 8) and verified via polling by default. This reduces\n' +
+        'GEF CompoundCommand rollback risk while keeping throughput practical.\n\n' +
         'TEMPID RESOLUTION ORDER (per chunk submission):\n' +
         '  1. Declared "idFiles" in the BOM (loaded upfront)\n' +
         '  2. Results from previously polled chunks in this run\n' +
@@ -159,7 +181,7 @@ export function batchApplyCommand(): Command {
         '  # recovers their real IDs, and continues with remaining ops'
     )
     .argument('<file>', 'path to BOM JSON file')
-    .option('-c, --chunk-size <n>', 'operations per API request (default 1 for atomic safety, max 1000)', '1')
+    .option('-c, --chunk-size <n>', 'operations per API request (default 8 for reliability, max 1000)', '8')
     .option('--dry-run', 'validate BOM and show what would be submitted, without applying')
     .option('--no-poll', 'disable polling (polling is enabled by default)')
     .option('--poll', '(deprecated) no-op alias; polling is already enabled by default')
@@ -286,7 +308,7 @@ export function batchApplyCommand(): Command {
 
           // --fast mode: override to batch-oriented defaults for speed
           if (options.fast) {
-            if (options.chunkSize === '1') {
+            if (options.chunkSize === '8') {
               options.chunkSize = '20';
             }
             options.validateConnections = false;
@@ -382,7 +404,7 @@ export function batchApplyCommand(): Command {
           // Determine inter-chunk throttle delay
           const throttleMs = options.throttle !== undefined
             ? parseNonNegativeInt(options.throttle, '--throttle')
-            : (chunkSize === 1 && !options.fast ? 50 : 0);
+            : (chunkSize <= 8 && !options.fast ? 50 : 0);
 
           if (!options.poll) {
             warnings.push('Running without --poll: operation results and tempId mappings are not tracked.');
@@ -723,6 +745,7 @@ export function batchApplyCommand(): Command {
           }
 
           if (hadOperationErrors) {
+            output['recovery'] = await collectRecoverySnapshot();
             print(
               failure('BATCH_APPLY_PARTIAL_FAILURE', buildChunkFailureMessage(results), output)
             );
