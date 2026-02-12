@@ -58,3 +58,4 @@ archimate-plugin/
 
 # Test output artifacts (auto-generated ID mappings)
 **/*.ids.json
+tmpclaude-*

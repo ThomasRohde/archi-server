@@ -712,12 +712,22 @@ const SaveDataSchema = z
 
 const ApplyDataSchema = z
   .object({
+    // Standard async response fields (≤20 ops)
     operationId: z.string().optional(),
     opId: z.string().optional(),
     status: z.string().optional(),
     message: z.string().optional(),
     queuedAt: z.string().optional(),
     requestId: z.string().optional(),
+    // Auto-chunked response fields (>20 ops)
+    totalOperations: z.number().int().optional(),
+    chunksSubmitted: z.number().int().optional(),
+    chunksCompleted: z.number().int().optional(),
+    chunksFailed: z.number().int().optional(),
+    tempIdMap: z.record(z.string(), z.string()).optional(),
+    result: z.array(z.unknown()).optional(),
+    elapsedMs: z.number().int().optional(),
+    chunks: z.array(z.unknown()).optional(),
   })
   .passthrough();
 
@@ -1116,6 +1126,72 @@ function prepareSearchRequest(args: z.infer<typeof SearchSchema>): {
       regexMode: 'expanded-case-insensitive',
     },
   };
+}
+
+// ---------------------------------------------------------------------------
+// Auto-chunking helpers: tempId resolution across sequential chunks
+// ---------------------------------------------------------------------------
+
+/** Fields that may contain tempId references needing substitution across chunks. */
+const REFERENCE_ID_FIELDS = [
+  'id',
+  'sourceId',
+  'targetId',
+  'elementId',
+  'viewId',
+  'relationshipId',
+  'sourceVisualId',
+  'targetVisualId',
+  'parentId',
+  'folderId',
+  'viewObjectId',
+  'connectionId',
+  'parentVisualId',
+  'visualId',
+  'viewConnectionId',
+] as const;
+
+/**
+ * Replace known tempId references in a chunk with resolved real IDs from
+ * earlier chunks.
+ */
+function substituteIdsInChunk(
+  chunk: Array<Record<string, unknown>>,
+  idMap: Record<string, string>,
+): Array<Record<string, unknown>> {
+  if (Object.keys(idMap).length === 0) return chunk;
+  return chunk.map((change) => {
+    const patched = { ...change };
+    for (const field of REFERENCE_ID_FIELDS) {
+      const value = patched[field];
+      if (typeof value === 'string' && idMap[value]) {
+        patched[field] = idMap[value];
+      }
+    }
+    return patched;
+  });
+}
+
+/**
+ * Extract tempId → realId mappings from a completed operation's result array.
+ * Priority order matches archicli: realId > visualId > noteId > groupId > viewId.
+ */
+function extractTempIdMappings(results: Array<Record<string, unknown>>): Record<string, string> {
+  const map: Record<string, string> = {};
+  for (const result of results) {
+    const tempId = getNonEmptyString(result.tempId);
+    if (!tempId) continue;
+    const resolvedId =
+      getNonEmptyString(result.realId) ??
+      getNonEmptyString(result.visualId) ??
+      getNonEmptyString(result.noteId) ??
+      getNonEmptyString(result.groupId) ??
+      getNonEmptyString(result.viewId);
+    if (resolvedId) {
+      map[tempId] = resolvedId;
+    }
+  }
+  return map;
 }
 
 function normalizeApplyChanges(changes: Array<Record<string, unknown>>): {
@@ -1686,6 +1762,162 @@ async function waitForOperationCompletion(
   }
 }
 
+// ---------------------------------------------------------------------------
+// Auto-chunked batch apply
+// ---------------------------------------------------------------------------
+
+interface ChunkSummary {
+  chunkIndex: number;
+  operationId?: string;
+  status: string;
+  operationCount: number;
+  result?: Array<Record<string, unknown>>;
+  error?: string;
+  errorDetails?: Record<string, unknown>;
+}
+
+interface ChunkedApplyResult {
+  status: 'complete' | 'partial_error';
+  totalOperations: number;
+  chunksSubmitted: number;
+  chunksCompleted: number;
+  chunksFailed: number;
+  tempIdMap: Record<string, string>;
+  result: Array<Record<string, unknown>>;
+  elapsedMs: number;
+  chunks: ChunkSummary[];
+  mcp?: Record<string, unknown>;
+}
+
+/**
+ * Split a large batch of changes into chunks of ≤MAX_CHUNK_SIZE, submit each
+ * sequentially, poll until complete, resolve tempIds across chunks, and return
+ * merged results.
+ */
+async function executeChunkedApply(
+  api: ArchiApiClient,
+  allChanges: Array<Record<string, unknown>>,
+): Promise<ChunkedApplyResult> {
+  const MAX_CHUNK_SIZE = 20;
+  const POLL_INTERVAL_MS = 500;
+  const POLL_TIMEOUT_MS = 120_000;
+
+  // Split into chunks
+  const rawChunks: Array<Array<Record<string, unknown>>> = [];
+  for (let i = 0; i < allChanges.length; i += MAX_CHUNK_SIZE) {
+    rawChunks.push(allChanges.slice(i, i + MAX_CHUNK_SIZE));
+  }
+
+  const startedAt = Date.now();
+  const tempIdMap: Record<string, string> = {};
+  const allResults: Array<Record<string, unknown>> = [];
+  const chunkSummaries: ChunkSummary[] = [];
+  let chunksFailed = 0;
+  let totalAliasesResolved = 0;
+
+  for (let i = 0; i < rawChunks.length; i++) {
+    // Substitute tempIds resolved from prior chunks
+    const resolvedChunk = substituteIdsInChunk(rawChunks[i], tempIdMap);
+
+    // Normalize aliases (w→width, visualId→viewObjectId, etc.) for this chunk
+    const { changes: normalizedChunk, aliasesResolved: chunkAliases } =
+      normalizeApplyChanges(resolvedChunk);
+    totalAliasesResolved += chunkAliases;
+
+    try {
+      // Submit chunk
+      const applyResult = await api.postModelApply({ changes: normalizedChunk });
+      const operationId = getNonEmptyString(
+        (applyResult as Record<string, unknown>).operationId,
+      );
+
+      if (!operationId) {
+        throw new Error(
+          'No operationId returned from postModelApply for chunk ' + (i + 1),
+        );
+      }
+
+      // Poll until complete
+      const pollResult = await waitForOperationCompletion(api, {
+        operationId,
+        timeoutMs: POLL_TIMEOUT_MS,
+        pollIntervalMs: POLL_INTERVAL_MS,
+      });
+
+      if (pollResult.status === 'error') {
+        chunksFailed++;
+        chunkSummaries.push({
+          chunkIndex: i,
+          operationId,
+          status: 'error',
+          operationCount: normalizedChunk.length,
+          error: pollResult.error,
+          errorDetails: pollResult.errorDetails as Record<string, unknown> | undefined,
+        });
+        break;
+      }
+
+      if (pollResult.timedOut) {
+        chunksFailed++;
+        chunkSummaries.push({
+          chunkIndex: i,
+          operationId,
+          status: 'timeout',
+          operationCount: normalizedChunk.length,
+          error: 'Polling timed out after ' + POLL_TIMEOUT_MS + 'ms',
+        });
+        break;
+      }
+
+      // Extract results and accumulate tempId mappings
+      const opResults = (pollResult.result ?? []) as Array<Record<string, unknown>>;
+      const newMappings = extractTempIdMappings(opResults);
+      Object.assign(tempIdMap, newMappings);
+      allResults.push(...opResults);
+
+      chunkSummaries.push({
+        chunkIndex: i,
+        operationId,
+        status: 'complete',
+        operationCount: normalizedChunk.length,
+        result: opResults,
+      });
+    } catch (err) {
+      chunksFailed++;
+      chunkSummaries.push({
+        chunkIndex: i,
+        status: 'error',
+        operationCount: normalizedChunk.length,
+        error: err instanceof Error ? err.message : String(err),
+      });
+      break;
+    }
+  }
+
+  const elapsedMs = Date.now() - startedAt;
+
+  const response: ChunkedApplyResult = {
+    status: chunksFailed > 0 ? 'partial_error' : 'complete',
+    totalOperations: allChanges.length,
+    chunksSubmitted: chunkSummaries.length,
+    chunksCompleted: chunkSummaries.filter((c) => c.status === 'complete').length,
+    chunksFailed,
+    tempIdMap,
+    result: allResults,
+    elapsedMs,
+    chunks: chunkSummaries,
+  };
+
+  if (totalAliasesResolved > 0) {
+    response.mcp = {
+      aliasesResolved: totalAliasesResolved,
+      note: 'Normalized alias fields before chunked submission.',
+    };
+  }
+
+  return response;
+}
+
 function withToolSpecificErrorHint(operation: string, error: ArchiApiError): ArchiApiError {
   if (operation === 'archi_get_element' && error.status === 404 && error.code === 'NotFound') {
     return new ArchiApiError(
@@ -1702,7 +1934,10 @@ function withToolSpecificErrorHint(operation: string, error: ArchiApiError): Arc
     error.status !== undefined
   ) {
     return new ArchiApiError(
-      `${error.message}\nHint: MCP script execution has no UI selection context. Prefer structured tools (archi_get_element, archi_get_view, archi_apply_model_changes, archi_populate_view).`,
+      `${error.message}\nHint: The script preamble pre-binds helpers: use \`model\` (the loaded model), ` +
+        '`getModel()`, `findElements(type)`, `findViews(name)`, `findRelationships(type)`, ' +
+        'or `$(selector)` (auto-bound to the loaded model). ' +
+        'Also consider structured tools (archi_get_element, archi_get_view, archi_apply_model_changes).',
       error.status,
       error.code,
       error.details,
@@ -2197,7 +2432,10 @@ export function createArchiMcpServer(config: AppConfig): McpServer {
     {
       title: 'Apply Model Changes',
       description:
-        'Queues model changes for async execution. Use archi_get_operation_status to poll completion.\n\n' +
+        'Queues model changes for async execution. For batches of ≤20 operations, returns an operationId ' +
+        'for polling via archi_wait_for_operation. Batches exceeding 20 operations are auto-chunked: the ' +
+        'MCP layer splits, submits sequentially, polls each chunk, resolves tempIds across chunks, and ' +
+        'returns merged results directly (no separate archi_wait_for_operation call needed).\n\n' +
         'Operation field reference (aliases auto-normalized):\n' +
         '- createElement: type, name, tempId?, documentation?, properties?, folder?\n' +
         '- createRelationship: type, sourceId, targetId, tempId?, name?, accessType?\n' +
@@ -2224,33 +2462,30 @@ export function createArchiMcpServer(config: AppConfig): McpServer {
       annotations: DestructiveAnnotations,
     },
     async ({ changes }) => {
-      // Pre-validate batch size: GEF CompoundCommands with >20 operations often
-      // trigger silent rollbacks because each operation expands to 2-3 sub-commands,
-      // exceeding the maxSubCommandsPerBatch limit (50).  Reject early with a clear
-      // error instead of queueing for async execution and getting a cryptic rollback.
-      const MAX_RECOMMENDED_OPS = 20;
-      if (changes.length > MAX_RECOMMENDED_OPS) {
-        throw new Error(
-          `Batch contains ${changes.length} operations, which exceeds the recommended maximum of ${MAX_RECOMMENDED_OPS}. ` +
-            'Large batches risk silent GEF rollbacks because each operation expands to multiple sub-commands. ' +
-            `Split into batches of ≤${MAX_RECOMMENDED_OPS} operations and submit sequentially.`,
-        );
+      const MAX_CHUNK_SIZE = 20;
+
+      // Small batches (≤20 ops): keep existing async behavior — return operationId
+      // for the agent to poll via archi_wait_for_operation.
+      if (changes.length <= MAX_CHUNK_SIZE) {
+        const { changes: normalizedChanges, aliasesResolved } = normalizeApplyChanges(changes);
+        const result = await api.postModelApply({ changes: normalizedChanges });
+
+        if (aliasesResolved === 0) {
+          return result;
+        }
+
+        return {
+          ...result,
+          mcp: {
+            aliasesResolved,
+            note: 'Normalized alias fields: elementId/relationshipId→id, visualId→viewObjectId, viewConnectionId→connectionId, viewObjectId→visualId (nestInView).',
+          },
+        };
       }
 
-      const { changes: normalizedChanges, aliasesResolved } = normalizeApplyChanges(changes);
-      const result = await api.postModelApply({ changes: normalizedChanges });
-
-      if (aliasesResolved === 0) {
-        return result;
-      }
-
-      return {
-        ...result,
-        mcp: {
-          aliasesResolved,
-          note: 'Normalized alias fields: elementId/relationshipId→id, visualId→viewObjectId, viewConnectionId→connectionId, viewObjectId→visualId (nestInView).',
-        },
-      };
+      // Large batches (>20 ops): auto-chunk, submit sequentially, poll each
+      // to completion, resolve tempIds across chunks, return merged results.
+      return executeChunkedApply(api, changes);
     },
   );
 
@@ -2274,7 +2509,16 @@ export function createArchiMcpServer(config: AppConfig): McpServer {
     {
       title: 'Run JArchi Script',
       description:
-        'Executes JavaScript inside Archi. MCP execution has no UI selection context, so selection-dependent APIs can fail; prefer structured model/view tools for routine tasks.',
+        'Executes JavaScript inside Archi (GraalVM). Prefer structured tools for routine tasks.\n\n' +
+        'Pre-bound helpers available in every script:\n' +
+        '- `model` — the first loaded ArchiMate model (pre-bound convenience variable)\n' +
+        '- `getModel()` — returns the first loaded model (same as `model`, callable)\n' +
+        '- `findElements(type?)` — find elements; optional type filter (e.g. "business-actor")\n' +
+        '- `findViews(name?)` — find views; optional name substring filter\n' +
+        '- `findRelationships(type?)` — find relationships; optional type filter\n' +
+        '- `$(selector)` — auto-bound to the loaded model (no UI context needed)\n\n' +
+        'Example: `var actors = findElements("business-actor"); console.log(JSON.stringify(actors));`\n' +
+        'Example: `model.find("element").each(function(e) { console.log(e.name); });`',
       inputSchema: ScriptSchema,
       outputDataSchema: ScriptRunDataSchema,
       annotations: ScriptAnnotations,

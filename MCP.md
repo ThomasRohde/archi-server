@@ -83,7 +83,7 @@ When adding elements to a view, the default size is 120×55, which is fine for a
 
 **Suggestion**: Allow `addToView` to accept `width`/`height` and apply them at creation time (the `undoableCommands.js` code already has width/height support in the `addToView` handler — verify this). If it already works, the MCP tool description just needs to document the correct field names.
 
-### FRICTION 2: `archi_run_script` has no model selection context
+### FRICTION 2: `archi_run_script` has no model selection context — FIXED
 
 Attempting to use script execution as a fallback for batch resizing failed because:
 - `$("selector")` requires UI selection context that doesn't exist via API
@@ -91,6 +91,8 @@ Attempting to use script execution as a fallback for batch resizing failed becau
 - `$.model.getLoadedModels().get(0).find()` → CompoundCommand null context error
 
 This means scripts can't be used as an escape hatch for operations the structured API doesn't cover well. The error message is helpful ("Prefer structured tools…"), but it would be better if scripts could access the model directly without UI context.
+
+**Resolution**: The script preamble now pre-binds a `model` convenience variable (`var model = getModel()`) and auto-binds `$()` to the loaded model. Helper functions `getModel()`, `findElements(type)`, `findViews(name)`, `findRelationships(type)` are available in every script. The MCP tool description documents all helpers with examples. Error messages now advertise these helpers instead of only suggesting structured tools.
 
 ### FRICTION 3: `styleViewObject` `fontStyle` = "bold" was silently ignored — FIXED
 
@@ -104,9 +106,11 @@ When styling L1 capability containers, `fontStyle: "bold"` was included in the `
 
 The capability map needed a title. The only option was `createNote`, which creates a free-floating text box. There's no concept of a view title/header element that stays anchored or styled differently. Minor, but worth noting for future view-building scenarios.
 
-### FRICTION 5: Batching limits require manual operation splitting
+### FRICTION 5: Batching limits require manual operation splitting — FIXED
 
 The 20-operation batch limit means the agent must manually split work across multiple `archi_apply_model_changes` calls. For this 35-element model, I needed 4 separate createElement+createRelationship batches plus 3 separate view-population batches. An auto-chunking feature in the MCP layer (splitting a larger batch internally, polling each chunk, and merging results) would reduce agent complexity significantly.
+
+**Resolution**: The MCP layer now auto-chunks batches exceeding 20 operations. It splits into ≤20-op chunks, submits each sequentially, polls until complete, resolves tempIds across chunks, and returns merged results directly. The agent can submit up to 1000 operations in a single call without manual splitting. For auto-chunked batches, no separate `archi_wait_for_operation` call is needed.
 
 ---
 
@@ -162,9 +166,9 @@ The MCP server normalizes these aliases:
 3. ~~**P1 — Fix tool descriptions**~~ ✅ DONE
 4. ~~**P1 — Document `fontStyle` valid values**~~ ✅ DONE
 
-5. **P2 — Consider auto-chunking** large batches in the MCP layer (split → sequential apply → merge results) to eliminate the agent-side batching complexity.
+5. ~~**P2 — Consider auto-chunking** large batches in the MCP layer (split → sequential apply → merge results) to eliminate the agent-side batching complexity.~~ ✅ DONE
 
-6. **P2 — Improve `archi_run_script` model access** so scripts can access the loaded model without UI selection context.
+6. ~~**P2 — Improve `archi_run_script` model access** so scripts can access the loaded model without UI selection context.~~ ✅ DONE
 
 ---
 

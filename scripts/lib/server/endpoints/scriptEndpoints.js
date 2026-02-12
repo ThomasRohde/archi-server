@@ -386,6 +386,9 @@
                     "    }",
                     "}",
                     "",
+                    "// Pre-bind 'model' for convenience — scripts can use model.find() directly",
+                    "var model = getModel();",
+                    "",
                     "// Execute user script — last expression value is captured by load()",
                     scriptCode,
                     ""
@@ -455,7 +458,9 @@
                     if (errorMsg.indexOf("Could not get the currently selected model") !== -1) {
                         var detailedError = errorMsg;
                         errorMsg = "$() requires UI selection context which is not available via API. " +
-                            "Use: var model = $.model.getLoadedModels().get(0); model.find('element').each(function(e) { console.log(e.name); });";
+                            "Use the pre-bound helpers instead: 'model' (pre-bound to loaded model), " +
+                            "getModel(), findElements(type), findViews(name), findRelationships(type). " +
+                            "Example: model.find('element').each(function(e) { console.log(e.name); });";
                         output.push({ level: "error", message: detailedError });
                     }
                     
