@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.0](https://github.com/ThomasRohde/archi-server/compare/v1.8.1...v1.9.0) (2026-02-12)
+
+
+### Features
+
+* **archi-mcp-modeling:** add new skill for ArchiMate modeling ([e594fc1](https://github.com/ThomasRohde/archi-server/commit/e594fc13d63ac2eddd02c46bacf374cc538675c3))
+* **endpoints:** enhance viewpoint resolution and normalization logic ([3eb316b](https://github.com/ThomasRohde/archi-server/commit/3eb316ba485dc83cd05e2f6643c3331ccd1ad609))
+* **logTab:** create log tab with clear and export functionality ([3eb316b](https://github.com/ThomasRohde/archi-server/commit/3eb316ba485dc83cd05e2f6643c3331ccd1ad609))
+* **mcp-builder:** add Python MCP server implementation guide and evaluation scripts ([65e9438](https://github.com/ThomasRohde/archi-server/commit/65e943832111d6f3c2877c0dbc2356cae51418ec))
+* **monitorUI:** implement tabbed interface for log, settings, and stats ([3eb316b](https://github.com/ThomasRohde/archi-server/commit/3eb316ba485dc83cd05e2f6643c3331ccd1ad609))
+* **operationValidation:** simplify viewpoint format validation ([3eb316b](https://github.com/ThomasRohde/archi-server/commit/3eb316ba485dc83cd05e2f6643c3331ccd1ad609))
+* **settingsTab:** add settings tab for server configuration management ([3eb316b](https://github.com/ThomasRohde/archi-server/commit/3eb316ba485dc83cd05e2f6643c3331ccd1ad609))
+* **statsTab:** implement stats tab for live server metrics and operation stats ([3eb316b](https://github.com/ThomasRohde/archi-server/commit/3eb316ba485dc83cd05e2f6643c3331ccd1ad609))
+
+
+### Tests
+
+* **model-apply:** add test for creating view with viewpoint as label ([3eb316b](https://github.com/ThomasRohde/archi-server/commit/3eb316ba485dc83cd05e2f6643c3331ccd1ad609))
+
 ## [1.8.1](https://github.com/ThomasRohde/archi-server/compare/v1.8.0...v1.8.1) (2026-02-11)
 
 
