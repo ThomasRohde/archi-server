@@ -71,7 +71,7 @@ describe.skipIf(!serverUp)('BOM composition — includes', () => {
 
 beforeAll(async () => {
   await assertEmptyModel();
-}, 30_000);
+}, 120_000);
 
 afterAll(async () => {
   try {

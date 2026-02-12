@@ -58,6 +58,8 @@ Representative JSON shapes:
 - `archicli --quiet batch apply changes.json` → `{ "operationIds": ["op_..."] }`
 - `archicli --quiet ops status <opId>` → `{ "operationId": "op_...", "status": "complete" }`
 
+`ops status`/`ops list` responses now include additive operation metadata from the API when present (for example `digest`, `timeline`, `tempIdMap`, `tempIdMappings`, `retryHints`, `hasMore`, `nextCursor`).
+
 ## BOM Workflow
 
 Most write automation should use `batch apply`, which polls by default.

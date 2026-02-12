@@ -194,6 +194,21 @@ const OpsStatusSchema = z
       .describe(
         'Operation ID returned by archi_apply_model_changes. Preferred field name because tool responses use operationId.',
       ),
+    summaryOnly: z
+      .boolean()
+      .optional()
+      .describe('Return compact metadata without paged result rows.'),
+    cursor: z
+      .string()
+      .optional()
+      .describe('Optional zero-based cursor offset for paged result rows.'),
+    pageSize: z
+      .number()
+      .int()
+      .min(1)
+      .max(1000)
+      .optional()
+      .describe('Optional result page size (1-1000).'),
   })
   .strict()
   .superRefine((value, ctx) => {
@@ -220,6 +235,14 @@ const OpsListSchema = z
       .enum(['queued', 'processing', 'complete', 'error'])
       .optional()
       .describe('Optional operation status filter.'),
+    cursor: z
+      .string()
+      .optional()
+      .describe('Optional zero-based cursor offset for paged operation rows.'),
+    summaryOnly: z
+      .boolean()
+      .optional()
+      .describe('Return compact operation summaries only.'),
   })
   .strict();
 
@@ -576,6 +599,17 @@ const OperationStatusDataSchema = z
     opId: z.string().optional(),
     status: z.string().optional(),
     result: z.array(z.unknown()).optional(),
+    totalResultCount: z.number().int().optional(),
+    cursor: z.string().optional(),
+    pageSize: z.number().int().optional(),
+    hasMore: z.boolean().optional(),
+    nextCursor: z.string().nullable().optional(),
+    summaryOnly: z.boolean().optional(),
+    digest: LooseObjectSchema.optional(),
+    tempIdMap: z.record(z.string(), z.string()).optional(),
+    tempIdMappings: LooseObjectArraySchema.optional(),
+    timeline: LooseObjectArraySchema.optional(),
+    retryHints: LooseObjectArraySchema.nullable().optional(),
     error: z.string().optional(),
     errorDetails: LooseObjectSchema.optional(),
     createdAt: z.string().optional(),
@@ -590,6 +624,12 @@ const OperationListDataSchema = z
   .object({
     operations: LooseObjectArraySchema.optional(),
     total: z.number().int().optional(),
+    limit: z.number().int().optional(),
+    status: z.string().nullable().optional(),
+    cursor: z.string().optional(),
+    hasMore: z.boolean().optional(),
+    nextCursor: z.string().nullable().optional(),
+    summaryOnly: z.boolean().optional(),
     requestId: z.string().optional(),
   })
   .passthrough();
@@ -604,6 +644,10 @@ const WaitForOperationDataSchema = z
     elapsedMs: z.number().int().nonnegative(),
     statusHistory: z.array(z.string()),
     result: z.array(z.unknown()).optional(),
+    digest: LooseObjectSchema.optional(),
+    tempIdMap: z.record(z.string(), z.string()).optional(),
+    tempIdMappings: LooseObjectArraySchema.optional(),
+    timeline: LooseObjectArraySchema.optional(),
     error: z.string().optional(),
     errorDetails: LooseObjectSchema.optional(),
     requestId: z.string().optional(),
@@ -688,6 +732,8 @@ const PopulateViewDataSchema = z
     relationshipsConsidered: z.number().int(),
     skippedElementIds: z.array(z.string()),
     skippedRelationshipIds: z.array(z.string()),
+    skippedRelationships: z.array(LooseObjectSchema).optional(),
+    skipReasonCounts: LooseObjectSchema.optional(),
     changesQueued: z.number().int(),
     message: z.string().optional(),
     requestId: z.string().optional(),
@@ -732,6 +778,10 @@ const ApplyDataSchema = z
     result: z.array(z.unknown()).optional(),
     elapsedMs: z.number().int().optional(),
     chunks: z.array(z.unknown()).optional(),
+    digest: LooseObjectSchema.optional(),
+    tempIdMappings: LooseObjectArraySchema.optional(),
+    hasMore: z.boolean().optional(),
+    nextCursor: z.string().nullable().optional(),
   })
   .passthrough();
 
@@ -1442,6 +1492,7 @@ async function collectRelationshipsBetweenElements(
 ): Promise<{
   relationships: RelationshipBetweenElements[];
   elementNameById: Map<string, string>;
+  unsupportedTypeRelationshipIds: string[];
 }> {
   const uniqueElementIds = uniqueStrings(elementIds);
   const uniqueElementIdSet = new Set(uniqueElementIds);
@@ -1453,6 +1504,7 @@ async function collectRelationshipsBetweenElements(
   const details = await Promise.all(uniqueElementIds.map((elementId) => api.getElementById(elementId)));
   const elementNameById = new Map<string, string>();
   const relationshipsById = new Map<string, RelationshipBetweenElements>();
+  const unsupportedTypeRelationshipIds = new Set<string>();
 
   for (const [index, detail] of details.entries()) {
     const currentElementId = uniqueElementIds[index];
@@ -1468,6 +1520,9 @@ async function collectRelationshipsBetweenElements(
         continue;
       }
       if (!isRelationshipTypeAllowed(relationship.type, allowedTypes)) {
+        if (relationshipId) {
+          unsupportedTypeRelationshipIds.add(relationshipId);
+        }
         continue;
       }
 
@@ -1490,6 +1545,9 @@ async function collectRelationshipsBetweenElements(
         continue;
       }
       if (!isRelationshipTypeAllowed(relationship.type, allowedTypes)) {
+        if (relationshipId) {
+          unsupportedTypeRelationshipIds.add(relationshipId);
+        }
         continue;
       }
 
@@ -1524,6 +1582,9 @@ async function collectRelationshipsBetweenElements(
   return {
     relationships,
     elementNameById,
+    unsupportedTypeRelationshipIds: Array.from(unsupportedTypeRelationshipIds.values()).sort((a, b) =>
+      a.localeCompare(b),
+    ),
   };
 }
 
@@ -1635,6 +1696,8 @@ async function populateViewWithRelationships(
   }));
 
   const skippedRelationshipIds: string[] = [];
+  const skippedRelationships: Array<{ relationshipId: string; reason: string }> = [];
+  const skipReasonCounts: Record<string, number> = {};
   let relationshipsConsidered = 0;
   let connectionOpsQueued = 0;
 
@@ -1648,12 +1711,24 @@ async function populateViewWithRelationships(
     ]);
 
     if (allRelevantElementIds.length >= 2) {
-      const { relationships } = await collectRelationshipsBetweenElements(api, allRelevantElementIds, args.relationshipTypes);
+      const { relationships, unsupportedTypeRelationshipIds } = await collectRelationshipsBetweenElements(
+        api,
+        allRelevantElementIds,
+        args.relationshipTypes,
+      );
       relationshipsConsidered = relationships.length;
+
+      for (const relationshipId of unsupportedTypeRelationshipIds) {
+        skippedRelationshipIds.push(relationshipId);
+        skippedRelationships.push({ relationshipId, reason: 'unsupportedType' });
+        skipReasonCounts.unsupportedType = (skipReasonCounts.unsupportedType ?? 0) + 1;
+      }
 
       for (const relationship of relationships) {
         if (skipExistingConnections && existingVisualizedRelationshipIds.has(relationship.id)) {
           skippedRelationshipIds.push(relationship.id);
+          skippedRelationships.push({ relationshipId: relationship.id, reason: 'alreadyConnected' });
+          skipReasonCounts.alreadyConnected = (skipReasonCounts.alreadyConnected ?? 0) + 1;
           continue;
         }
 
@@ -1662,6 +1737,7 @@ async function populateViewWithRelationships(
           viewId: args.viewId,
           relationshipId: relationship.id,
           autoResolveVisuals: true,
+          skipExistingConnections,
         });
         connectionOpsQueued += 1;
       }
@@ -1680,6 +1756,8 @@ async function populateViewWithRelationships(
       relationshipsConsidered,
       skippedElementIds,
       skippedRelationshipIds,
+      skippedRelationships,
+      skipReasonCounts,
       changesQueued: 0,
       message: 'No changes queued. Requested elements/connections are already visualized on the target view.',
     };
@@ -1698,6 +1776,8 @@ async function populateViewWithRelationships(
     relationshipsConsidered,
     skippedElementIds,
     skippedRelationshipIds,
+    skippedRelationships,
+    skipReasonCounts,
     changesQueued: changes.length,
     message: getNonEmptyString(applyResponse.message),
     requestId: getNonEmptyString(applyResponseRecord.requestId),
@@ -1722,7 +1802,7 @@ async function waitForOperationCompletion(
   let polls = 0;
 
   while (true) {
-    const latest = await api.getOpsStatus(operationId);
+    const latest = await api.getOpsStatus({ opId: operationId });
     polls += 1;
 
     const status = getNonEmptyString(latest.status) ?? 'unknown';
@@ -1743,6 +1823,14 @@ async function waitForOperationCompletion(
         elapsedMs,
         statusHistory,
         result: Array.isArray(latest.result) ? latest.result : undefined,
+        digest: asLooseObject((latest as Record<string, unknown>).digest),
+        tempIdMap: (latest as Record<string, unknown>).tempIdMap as Record<string, string> | undefined,
+        tempIdMappings: Array.isArray((latest as Record<string, unknown>).tempIdMappings)
+          ? ((latest as Record<string, unknown>).tempIdMappings as Array<Record<string, unknown>>)
+          : undefined,
+        timeline: Array.isArray((latest as Record<string, unknown>).timeline)
+          ? ((latest as Record<string, unknown>).timeline as Array<Record<string, unknown>>)
+          : undefined,
         error: getNonEmptyString(latest.error),
         errorDetails,
         requestId: getNonEmptyString(latestRecord.requestId),
@@ -1759,6 +1847,14 @@ async function waitForOperationCompletion(
         elapsedMs,
         statusHistory,
         result: Array.isArray(latest.result) ? latest.result : undefined,
+        digest: asLooseObject((latest as Record<string, unknown>).digest),
+        tempIdMap: (latest as Record<string, unknown>).tempIdMap as Record<string, string> | undefined,
+        tempIdMappings: Array.isArray((latest as Record<string, unknown>).tempIdMappings)
+          ? ((latest as Record<string, unknown>).tempIdMappings as Array<Record<string, unknown>>)
+          : undefined,
+        timeline: Array.isArray((latest as Record<string, unknown>).timeline)
+          ? ((latest as Record<string, unknown>).timeline as Array<Record<string, unknown>>)
+          : undefined,
         error: getNonEmptyString(latest.error),
         errorDetails,
         requestId: getNonEmptyString(latestRecord.requestId),
@@ -2374,7 +2470,12 @@ export function createArchiMcpServer(config: AppConfig): McpServer {
     },
     async (args) => {
       const operationId = resolveOperationIdentifier(args, 'archi_get_operation_status');
-      return api.getOpsStatus(operationId);
+      return api.getOpsStatus({
+        opId: operationId,
+        summaryOnly: args.summaryOnly,
+        cursor: args.cursor,
+        pageSize: args.pageSize,
+      });
     },
   );
 

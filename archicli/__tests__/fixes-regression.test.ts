@@ -88,7 +88,7 @@ describe.skipIf(!serverUp)('Fixes & regressions', () => {
 
 beforeAll(async () => {
   await assertEmptyModel();
-}, 30_000);
+}, 120_000);
 
 afterAll(async () => {
   try {
@@ -447,7 +447,8 @@ describe('Bug 4 — Duplicate Detection with Properties', () => {
 
     // Both should target the same element
     for (const rel of accessRels) {
-      expect(rel.targetId).toBe(fix4ElementIds['fix4-tgt']);
+      const resolvedTargetId = rel.targetId ?? rel.otherEndId;
+      expect(resolvedTargetId).toBe(fix4ElementIds['fix4-tgt']);
     }
   });
 

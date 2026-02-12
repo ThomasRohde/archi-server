@@ -1702,6 +1702,34 @@
                     throw new Error("Cannot find relationship: " + operation.relationshipId);
                 }
 
+                if (typeof relationship.getSource !== "function" || typeof relationship.getTarget !== "function") {
+                    results.push({
+                        op: "addConnectionToView",
+                        skipped: true,
+                        reasonCode: "unsupportedType",
+                        reason: "relationship is not a connectable ArchiMate relationship",
+                        relationshipId: operation.relationshipId
+                    });
+                    continue;
+                }
+
+                if (operation.skipExistingConnections === true) {
+                    var existingConnections = findConnectionsForRelationship(
+                        viewForConn,
+                        relationship.getId ? relationship.getId() : operation.relationshipId
+                    );
+                    if (existingConnections && existingConnections.length > 0) {
+                        results.push({
+                            op: "addConnectionToView",
+                            skipped: true,
+                            reasonCode: "alreadyConnected",
+                            reason: "relationship already connected in view",
+                            relationshipId: operation.relationshipId
+                        });
+                        continue;
+                    }
+                }
+
                 // Find source and target visual objects
                 var sourceVisual = null;
                 var targetVisual = null;
@@ -1743,17 +1771,11 @@
                     }
                     // Fall back to searching committed view children
                     if (!sourceVisual || !targetVisual) {
-                        var autoChildren = viewForConn.getChildren();
-                        for (var avi = 0; avi < autoChildren.size(); avi++) {
-                            var avc = autoChildren.get(avi);
-                            if (typeof avc.getArchimateElement === "function") {
-                                var avel = avc.getArchimateElement();
-                                if (avel) {
-                                    var avelId = avel.getId();
-                                    if (!sourceVisual && avelId === relSrcId) { sourceVisual = avc; }
-                                    if (!targetVisual && avelId === relTgtId) { targetVisual = avc; }
-                                }
-                            }
+                        if (!sourceVisual && relSrcId) {
+                            sourceVisual = findVisualForConceptInView(viewForConn, relSrcId);
+                        }
+                        if (!targetVisual && relTgtId) {
+                            targetVisual = findVisualForConceptInView(viewForConn, relTgtId);
                         }
                     }
                     if (sourceVisual && targetVisual) {
@@ -1763,9 +1785,11 @@
 
                 if (!sourceVisual || !targetVisual) {
                     // Source or target element not present in this view — skip gracefully
+                    var reasonCode = !sourceVisual ? "missingSourceVisual" : "missingTargetVisual";
                     results.push({
                         op: "addConnectionToView",
                         skipped: true,
+                        reasonCode: reasonCode,
                         reason: (!sourceVisual ? "source" : "target") + " element not in view",
                         relationshipId: operation.relationshipId
                     });
@@ -3361,6 +3385,36 @@
                 if (found) return found;
             }
         }
+        return null;
+    }
+
+    /**
+     * Find first visual in a view/container that references the given concept ID.
+     * Traverses nested containers recursively.
+     * @param {Object} viewOrContainer - View or visual container
+     * @param {string} conceptId - Concept ID to match
+     * @returns {Object|null} Matching visual or null
+     */
+    function findVisualForConceptInView(viewOrContainer, conceptId) {
+        if (!viewOrContainer || !conceptId || typeof viewOrContainer.getChildren !== "function") {
+            return null;
+        }
+
+        var children = viewOrContainer.getChildren();
+        for (var i = 0; i < children.size(); i++) {
+            var child = children.get(i);
+            if (typeof child.getArchimateElement === "function") {
+                var archElement = child.getArchimateElement();
+                if (archElement && typeof archElement.getId === "function" && archElement.getId() === conceptId) {
+                    return child;
+                }
+            }
+            if (typeof child.getChildren === "function") {
+                var nested = findVisualForConceptInView(child, conceptId);
+                if (nested) return nested;
+            }
+        }
+
         return null;
     }
 

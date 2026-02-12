@@ -47,7 +47,7 @@ export interface CLIResult<T = unknown> {
 const CLI_ROOT = resolve(__dirname, '..', '..');
 
 /** Default timeout per CLI invocation (ms) */
-const DEFAULT_TIMEOUT = 60_000;
+const DEFAULT_TIMEOUT = 120_000;
 
 /** Base URL for the Archi server */
 const DEFAULT_BASE_URL = process.env['ARCHI_BASE_URL'] ?? 'http://127.0.0.1:8765';

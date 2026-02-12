@@ -80,17 +80,27 @@ Mutation tools:
 ## Agent UX additions
 
 - `archi_wait_for_operation` removes client-side polling loops by waiting until an async operation reaches `complete`/`error` or timeout.
-- `archi_get_operation_status` accepts both `operationId` and `opId` for compatibility.
+- `archi_get_operation_status` accepts both `operationId` and `opId` for compatibility, plus `summaryOnly`, `cursor`, and `pageSize` for compact paged reads.
+- `archi_list_operations` supports `cursor` and `summaryOnly`, and returns `hasMore`/`nextCursor` for deterministic paging.
+- Operation responses include additive metadata blocks: `digest`, `timeline`, `tempIdMap`, `tempIdMappings`, and `retryHints` (when applicable).
 - `archi_list_views` supports name/type/viewpoint filtering plus pagination metadata to reduce context bloat.
 - MCP resources `archi://server/defaults` (runtime config) and `archi://agent/quickstart` (recommended workflow) provide agent bootstrapping context.
 
 ## Correctness notes
 
 - Async writes: prefer `archi_apply_model_changes` → `archi_wait_for_operation` as the default completion flow.
+- Diagnostics/history reads: use `archi_get_operation_status` or `archi_list_operations` with `summaryOnly: true` first, then page full `result` rows only when needed.
 - Export format: `archi_export_view` accepts `PNG/JPG/JPEG` and also normalizes lowercase `png/jpg/jpeg`.
 - Geometry typing: `x`, `y`, `width`, and `height` must be numeric values (not quoted strings).
 - Folder operations: `createFolder` supports `parentId`, `parentType`, or `parentFolder`; same-batch `moveToFolder.folderId` can reference a `createFolder` `tempId`.
 - `archi_populate_view` may return `status: "no-op"` with no `operationId` when nothing needs to change.
+
+### Operation response notes
+
+- `digest` summarizes totals by op type, skip reasons, and integrity flags.
+- `timeline` captures lifecycle events (`queued`, `processing`, `complete`, `failed`).
+- `tempIdMap` and `tempIdMappings` retain deterministic tempId resolution across operation history.
+- `retryHints` includes best-effort failed payload fragments to speed targeted retries.
  
 ## Prompt Templates (Modeling Activities)
 

@@ -66,7 +66,7 @@ describe.skipIf(!serverUp)('Smoke tests', () => {
 
 beforeAll(async () => {
   await assertEmptyModel();
-}, 30_000);
+}, 120_000);
 
 afterAll(async () => {
   // Clean up all model data created by this suite

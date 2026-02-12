@@ -393,6 +393,28 @@ paths:
           description: Operation ID returned from `/model/apply`
           schema:
             type: string
+        - name: summaryOnly
+          in: query
+          required: false
+          description: Return compact status metadata without result payload rows
+          schema:
+            type: boolean
+            default: false
+        - name: cursor
+          in: query
+          required: false
+          description: Zero-based cursor offset for paged result rows
+          schema:
+            type: string
+        - name: pageSize
+          in: query
+          required: false
+          description: Number of result rows per page (1-1000, default 200)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 200
       responses:
         '200':
           description: Operation status
@@ -438,6 +460,19 @@ paths:
           schema:
             type: string
             enum: [queued, processing, complete, error]
+        - name: cursor
+          in: query
+          required: false
+          description: Zero-based cursor offset for paged operation summaries
+          schema:
+            type: string
+        - name: summaryOnly
+          in: query
+          required: false
+          description: Return compact operation summaries only
+          schema:
+            type: boolean
+            default: false
       responses:
         '200':
           description: Operation list
@@ -1809,6 +1844,16 @@ components:
           enum: [queued]
         message:
           type: string
+        digest:
+          $ref: '#/components/schemas/OperationDigest'
+        tempIdMap:
+          type: object
+          additionalProperties:
+            type: string
+        tempIdMappings:
+          type: array
+          items:
+            $ref: '#/components/schemas/TempIdMapping'
 
     OperationStatusResponse:
       type: object
@@ -1824,6 +1869,30 @@ components:
           items:
             type: object
           description: Array of operation results (when status is complete)
+        totalResultCount:
+          type: integer
+          nullable: true
+          description: Total number of result rows available before paging
+        cursor:
+          type: string
+          nullable: true
+          description: Current cursor offset for paged results
+        pageSize:
+          type: integer
+          nullable: true
+          description: Page size used for result paging
+        hasMore:
+          type: boolean
+          nullable: true
+          description: True when additional paged rows are available
+        nextCursor:
+          type: string
+          nullable: true
+          description: Cursor token for the next page
+        summaryOnly:
+          type: boolean
+          nullable: true
+          description: True when response is compact metadata without result rows
         error:
           type: string
           nullable: true
@@ -1877,6 +1946,26 @@ components:
           type: integer
           nullable: true
           description: Duration in milliseconds (included for both complete and error status)
+        digest:
+          $ref: '#/components/schemas/OperationDigest'
+        tempIdMap:
+          type: object
+          additionalProperties:
+            type: string
+        tempIdMappings:
+          type: array
+          items:
+            $ref: '#/components/schemas/TempIdMapping'
+        timeline:
+          type: array
+          items:
+            $ref: '#/components/schemas/OperationTimelineEvent'
+        retryHints:
+          type: array
+          nullable: true
+          items:
+            type: object
+            additionalProperties: true
 
     OperationSummary:
       type: object
@@ -1906,6 +1995,26 @@ components:
         error:
           type: string
           nullable: true
+        digest:
+          $ref: '#/components/schemas/OperationDigest'
+        tempIdMap:
+          type: object
+          additionalProperties:
+            type: string
+        tempIdMappings:
+          type: array
+          items:
+            $ref: '#/components/schemas/TempIdMapping'
+        timeline:
+          type: array
+          items:
+            $ref: '#/components/schemas/OperationTimelineEvent'
+        retryHints:
+          type: array
+          nullable: true
+          items:
+            type: object
+            additionalProperties: true
 
     OperationListResponse:
       type: object
@@ -1921,6 +2030,96 @@ components:
         status:
           type: string
           nullable: true
+        cursor:
+          type: string
+          nullable: true
+        hasMore:
+          type: boolean
+          nullable: true
+        nextCursor:
+          type: string
+          nullable: true
+        summaryOnly:
+          type: boolean
+          nullable: true
+
+    TempIdMapping:
+      type: object
+      properties:
+        tempId:
+          type: string
+        resolvedId:
+          type: string
+        mappingType:
+          type: string
+          enum: [concept, visual, connection, view]
+        op:
+          type: string
+          nullable: true
+        resultIndex:
+          type: integer
+
+    OperationTimelineEvent:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [queued, processing, complete, failed]
+        timestamp:
+          type: string
+          format: date-time
+        chunkIndex:
+          type: integer
+          nullable: true
+        chunkCount:
+          type: integer
+          nullable: true
+        operationCount:
+          type: integer
+          nullable: true
+        resultCount:
+          type: integer
+          nullable: true
+        error:
+          type: string
+          nullable: true
+        opIndex:
+          type: integer
+          nullable: true
+        op:
+          type: string
+          nullable: true
+
+    OperationDigest:
+      type: object
+      properties:
+        totals:
+          type: object
+          properties:
+            requested:
+              type: integer
+            results:
+              type: integer
+            executed:
+              type: integer
+            skipped:
+              type: integer
+        requestedByType:
+          type: object
+          additionalProperties:
+            type: integer
+        executedByType:
+          type: object
+          additionalProperties:
+            type: integer
+        skipsByReason:
+          type: object
+          additionalProperties:
+            type: integer
+        integrityFlags:
+          type: object
+          additionalProperties:
+            type: boolean
 
     ErrorResponse:
       type: object

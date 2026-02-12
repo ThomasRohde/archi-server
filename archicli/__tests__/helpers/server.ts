@@ -7,6 +7,30 @@
  */
 
 const DEFAULT_BASE_URL = process.env['ARCHI_BASE_URL'] ?? 'http://127.0.0.1:8765';
+const HEALTH_RETRY_ATTEMPTS = 3;
+const HEALTH_RETRY_DELAY_MS = 300;
+const REQUEST_RETRY_ATTEMPTS = 5;
+const REQUEST_RETRY_BASE_DELAY_MS = 400;
+
+function parseRetryDelayMs(response: Response, bodyText: string, fallbackMs: number): number {
+  const retryAfterHeader = response.headers.get('retry-after');
+  if (retryAfterHeader) {
+    var parsedSeconds = Number.parseInt(retryAfterHeader, 10);
+    if (Number.isFinite(parsedSeconds) && parsedSeconds > 0) {
+      return parsedSeconds * 1000;
+    }
+  }
+
+  const messageMatch = bodyText.match(/try again in\s+(\d+)\s+seconds?/i);
+  if (messageMatch) {
+    const parsedSeconds = Number.parseInt(messageMatch[1], 10);
+    if (Number.isFinite(parsedSeconds) && parsedSeconds > 0) {
+      return parsedSeconds * 1000;
+    }
+  }
+
+  return fallbackMs;
+}
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -46,28 +70,62 @@ export interface ViewSummary {
 // ── Low-level fetch helpers ──────────────────────────────────────────────────
 
 async function serverGet<T>(path: string, baseUrl = DEFAULT_BASE_URL): Promise<T> {
-  const res = await fetch(`${baseUrl}${path}`, {
-    method: 'GET',
-    headers: { 'Content-Type': 'application/json' },
-  });
-  if (!res.ok) {
-    const body = await res.text().catch(() => '');
-    throw new Error(`GET ${path} failed: HTTP ${res.status} — ${body.slice(0, 500)}`);
+  for (let attempt = 0; attempt < REQUEST_RETRY_ATTEMPTS; attempt += 1) {
+    const res = await fetch(`${baseUrl}${path}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    if (res.status === 429 && attempt < REQUEST_RETRY_ATTEMPTS - 1) {
+      const retryBody = await res.text().catch(() => '');
+      const retryDelayMs = parseRetryDelayMs(
+        res,
+        retryBody,
+        REQUEST_RETRY_BASE_DELAY_MS * (attempt + 1),
+      );
+      await sleep(retryDelayMs + 250);
+      continue;
+    }
+
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      throw new Error(`GET ${path} failed: HTTP ${res.status} — ${body.slice(0, 500)}`);
+    }
+
+    return res.json() as Promise<T>;
   }
-  return res.json() as Promise<T>;
+
+  throw new Error(`GET ${path} failed after ${REQUEST_RETRY_ATTEMPTS} attempts`);
 }
 
 async function serverPost<T>(path: string, body?: unknown, baseUrl = DEFAULT_BASE_URL): Promise<T> {
-  const res = await fetch(`${baseUrl}${path}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
-  });
-  if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    throw new Error(`POST ${path} failed: HTTP ${res.status} — ${text.slice(0, 500)}`);
+  for (let attempt = 0; attempt < REQUEST_RETRY_ATTEMPTS; attempt += 1) {
+    const res = await fetch(`${baseUrl}${path}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+    });
+
+    if (res.status === 429 && attempt < REQUEST_RETRY_ATTEMPTS - 1) {
+      const retryBody = await res.text().catch(() => '');
+      const retryDelayMs = parseRetryDelayMs(
+        res,
+        retryBody,
+        REQUEST_RETRY_BASE_DELAY_MS * (attempt + 1),
+      );
+      await sleep(retryDelayMs + 250);
+      continue;
+    }
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      throw new Error(`POST ${path} failed: HTTP ${res.status} — ${text.slice(0, 500)}`);
+    }
+
+    return res.json() as Promise<T>;
   }
-  return res.json() as Promise<T>;
+
+  throw new Error(`POST ${path} failed after ${REQUEST_RETRY_ATTEMPTS} attempts`);
 }
 
 // ── Server connectivity ──────────────────────────────────────────────────────
@@ -76,12 +134,38 @@ async function serverPost<T>(path: string, body?: unknown, baseUrl = DEFAULT_BAS
  * Check that the Archi server is reachable. Returns `true` if healthy.
  */
 export async function isServerHealthy(baseUrl = DEFAULT_BASE_URL): Promise<boolean> {
-  try {
-    const data = await serverGet<{ status?: string }>(('/health'), baseUrl);
-    return data.status === 'ok' || data.status === 'running';
-  } catch {
-    return false;
+  for (let attempt = 0; attempt < HEALTH_RETRY_ATTEMPTS; attempt += 1) {
+    try {
+      const response = await fetch(`${baseUrl}/health`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      // Rate limit still indicates a reachable and healthy server process.
+      if (response.status === 429) {
+        return true;
+      }
+
+      if (!response.ok) {
+        if (attempt < HEALTH_RETRY_ATTEMPTS - 1) {
+          await sleep(HEALTH_RETRY_DELAY_MS * (attempt + 1));
+          continue;
+        }
+        return false;
+      }
+
+      const data = (await response.json()) as { status?: string };
+      return data.status === 'ok' || data.status === 'running';
+    } catch {
+      if (attempt < HEALTH_RETRY_ATTEMPTS - 1) {
+        await sleep(HEALTH_RETRY_DELAY_MS * (attempt + 1));
+        continue;
+      }
+      return false;
+    }
   }
+
+  return false;
 }
 
 /**

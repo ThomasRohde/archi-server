@@ -295,7 +295,7 @@ Read-only tools (17):
 - `archi_list_folders` — full model folder hierarchy
 - `archi_get_operation_status` — check async operation status
 - `archi_wait_for_operation` — poll until complete/error/timeout
-- `archi_list_operations` — list recent operations with optional status filter
+- `archi_list_operations` — list recent operations with optional status/cursor/summary filter
 - `archi_list_views` — filtered, sorted, paginated view listing
 - `archi_get_view` — full view detail with visual elements and connections
 - `archi_get_view_summary` — compact view summary for faster agent reasoning
@@ -441,10 +441,12 @@ The server exposes a comprehensive REST API:
 - `POST /scripts/run` - Execute custom JArchi code
 
 ### Administration
-- `GET /ops/status?opId=...` - Check operation status
-- `GET /ops/list` - List recent operations
+- `GET /ops/status?opId=...` - Check operation status (`summaryOnly`, `cursor`, `pageSize` supported)
+- `GET /ops/list` - List recent operations (`status`, `cursor`, `summaryOnly` supported)
 - `POST /model/save` - Save model to disk
 - `POST /shutdown` - Gracefully stop server
+
+Operation status/list responses include additive metadata blocks: `digest`, `timeline`, `tempIdMap`, `tempIdMappings`, and `retryHints` (when available), plus paging fields `hasMore` and `nextCursor`.
 
 Full API documentation available in [openapi.yaml](openapi.yaml).
 

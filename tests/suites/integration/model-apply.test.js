@@ -257,6 +257,34 @@ describe.skipIf(!serverAvailable)('Model Apply Endpoint', () => {
 
       expectErrorResponse(response, 404);
     });
+
+    it('supports summaryOnly with paging metadata and digest fields', async () => {
+      const name = generateUniqueName('StatusSummaryActor');
+      const payload = createApplyRequest([
+        createElementPayload('business-actor', name, { tempId: 'temp-summary-1' })
+      ]);
+
+      const response = await httpClient.post('/model/apply', payload);
+      const opId = response.body.operationId;
+
+      const result = await waitForOperation(opId);
+      const idMap = buildIdMap(result.result);
+      createdElementIds.push(idMap['temp-summary-1']);
+
+      const statusResponse = await httpClient.get(`/ops/status?opId=${opId}&summaryOnly=true&cursor=0&pageSize=1`);
+
+      expectSuccessResponse(statusResponse);
+      expect(statusResponse.body.operationId).toBe(opId);
+      expect(statusResponse.body.summaryOnly).toBe(true);
+      expect(statusResponse.body).toHaveProperty('hasMore');
+      expect(statusResponse.body).toHaveProperty('nextCursor');
+      expect(statusResponse.body).toHaveProperty('cursor');
+      expect(statusResponse.body).toHaveProperty('pageSize');
+      expect(statusResponse.body).toHaveProperty('digest');
+      expect(statusResponse.body).toHaveProperty('tempIdMap');
+      expect(statusResponse.body).toHaveProperty('tempIdMappings');
+      expect(statusResponse.body).toHaveProperty('timeline');
+    });
   });
 
   describe('GET /ops/list', () => {
@@ -292,6 +320,17 @@ describe.skipIf(!serverAvailable)('Model Apply Endpoint', () => {
 
       expectErrorResponse(response, 400);
       expect(response.body.error.message).toContain('status');
+    });
+
+    it('supports cursor and summaryOnly metadata', async () => {
+      const response = await httpClient.get('/ops/list?limit=5&cursor=0&summaryOnly=true');
+
+      expectSuccessResponse(response);
+      expect(Array.isArray(response.body.operations)).toBe(true);
+      expect(response.body.summaryOnly).toBe(true);
+      expect(response.body).toHaveProperty('cursor');
+      expect(response.body).toHaveProperty('hasMore');
+      expect(response.body).toHaveProperty('nextCursor');
     });
   });
 

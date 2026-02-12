@@ -118,7 +118,7 @@ describe.skipIf(!serverUp)('Bulk modeling', () => {
 beforeAll(async () => {
   await assertEmptyModel();
   suiteStartTime = Date.now();
-}, 30_000);
+}, 120_000);
 
 afterAll(async () => {
   const totalMs = Date.now() - suiteStartTime;

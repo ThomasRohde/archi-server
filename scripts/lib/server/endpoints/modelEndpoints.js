@@ -218,6 +218,8 @@
                     id: rel.getId(),
                     name: rel.getName() || '',
                     type: getTypeString(rel),
+                    sourceId: source.getId(),
+                    targetId: target ? target.getId() : null,
                     otherEndId: target ? target.getId() : null,
                     otherEndName: target ? target.getName() : null,
                     otherEndType: target ? getTypeString(target) : null
@@ -228,6 +230,8 @@
                     id: rel.getId(),
                     name: rel.getName() || '',
                     type: getTypeString(rel),
+                    sourceId: source ? source.getId() : null,
+                    targetId: target.getId(),
                     otherEndId: source ? source.getId() : null,
                     otherEndName: source ? source.getName() : null,
                     otherEndType: source ? getTypeString(source) : null
@@ -615,6 +619,12 @@
             var operation = operationQueue.createOperation(changes);
             operation.requestId = request.requestId;  // Track originating request
 
+            var requestedByType = {};
+            for (var i = 0; i < changes.length; i++) {
+                var opName = changes[i] && typeof changes[i].op === "string" ? changes[i].op : "unknown";
+                requestedByType[opName] = (requestedByType[opName] || 0) + 1;
+            }
+
             // Queue for processing
             operationQueue.queueOperation(operation);
 
@@ -626,7 +636,26 @@
             response.body = {
                 operationId: operation.id,
                 status: "queued",
-                message: "Operation queued for processing. Poll /ops/status?opId=" + operation.id
+                message: "Operation queued for processing. Poll /ops/status?opId=" + operation.id,
+                digest: {
+                    totals: {
+                        requested: changes.length,
+                        results: 0,
+                        executed: 0,
+                        skipped: 0
+                    },
+                    requestedByType: requestedByType,
+                    executedByType: {},
+                    skipsByReason: {},
+                    integrityFlags: {
+                        hasErrors: false,
+                        hasSkips: false,
+                        resultCountMatchesRequested: false,
+                        pending: true
+                    }
+                },
+                tempIdMap: {},
+                tempIdMappings: []
             };
         },
 

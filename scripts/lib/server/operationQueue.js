@@ -101,6 +101,190 @@
             "parentId", "folderId", "viewObjectId", "connectionId"
         ],
 
+        _incrementCounter: function(target, key) {
+            if (!target || !key) return;
+            target[key] = (target[key] || 0) + 1;
+        },
+
+        _normalizeSkipReasonCode: function(result) {
+            if (!result || typeof result !== "object") return null;
+            if (typeof result.reasonCode === "string" && result.reasonCode.length > 0) {
+                return result.reasonCode;
+            }
+            var reason = typeof result.reason === "string" ? result.reason.toLowerCase() : "";
+            if (reason.indexOf("source") !== -1) return "missingSourceVisual";
+            if (reason.indexOf("target") !== -1) return "missingTargetVisual";
+            if (reason.indexOf("already") !== -1) return "alreadyConnected";
+            if (reason.indexOf("unsupported") !== -1) return "unsupportedType";
+            return "unknown";
+        },
+
+        _inferMappingType: function(result, resolvedId) {
+            if (!result || typeof result !== "object") return "concept";
+            var op = typeof result.op === "string" ? result.op : "";
+            if (result.connectionId && resolvedId === result.connectionId) {
+                return "connection";
+            }
+            if (result.visualId || result.noteId || result.groupId) {
+                return "visual";
+            }
+            if (op === "createView" || (result.viewId && !result.realId && !result.visualId)) {
+                return "view";
+            }
+            return "concept";
+        },
+
+        _buildTempIdMappingReport: function(results) {
+            var tempIdMap = {};
+            var tempIdMappings = [];
+
+            if (!results || !results.length) {
+                return {
+                    tempIdMap: tempIdMap,
+                    tempIdMappings: tempIdMappings
+                };
+            }
+
+            for (var i = 0; i < results.length; i++) {
+                var result = results[i];
+                if (!result || typeof result !== "object") continue;
+
+                var tempId = typeof result.tempId === "string" && result.tempId.length > 0 ? result.tempId : null;
+                if (!tempId) continue;
+
+                var resolvedId = null;
+                if (typeof result.realId === "string" && result.realId.length > 0) {
+                    resolvedId = result.realId;
+                } else if (typeof result.visualId === "string" && result.visualId.length > 0) {
+                    resolvedId = result.visualId;
+                } else if (typeof result.connectionId === "string" && result.connectionId.length > 0) {
+                    resolvedId = result.connectionId;
+                } else if (typeof result.noteId === "string" && result.noteId.length > 0) {
+                    resolvedId = result.noteId;
+                } else if (typeof result.groupId === "string" && result.groupId.length > 0) {
+                    resolvedId = result.groupId;
+                } else if (typeof result.viewId === "string" && result.viewId.length > 0) {
+                    resolvedId = result.viewId;
+                } else if (typeof result.folderId === "string" && result.folderId.length > 0) {
+                    resolvedId = result.folderId;
+                }
+
+                if (!resolvedId) continue;
+
+                tempIdMap[tempId] = resolvedId;
+                tempIdMappings.push({
+                    tempId: tempId,
+                    resolvedId: resolvedId,
+                    mappingType: this._inferMappingType(result, resolvedId),
+                    op: typeof result.op === "string" ? result.op : null,
+                    resultIndex: i
+                });
+            }
+
+            return {
+                tempIdMap: tempIdMap,
+                tempIdMappings: tempIdMappings
+            };
+        },
+
+        _buildOperationDigest: function(operation, results) {
+            var requestedByType = {};
+            var executedByType = {};
+            var skipsByReason = {};
+            var skipCount = 0;
+            var executedCount = 0;
+            var requested = operation && operation.changes ? operation.changes : [];
+            var output = results || [];
+
+            for (var i = 0; i < requested.length; i++) {
+                var requestedOp = requested[i] && typeof requested[i].op === "string" ? requested[i].op : "unknown";
+                this._incrementCounter(requestedByType, requestedOp);
+            }
+
+            for (var j = 0; j < output.length; j++) {
+                var row = output[j];
+                var rowOp = row && typeof row.op === "string" ? row.op : "unknown";
+                if (row && row.skipped === true) {
+                    skipCount++;
+                    this._incrementCounter(skipsByReason, this._normalizeSkipReasonCode(row));
+                    continue;
+                }
+                executedCount++;
+                this._incrementCounter(executedByType, rowOp);
+            }
+
+            return {
+                totals: {
+                    requested: requested.length,
+                    results: output.length,
+                    executed: executedCount,
+                    skipped: skipCount
+                },
+                requestedByType: requestedByType,
+                executedByType: executedByType,
+                skipsByReason: skipsByReason,
+                integrityFlags: {
+                    hasErrors: operation && operation.status === "error",
+                    hasSkips: skipCount > 0,
+                    resultCountMatchesRequested: output.length === requested.length,
+                    hadTimeout: operation && operation.errorDetails && operation.errorDetails.hint &&
+                        String(operation.errorDetails.hint).toLowerCase().indexOf("timeout") !== -1
+                }
+            };
+        },
+
+        _appendTimelineEvent: function(operation, status, metadata) {
+            if (!operation) return;
+            if (!operation.timeline) {
+                operation.timeline = [];
+            }
+            var event = {
+                status: status,
+                timestamp: new Date().toISOString(),
+                chunkIndex: 0,
+                chunkCount: 1,
+                operationCount: operation.changes && operation.changes.length ? operation.changes.length : 0
+            };
+            if (metadata && typeof metadata === "object") {
+                for (var key in metadata) {
+                    if (metadata.hasOwnProperty(key) && metadata[key] !== undefined) {
+                        event[key] = metadata[key];
+                    }
+                }
+            }
+            operation.timeline.push(event);
+        },
+
+        _buildRetryHints: function(operation) {
+            if (!operation || operation.status !== "error") return null;
+            var hints = [];
+            var failedChange = operation.errorDetails && operation.errorDetails.change ? operation.errorDetails.change : null;
+            if (failedChange) {
+                hints.push({
+                    strategy: "retry_failed_change",
+                    chunkIndex: 0,
+                    operationIndex: operation.errorDetails.opIndex,
+                    failedChange: failedChange
+                });
+            }
+            if (operation.errorDetails && operation.errorDetails.hint) {
+                hints.push({
+                    strategy: "apply_hint",
+                    message: operation.errorDetails.hint
+                });
+            }
+            return hints.length ? hints : null;
+        },
+
+        _finalizeOperationMetadata: function(operation) {
+            var results = operation && operation.result && operation.result.length ? operation.result : [];
+            var mappingReport = this._buildTempIdMappingReport(results);
+            operation.tempIdMap = mappingReport.tempIdMap;
+            operation.tempIdMappings = mappingReport.tempIdMappings;
+            operation.digest = this._buildOperationDigest(operation, results);
+            operation.retryHints = this._buildRetryHints(operation);
+        },
+
         /**
          * Extract human-readable message from an error object.
          * @param {Object|string} error - Thrown error
@@ -358,7 +542,7 @@
          */
         createOperation: function(changes) {
             var opId = "op_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
-            return {
+            var operation = {
                 id: opId,
                 changes: changes,
                 status: "queued",
@@ -367,8 +551,32 @@
                 errorDetails: null,
                 createdAt: new Date().toISOString(),
                 startedAt: null,         // Timestamp when processing started
-                completedAt: null
+                completedAt: null,
+                timeline: [],
+                tempIdMap: {},
+                tempIdMappings: [],
+                digest: {
+                    totals: {
+                        requested: changes && changes.length ? changes.length : 0,
+                        results: 0,
+                        executed: 0,
+                        skipped: 0
+                    },
+                    requestedByType: {},
+                    executedByType: {},
+                    skipsByReason: {},
+                    integrityFlags: {
+                        hasErrors: false,
+                        hasSkips: false,
+                        resultCountMatchesRequested: false,
+                        pending: true
+                    }
+                },
+                retryHints: null
             };
+
+            this._appendTimelineEvent(operation, "queued");
+            return operation;
         },
 
         /**
@@ -403,6 +611,9 @@
             var limit = typeof options.limit === "number" ? options.limit : 20;
             if (!isFinite(limit) || limit <= 0) limit = 20;
             if (limit > 200) limit = 200;
+            var cursor = typeof options.cursor === "number" ? options.cursor : 0;
+            if (!isFinite(cursor) || cursor < 0) cursor = 0;
+            var summaryOnly = options.summaryOnly === true;
 
             var statusFilter = typeof options.status === "string" ? options.status : null;
             var operations = [];
@@ -418,7 +629,7 @@
                     durationMs = new Date(op.completedAt).getTime() - new Date(op.startedAt).getTime();
                 }
 
-                operations.push({
+                var summary = {
                     operationId: op.id,
                     status: op.status,
                     createdAt: op.createdAt || null,
@@ -427,7 +638,18 @@
                     durationMs: durationMs,
                     changeCount: op.changes && op.changes.length ? op.changes.length : 0,
                     error: op.error || null
-                });
+                };
+
+                if (!summaryOnly) {
+                    summary.digest = op.digest || null;
+                    summary.timeline = op.timeline || [];
+                    summary.tempIdMap = op.tempIdMap || {};
+                    summary.tempIdMappings = op.tempIdMappings || [];
+                    summary.errorDetails = op.errorDetails || null;
+                    summary.retryHints = op.retryHints || null;
+                }
+
+                operations.push(summary);
             }
 
             operations.sort(function(a, b) {
@@ -437,15 +659,19 @@
             });
 
             var total = operations.length;
-            if (operations.length > limit) {
-                operations = operations.slice(0, limit);
-            }
+            var paged = operations.slice(cursor, cursor + limit);
+            var hasMore = cursor + paged.length < total;
+            var nextCursor = hasMore ? String(cursor + paged.length) : null;
 
             return {
-                operations: operations,
+                operations: paged,
                 total: total,
                 limit: limit,
-                status: statusFilter || null
+                status: statusFilter || null,
+                cursor: String(cursor),
+                hasMore: hasMore,
+                nextCursor: nextCursor,
+                summaryOnly: summaryOnly
             };
         },
 
@@ -614,6 +840,9 @@
                     // Mark operation as in-progress with start time
                     operation.status = "processing";
                     operation.startedAt = new Date().toISOString();
+                    self._appendTimelineEvent(operation, "processing", {
+                        queuedAt: operation.createdAt
+                    });
 
                     try {
                         if (loggingQueue) {
@@ -653,6 +882,10 @@
                         operation.status = "complete";
                         operation.result = results;
                         operation.completedAt = new Date().toISOString();
+                        self._appendTimelineEvent(operation, "complete", {
+                            resultCount: results.length
+                        });
+                        self._finalizeOperationMetadata(operation);
 
                         var duration = new Date(operation.completedAt).getTime() - new Date(operation.startedAt).getTime();
                         if (loggingQueue) {
@@ -690,6 +923,12 @@
                         operation.error = errorDetails.message;
                         operation.errorDetails = errorDetails;
                         operation.completedAt = new Date().toISOString();
+                        self._appendTimelineEvent(operation, "failed", {
+                            error: errorDetails.message,
+                            opIndex: errorDetails.opIndex,
+                            op: errorDetails.op
+                        });
+                        self._finalizeOperationMetadata(operation);
                     }
 
                     processed++;
@@ -736,6 +975,11 @@
                             hint: "Operation exceeded timeout while in processing state"
                         };
                         op.completedAt = new Date().toISOString();
+                        this._appendTimelineEvent(op, "failed", {
+                            error: op.error,
+                            timeoutMs: config.timeoutMs
+                        });
+                        this._finalizeOperationMetadata(op);
                     }
                 }
             }

@@ -675,12 +675,100 @@ test('archi_populate_view batches addToView plus auto-connected relationships', 
         capturedApplyBody.changes.filter((change) => change.op === 'addConnectionToView')[0].autoResolveVisuals,
         true,
       );
+      assert.equal(
+        capturedApplyBody.changes.filter((change) => change.op === 'addConnectionToView')[0].skipExistingConnections,
+        true,
+      );
 
       assert.equal(result.structuredContent.data.operationId, 'op-populate-1');
       assert.equal(result.structuredContent.data.elementOpsQueued, 2);
       assert.equal(result.structuredContent.data.connectionOpsQueued, 1);
       assert.deepEqual(result.structuredContent.data.skippedElementIds, ['e1']);
       assert.deepEqual(result.structuredContent.data.skippedRelationshipIds, ['r1']);
+      assert.equal(result.structuredContent.data.skipReasonCounts.alreadyConnected, 1);
+      assert.equal(result.structuredContent.data.skippedRelationships[0].reason, 'alreadyConnected');
+    });
+  } finally {
+    await closeServer(server);
+  }
+});
+
+test('archi_populate_view reports unsupportedType skips when relationship filter excludes candidates', async () => {
+  let capturedApplyBody;
+
+  const { server, baseUrl } = await startMockServer((req, res) => {
+    if (req.method === 'GET' && req.url === '/views/view-2') {
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(
+        JSON.stringify({
+          id: 'view-2',
+          elements: [{ id: 'vo-existing', conceptId: 'e1', conceptType: 'ApplicationComponent' }],
+          connections: [],
+        }),
+      );
+      return;
+    }
+
+    if (req.method === 'GET' && req.url === '/model/element/e1') {
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(
+        JSON.stringify({
+          id: 'e1',
+          relationships: {
+            outgoing: [{ id: 'r-flow', type: 'FlowRelationship', otherEndId: 'e2' }],
+          },
+        }),
+      );
+      return;
+    }
+
+    if (req.method === 'GET' && req.url === '/model/element/e2') {
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(
+        JSON.stringify({
+          id: 'e2',
+          relationships: {
+            incoming: [{ id: 'r-flow', type: 'FlowRelationship', otherEndId: 'e1' }],
+          },
+        }),
+      );
+      return;
+    }
+
+    if (req.method === 'POST' && req.url === '/model/apply') {
+      let body = '';
+      req.on('data', (chunk) => {
+        body += chunk;
+      });
+      req.on('end', () => {
+        capturedApplyBody = JSON.parse(body || '{}');
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({ operationId: 'op-populate-2', status: 'queued' }));
+      });
+      return;
+    }
+
+    res.writeHead(404, { 'content-type': 'application/json' });
+    res.end(JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Not found' } }));
+  });
+
+  try {
+    await withMcpClient(baseUrl, async (client) => {
+      const result = await client.callTool({
+        name: 'archi_populate_view',
+        arguments: {
+          viewId: 'view-2',
+          elementIds: ['e1', 'e2'],
+          relationshipTypes: ['serving-relationship'],
+        },
+      });
+
+      assert.equal(result.isError, undefined);
+      assert.ok(capturedApplyBody);
+      assert.equal(capturedApplyBody.changes.filter((change) => change.op === 'addConnectionToView').length, 0);
+      assert.deepEqual(result.structuredContent.data.skippedRelationshipIds, ['r-flow']);
+      assert.equal(result.structuredContent.data.skipReasonCounts.unsupportedType, 1);
+      assert.equal(result.structuredContent.data.skippedRelationships[0].reason, 'unsupportedType');
     });
   } finally {
     await closeServer(server);
@@ -1202,6 +1290,7 @@ test('archi_get_element not found errors include conceptId guidance', async () =
 
 test('operation tools expose operationId in structured output', async () => {
   const opId = 'op-test-123';
+  let capturedStatusQuery;
   const { server, baseUrl } = await startMockServer((req, res) => {
     if (req.method === 'POST' && req.url === '/model/apply') {
       req.resume();
@@ -1221,6 +1310,12 @@ test('operation tools expose operationId in structured output', async () => {
 
     if (req.method === 'GET' && req.url?.startsWith('/ops/status')) {
       const url = new URL(req.url, 'http://127.0.0.1');
+      capturedStatusQuery = {
+        opId: url.searchParams.get('opId'),
+        summaryOnly: url.searchParams.get('summaryOnly'),
+        cursor: url.searchParams.get('cursor'),
+        pageSize: url.searchParams.get('pageSize'),
+      };
       if (url.searchParams.get('opId') !== opId) {
         res.writeHead(400, { 'content-type': 'application/json' });
         res.end(JSON.stringify({ error: { code: 'BAD_REQUEST', message: 'Wrong opId' } }));
@@ -1232,7 +1327,21 @@ test('operation tools expose operationId in structured output', async () => {
         JSON.stringify({
           operationId: opId,
           status: 'complete',
-          result: [{ ok: true }],
+          result: [{ ok: true }, { ok: false }],
+          totalResultCount: 2,
+          hasMore: true,
+          nextCursor: '2',
+          cursor: '0',
+          pageSize: 1,
+          summaryOnly: true,
+          digest: {
+            totals: { requested: 2, results: 2, executed: 1, skipped: 1 },
+            skipsByReason: { missingTargetVisual: 1 },
+          },
+          tempIdMap: { 't-1': 'id-1' },
+          tempIdMappings: [{ tempId: 't-1', resolvedId: 'id-1', mappingType: 'concept' }],
+          timeline: [{ status: 'queued' }, { status: 'processing' }, { status: 'complete' }],
+          retryHints: [{ strategy: 'retry_failed_change' }],
           requestId: 'status-1',
         }),
       );
@@ -1255,11 +1364,23 @@ test('operation tools expose operationId in structured output', async () => {
 
       const statusResult = await client.callTool({
         name: 'archi_get_operation_status',
-        arguments: { operationId: opId },
+        arguments: { operationId: opId, summaryOnly: true, cursor: '0', pageSize: 1 },
       });
 
       assert.equal(statusResult.isError, undefined);
       assert.equal(statusResult.structuredContent.data.operationId, opId);
+      assert.equal(capturedStatusQuery.opId, opId);
+      assert.equal(capturedStatusQuery.summaryOnly, 'true');
+      assert.equal(capturedStatusQuery.cursor, '0');
+      assert.equal(capturedStatusQuery.pageSize, '1');
+      assert.equal(statusResult.structuredContent.data.summaryOnly, true);
+      assert.equal(statusResult.structuredContent.data.hasMore, true);
+      assert.equal(statusResult.structuredContent.data.nextCursor, '2');
+      assert.equal(statusResult.structuredContent.data.digest.totals.requested, 2);
+      assert.equal(statusResult.structuredContent.data.tempIdMap['t-1'], 'id-1');
+      assert.equal(statusResult.structuredContent.data.tempIdMappings[0].mappingType, 'concept');
+      assert.equal(statusResult.structuredContent.data.timeline[2].status, 'complete');
+      assert.equal(statusResult.structuredContent.data.retryHints[0].strategy, 'retry_failed_change');
       assert.ok(Array.isArray(statusResult.structuredContent.data.result));
     });
   } finally {
@@ -1288,6 +1409,11 @@ test('archi_wait_for_operation polls until completion', async () => {
           operationId: opId,
           status,
           result: status === 'complete' ? [{ ok: true }] : undefined,
+          digest: status === 'complete' ? { totals: { requested: 1, results: 1, executed: 1, skipped: 0 } } : undefined,
+          tempIdMap: status === 'complete' ? { tmp: 'id-abc' } : undefined,
+          tempIdMappings:
+            status === 'complete' ? [{ tempId: 'tmp', resolvedId: 'id-abc', mappingType: 'concept' }] : undefined,
+          timeline: status === 'complete' ? [{ status: 'queued' }, { status: 'complete' }] : undefined,
           requestId: `wait-${statusPolls}`,
         }),
       );
@@ -1317,6 +1443,65 @@ test('archi_wait_for_operation polls until completion', async () => {
       assert.ok(result.structuredContent.data.polls >= 2);
       assert.deepEqual(result.structuredContent.data.statusHistory, ['queued', 'complete']);
       assert.ok(Array.isArray(result.structuredContent.data.result));
+      assert.equal(result.structuredContent.data.digest.totals.executed, 1);
+      assert.equal(result.structuredContent.data.tempIdMap.tmp, 'id-abc');
+      assert.equal(result.structuredContent.data.tempIdMappings[0].mappingType, 'concept');
+      assert.equal(result.structuredContent.data.timeline[1].status, 'complete');
+    });
+  } finally {
+    await closeServer(server);
+  }
+});
+
+test('archi_list_operations forwards paging/summary arguments and exposes metadata', async () => {
+  let capturedListQuery;
+  const { server, baseUrl } = await startMockServer((req, res) => {
+    if (req.method === 'GET' && req.url?.startsWith('/ops/list')) {
+      const url = new URL(req.url, 'http://127.0.0.1');
+      capturedListQuery = {
+        limit: url.searchParams.get('limit'),
+        status: url.searchParams.get('status'),
+        cursor: url.searchParams.get('cursor'),
+        summaryOnly: url.searchParams.get('summaryOnly'),
+      };
+
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(
+        JSON.stringify({
+          operations: [{ operationId: 'op-1', status: 'complete' }],
+          total: 3,
+          limit: 1,
+          status: 'complete',
+          cursor: '1',
+          hasMore: true,
+          nextCursor: '2',
+          summaryOnly: true,
+        }),
+      );
+      return;
+    }
+
+    res.writeHead(404, { 'content-type': 'application/json' });
+    res.end(JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Not found' } }));
+  });
+
+  try {
+    await withMcpClient(baseUrl, async (client) => {
+      const result = await client.callTool({
+        name: 'archi_list_operations',
+        arguments: { limit: 1, status: 'complete', cursor: '1', summaryOnly: true },
+      });
+
+      assert.equal(result.isError, undefined);
+      assert.equal(capturedListQuery.limit, '1');
+      assert.equal(capturedListQuery.status, 'complete');
+      assert.equal(capturedListQuery.cursor, '1');
+      assert.equal(capturedListQuery.summaryOnly, 'true');
+      assert.equal(result.structuredContent.data.total, 3);
+      assert.equal(result.structuredContent.data.cursor, '1');
+      assert.equal(result.structuredContent.data.hasMore, true);
+      assert.equal(result.structuredContent.data.nextCursor, '2');
+      assert.equal(result.structuredContent.data.summaryOnly, true);
     });
   } finally {
     await closeServer(server);

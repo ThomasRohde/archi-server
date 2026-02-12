@@ -692,6 +692,11 @@ export type ApplyResponse = {
     operationId?: string;
     status?: 'queued';
     message?: string;
+    digest?: OperationDigest;
+    tempIdMap?: {
+        [key: string]: string;
+    };
+    tempIdMappings?: Array<TempIdMapping>;
 };
 
 export type OperationStatusResponse = {
@@ -703,6 +708,30 @@ export type OperationStatusResponse = {
     result?: Array<{
         [key: string]: unknown;
     }>;
+    /**
+     * Total number of result rows available before paging
+     */
+    totalResultCount?: number;
+    /**
+     * Current cursor offset for paged results
+     */
+    cursor?: string;
+    /**
+     * Page size used for result paging
+     */
+    pageSize?: number;
+    /**
+     * True when additional paged rows are available
+     */
+    hasMore?: boolean;
+    /**
+     * Cursor token for the next page
+     */
+    nextCursor?: string;
+    /**
+     * True when response is compact metadata without result rows
+     */
+    summaryOnly?: boolean;
     /**
      * Error message (when status is error)
      */
@@ -755,6 +784,15 @@ export type OperationStatusResponse = {
      * Duration in milliseconds (included for both complete and error status)
      */
     durationMs?: number;
+    digest?: OperationDigest;
+    tempIdMap?: {
+        [key: string]: string;
+    };
+    tempIdMappings?: Array<TempIdMapping>;
+    timeline?: Array<OperationTimelineEvent>;
+    retryHints?: Array<{
+        [key: string]: unknown;
+    }>;
 };
 
 export type OperationSummary = {
@@ -766,6 +804,15 @@ export type OperationSummary = {
     durationMs?: number;
     changeCount?: number;
     error?: string;
+    digest?: OperationDigest;
+    tempIdMap?: {
+        [key: string]: string;
+    };
+    tempIdMappings?: Array<TempIdMapping>;
+    timeline?: Array<OperationTimelineEvent>;
+    retryHints?: Array<{
+        [key: string]: unknown;
+    }>;
 };
 
 export type OperationListResponse = {
@@ -773,6 +820,51 @@ export type OperationListResponse = {
     total?: number;
     limit?: number;
     status?: string;
+    cursor?: string;
+    hasMore?: boolean;
+    nextCursor?: string;
+    summaryOnly?: boolean;
+};
+
+export type TempIdMapping = {
+    tempId?: string;
+    resolvedId?: string;
+    mappingType?: 'concept' | 'visual' | 'connection' | 'view';
+    op?: string;
+    resultIndex?: number;
+};
+
+export type OperationTimelineEvent = {
+    status?: 'queued' | 'processing' | 'complete' | 'failed';
+    timestamp?: string;
+    chunkIndex?: number;
+    chunkCount?: number;
+    operationCount?: number;
+    resultCount?: number;
+    error?: string;
+    opIndex?: number;
+    op?: string;
+};
+
+export type OperationDigest = {
+    totals?: {
+        requested?: number;
+        results?: number;
+        executed?: number;
+        skipped?: number;
+    };
+    requestedByType?: {
+        [key: string]: number;
+    };
+    executedByType?: {
+        [key: string]: number;
+    };
+    skipsByReason?: {
+        [key: string]: number;
+    };
+    integrityFlags?: {
+        [key: string]: boolean;
+    };
 };
 
 export type ErrorResponse = {
@@ -1623,6 +1715,18 @@ export type GetOpsStatusData = {
          * Operation ID returned from `/model/apply`
          */
         opId: string;
+        /**
+         * Return compact status metadata without result payload rows
+         */
+        summaryOnly?: boolean;
+        /**
+         * Zero-based cursor offset for paged result rows
+         */
+        cursor?: string;
+        /**
+         * Number of result rows per page (1-1000, default 200)
+         */
+        pageSize?: number;
     };
     url: '/ops/status';
 };
@@ -1661,6 +1765,14 @@ export type GetOpsListData = {
          * Optional status filter
          */
         status?: 'queued' | 'processing' | 'complete' | 'error';
+        /**
+         * Zero-based cursor offset for paged operation summaries
+         */
+        cursor?: string;
+        /**
+         * Return compact operation summaries only
+         */
+        summaryOnly?: boolean;
     };
     url: '/ops/list';
 };

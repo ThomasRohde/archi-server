@@ -303,11 +303,16 @@ export class ArchiApiClient {
     );
   }
 
-  getOpsStatus(opId: string): Promise<OperationStatusResponse> {
+  getOpsStatus(query: {
+    opId: string;
+    summaryOnly?: boolean;
+    cursor?: string;
+    pageSize?: number;
+  }): Promise<OperationStatusResponse> {
     return this.unwrap<OperationStatusResponse>(
       getOpsStatus({
         client: this.apiClient,
-        query: { opId },
+        query,
       }),
     );
   }
@@ -315,6 +320,8 @@ export class ArchiApiClient {
   getOpsList(query?: {
     limit?: number;
     status?: 'queued' | 'processing' | 'complete' | 'error';
+    cursor?: string;
+    summaryOnly?: boolean;
   }): Promise<OperationListResponse> {
     return this.unwrap<OperationListResponse>(
       getOpsList({

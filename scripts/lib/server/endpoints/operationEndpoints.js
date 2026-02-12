@@ -19,6 +19,46 @@
      * Operation status endpoint handlers
      */
     var operationEndpoints = {
+        _parseBooleanQuery: function(rawValue, defaultValue) {
+            if (rawValue === undefined || rawValue === null || String(rawValue).trim() === "") {
+                return defaultValue;
+            }
+            var normalized = String(rawValue).trim().toLowerCase();
+            if (normalized === "1" || normalized === "true" || normalized === "yes") return true;
+            if (normalized === "0" || normalized === "false" || normalized === "no") return false;
+            return null;
+        },
+
+        _parseIntegerQuery: function(rawValue, defaultValue, min, max) {
+            if (rawValue === undefined || rawValue === null || String(rawValue).trim() === "") {
+                return defaultValue;
+            }
+            var parsed = parseInt(String(rawValue), 10);
+            if (!isFinite(parsed) || parsed < min || parsed > max) {
+                return null;
+            }
+            return parsed;
+        },
+
+        _paginateArray: function(items, cursor, pageSize) {
+            var safeItems = Array.isArray(items) ? items : [];
+            var start = cursor;
+            if (!isFinite(start) || start < 0) start = 0;
+            var size = pageSize;
+            if (!isFinite(size) || size < 1) size = safeItems.length || 1;
+
+            var page = safeItems.slice(start, start + size);
+            var hasMore = start + page.length < safeItems.length;
+            return {
+                page: page,
+                total: safeItems.length,
+                cursor: String(start),
+                pageSize: size,
+                hasMore: hasMore,
+                nextCursor: hasMore ? String(start + page.length) : null
+            };
+        },
+
         /**
          * Handle GET /ops/status - Poll operation status
          * @param {Object} request - HTTP request object with query.opId
@@ -27,6 +67,9 @@
          */
         handleOpStatus: function(request, response, serverState) {
             var opId = request.query.opId;
+            var summaryOnly = this._parseBooleanQuery(request.query.summaryOnly, false);
+            var cursor = this._parseIntegerQuery(request.query.cursor, 0, 0, 1000000);
+            var pageSize = this._parseIntegerQuery(request.query.pageSize, 200, 1, 1000);
 
             if (!opId) {
                 response.statusCode = 400;
@@ -34,6 +77,39 @@
                     error: {
                         code: "BadRequest",
                         message: "Missing 'opId' query parameter"
+                    }
+                };
+                return;
+            }
+
+            if (summaryOnly === null) {
+                response.statusCode = 400;
+                response.body = {
+                    error: {
+                        code: "BadRequest",
+                        message: "Invalid 'summaryOnly' query parameter. Use true/false"
+                    }
+                };
+                return;
+            }
+
+            if (cursor === null) {
+                response.statusCode = 400;
+                response.body = {
+                    error: {
+                        code: "BadRequest",
+                        message: "Invalid 'cursor' query parameter. Must be an integer >= 0"
+                    }
+                };
+                return;
+            }
+
+            if (pageSize === null) {
+                response.statusCode = 400;
+                response.body = {
+                    error: {
+                        code: "BadRequest",
+                        message: "Invalid 'pageSize' query parameter. Must be an integer 1-1000"
                     }
                 };
                 return;
@@ -54,10 +130,22 @@
 
             // Return operation status
             if (operation.status === "complete") {
+                var pagedResult = this._paginateArray(operation.result, cursor, pageSize);
                 response.body = {
                     operationId: opId,
                     status: "complete",
-                    result: operation.result,
+                    result: summaryOnly ? undefined : pagedResult.page,
+                    totalResultCount: pagedResult.total,
+                    cursor: pagedResult.cursor,
+                    pageSize: pagedResult.pageSize,
+                    hasMore: pagedResult.hasMore,
+                    nextCursor: pagedResult.nextCursor,
+                    summaryOnly: summaryOnly,
+                    digest: operation.digest || null,
+                    timeline: operation.timeline || [],
+                    tempIdMap: operation.tempIdMap || {},
+                    tempIdMappings: operation.tempIdMappings || [],
+                    retryHints: operation.retryHints || null,
                     createdAt: operation.createdAt,
                     startedAt: operation.startedAt,
                     completedAt: operation.completedAt,
@@ -70,6 +158,12 @@
                     status: "error",
                     error: operation.error,
                     errorDetails: operation.errorDetails || null,
+                    summaryOnly: summaryOnly,
+                    digest: operation.digest || null,
+                    timeline: operation.timeline || [],
+                    tempIdMap: operation.tempIdMap || {},
+                    tempIdMappings: operation.tempIdMappings || [],
+                    retryHints: operation.retryHints || null,
                     createdAt: operation.createdAt,
                     startedAt: operation.startedAt,
                     completedAt: operation.completedAt,
@@ -81,6 +175,11 @@
                     operationId: opId,
                     status: operation.status,
                     message: "Operation in progress",
+                    summaryOnly: summaryOnly,
+                    digest: operation.digest || null,
+                    timeline: operation.timeline || [],
+                    tempIdMap: operation.tempIdMap || {},
+                    tempIdMappings: operation.tempIdMappings || [],
                     createdAt: operation.createdAt,
                     startedAt: operation.startedAt
                 };
@@ -97,6 +196,8 @@
             var query = request.query || {};
             var limitRaw = query.limit;
             var statusRaw = query.status;
+            var cursorRaw = query.cursor;
+            var summaryOnlyRaw = query.summaryOnly;
 
             var limit = 20;
             if (limitRaw !== undefined && limitRaw !== null && String(limitRaw).trim() !== "") {
@@ -123,6 +224,30 @@
                 }
             }
 
+            var cursor = this._parseIntegerQuery(cursorRaw, 0, 0, 1000000);
+            if (cursor === null) {
+                response.statusCode = 400;
+                response.body = {
+                    error: {
+                        code: "BadRequest",
+                        message: "Invalid 'cursor' query parameter. Must be an integer >= 0"
+                    }
+                };
+                return;
+            }
+
+            var summaryOnly = this._parseBooleanQuery(summaryOnlyRaw, false);
+            if (summaryOnly === null) {
+                response.statusCode = 400;
+                response.body = {
+                    error: {
+                        code: "BadRequest",
+                        message: "Invalid 'summaryOnly' query parameter. Use true/false"
+                    }
+                };
+                return;
+            }
+
             var status = null;
             if (statusRaw !== undefined && statusRaw !== null && String(statusRaw).trim() !== "") {
                 status = String(statusRaw).trim().toLowerCase();
@@ -140,14 +265,20 @@
 
             var listResult = operationQueue.listOperations({
                 limit: limit,
-                status: status || undefined
+                status: status || undefined,
+                cursor: cursor,
+                summaryOnly: summaryOnly
             });
 
             response.body = {
                 operations: listResult.operations,
                 total: listResult.total,
                 limit: listResult.limit,
-                status: listResult.status
+                status: listResult.status,
+                cursor: listResult.cursor,
+                hasMore: listResult.hasMore,
+                nextCursor: listResult.nextCursor,
+                summaryOnly: listResult.summaryOnly
             };
         }
     };
