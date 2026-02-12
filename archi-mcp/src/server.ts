@@ -457,7 +457,7 @@ const RouterSchema = z
 const LayoutSchema = z
   .object({
     viewId: z.string().min(1).describe('View ID to auto-layout.'),
-    algorithm: z.enum(['dagre']).optional().describe('Layout algorithm to apply.'),
+    algorithm: z.enum(['dagre', 'sugiyama']).optional().describe('Layout algorithm to apply.'),
     rankdir: z.enum(['TB', 'BT', 'LR', 'RL']).optional().describe('Graph direction (TB, BT, LR, RL).'),
     ranksep: z.number().int().min(0).max(5000).optional().describe('Vertical separation between ranks.'),
     nodesep: z.number().int().min(0).max(5000).optional().describe('Horizontal separation between nodes.'),
@@ -2597,7 +2597,7 @@ export function createArchiMcpServer(config: AppConfig): McpServer {
     'archi_layout_view',
     {
       title: 'Auto-Layout View',
-      description: 'Applies automatic layout to a view using Dagre options.',
+      description: 'Applies automatic layout to a view using Dagre or Sugiyama options.',
       inputSchema: LayoutSchema,
       outputDataSchema: LayoutDataSchema,
       annotations: MutationAnnotations,

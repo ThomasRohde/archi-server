@@ -1213,8 +1213,10 @@
                     return;
                 }
 
-                // Check if layoutDagreHeadless is available
-                if (typeof layoutDagreHeadless === "undefined") {
+                var requestedAlgorithm = body.algorithm || "dagre";
+                var algorithm = requestedAlgorithm === "sugiyama" ? "sugiyama" : "dagre";
+
+                if (algorithm === "dagre" && typeof layoutDagreHeadless === "undefined") {
                     response.statusCode = 501;
                     response.body = {
                         error: {
@@ -1225,8 +1227,11 @@
                     return;
                 }
 
+                if (algorithm === "sugiyama" && typeof layoutSugiyamaHeadless === "undefined") {
+                    algorithm = "dagre";
+                }
+
                 var startTime = Date.now();
-                var algorithm = body.algorithm || "dagre";
                 var options = {
                     rankdir: body.rankdir || 'TB',
                     nodesep: body.nodesep || 50,
@@ -1240,6 +1245,7 @@
                 var ops = [{
                     op: "layoutView",
                     viewId: viewId,
+                    algorithm: algorithm,
                     rankdir: options.rankdir,
                     nodesep: options.nodesep,
                     ranksep: options.ranksep,

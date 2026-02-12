@@ -2853,18 +2853,24 @@
                 });
             }
             else if (operation.op === "layoutView") {
-                // Apply Dagre layout to a view (undoable)
                 var layoutView = idMap[operation.viewId] || findViewById(model, operation.viewId);
                 if (!layoutView) {
                     throw new Error("layoutView: cannot find view: " + operation.viewId);
                 }
 
-                // Compute layout without applying it
-                if (typeof layoutDagreHeadless === "undefined" || !layoutDagreHeadless) {
+                var requestedAlgorithm = operation.algorithm || "dagre";
+                var algorithm = requestedAlgorithm === "sugiyama" ? "sugiyama" : "dagre";
+                var layoutEngine = layoutDagreHeadless;
+
+                if (algorithm === "sugiyama" && typeof layoutSugiyamaHeadless !== "undefined" && layoutSugiyamaHeadless) {
+                    layoutEngine = layoutSugiyamaHeadless;
+                }
+
+                if (!layoutEngine) {
                     throw new Error("layoutView: Dagre layout module not loaded");
                 }
 
-                var layoutResult = layoutDagreHeadless.computeLayout(layoutView, {
+                var layoutResult = layoutEngine.computeLayout(layoutView, {
                     rankdir: operation.rankdir || 'TB',
                     nodesep: operation.nodesep || 50,
                     ranksep: operation.ranksep || 50,
@@ -2915,6 +2921,7 @@
                 results.push({
                     op: "layoutView",
                     viewId: layoutView.getId(),
+                    algorithm: algorithm,
                     nodesPositioned: nodesPositioned,
                     edgesRouted: edgesRouted
                 });

@@ -86,6 +86,7 @@ Useful apply flags:
 - `--fast`: chunk-size 20, disables connection validation/throttle
 - `--skip-existing`: idempotent re-apply behavior for duplicate creates
 - `--layout`: auto-layout views created/populated in this run
+- `--layout-algorithm <name>`: layout algorithm for `--layout` (`dagre` or `sugiyama`)
 - `--continue-on-error`: keep processing independent chunks
 - `--resolve-names`: resolve unresolved concept tempIds by exact name lookup (not visual IDs)
 
@@ -107,7 +108,7 @@ archicli view get <id>                Get full view details (visual IDs, positio
 archicli view create <name>           Create a view (optional viewpoint/folder/documentation)
 archicli view export [id]             Export one view or --all views to PNG/JPEG/JPG
 archicli view delete <id>             Delete a view
-archicli view layout <id>             Auto-layout a view
+archicli view layout <id>             Auto-layout a view (--algorithm dagre|sugiyama)
 archicli ops status <opId>            Get operation status or --poll to completion
 archicli ops list                     List recent async operations
 archicli folder list                  List folders (optional --type filter)

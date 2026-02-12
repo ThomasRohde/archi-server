@@ -875,7 +875,8 @@ paths:
       summary: Apply automatic layout
       description: |
         Applies automatic graph layout algorithm to arrange elements in the view.
-        Currently supports Dagre algorithm with configurable options.
+        Supports Dagre and Sugiyama-style layered algorithms with configurable options.
+        Unknown algorithms fall back to dagre.
       operationId: postViewLayout
       parameters:
         - name: viewId
@@ -2198,7 +2199,7 @@ components:
       properties:
         algorithm:
           type: string
-          enum: [dagre]
+          enum: [dagre, sugiyama]
           default: dagre
           description: Layout algorithm to apply
         rankdir:

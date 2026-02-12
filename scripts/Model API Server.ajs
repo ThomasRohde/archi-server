@@ -89,6 +89,7 @@ load(__DIR__ + "lib/server/operationQueue.js");
 load(__DIR__ + "lib/server/monitorUI.js");
 load(__DIR__ + "lib/server/apiEndpoints.js");
 load(__DIR__ + "lib/server/layoutDagreHeadless.js");  // Dagre layout for view layout endpoint
+load(__DIR__ + "lib/server/layoutSugiyamaHeadless.js");
 
 /**
  * Router for /views endpoints
@@ -102,7 +103,7 @@ load(__DIR__ + "lib/server/layoutDagreHeadless.js");  // Dagre layout for view l
  *   POST   /views/{id}/export      -> handleExportView
  *   POST   /views/{id}/duplicate   -> handleDuplicateView
  *   PUT    /views/{id}/router      -> handleSetViewRouter
- *   POST   /views/{id}/layout      -> handleLayoutView
+ *   POST   /views/{id}/layout      -> handleLayoutView (dagre, sugiyama)
  *   GET    /views/{id}/validate    -> handleValidateView
  */
 function routeViewsEndpoint(req, res, state, apiEndpoints) {

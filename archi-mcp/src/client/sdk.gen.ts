@@ -379,7 +379,8 @@ export const putViewRouter = <ThrowOnError extends boolean = false>(options: Opt
  * Apply automatic layout
  *
  * Applies automatic graph layout algorithm to arrange elements in the view.
- * Currently supports Dagre algorithm with configurable options.
+ * Supports Dagre and Sugiyama-style layered algorithms with configurable options.
+ * Unknown algorithms fall back to dagre.
  *
  */
 export const postViewLayout = <ThrowOnError extends boolean = false>(options: Options<PostViewLayoutData, ThrowOnError>) => (options.client ?? client).post<PostViewLayoutResponses, PostViewLayoutErrors, ThrowOnError>({

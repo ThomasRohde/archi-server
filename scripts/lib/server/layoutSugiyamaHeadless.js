@@ -1,0 +1,900 @@
+(function() {
+    "use strict";
+
+    /**
+     * layoutSugiyamaHeadless.js
+     *
+     * Sugiyama-style layered layout engine for Archi diagram views.
+     *
+     * Pipeline overview:
+     *  1) Extract top-level diagram graph
+     *  2) Break cycles by reversing back-edges (heuristic)
+     *  3) Assign layers with longest-path strategy
+     *  4) Properize long edges with internal dummy nodes
+     *  5) Reduce crossings with alternating barycenter sweeps
+     *  6) Assign x coordinates using four directional variants + balancing
+     *  7) Enforce no-overlap spacing constraints
+     *  8) Place layers on y axis, apply orientation transform, write bounds
+     *
+     * Notes:
+     * - Works in GraalVM/jArchi runtime (no Node.js dependencies).
+     * - Mutations are performed by callers through undoable command wrappers.
+     * - On unexpected runtime failures, computeLayout falls back to Dagre when available.
+     */
+
+    if (typeof globalThis !== "undefined" && typeof globalThis.layoutSugiyamaHeadless !== "undefined") {
+        return;
+    }
+    if (typeof global !== "undefined" && typeof global.layoutSugiyamaHeadless !== "undefined") {
+        return;
+    }
+
+    var IDiagramModelConnection = Java.type("com.archimatetool.model.IDiagramModelConnection");
+    var IArchimateFactory = Java.type("com.archimatetool.model.IArchimateFactory");
+    var factory = IArchimateFactory.eINSTANCE;
+
+    /**
+     * Parse integer option safely and clamp to non-negative domain.
+     */
+    function getOptionInt(options, key, fallback) {
+        var value = options[key];
+        if (value === undefined || value === null || value === "") return fallback;
+        var parsed = Number(value);
+        if (!isFinite(parsed)) return fallback;
+        return Math.max(0, Math.round(parsed));
+    }
+
+    /**
+     * Parse string option safely with trim and fallback.
+     */
+    function getOptionString(options, key, fallback) {
+        var value = options[key];
+        if (value === undefined || value === null) return fallback;
+        var s = String(value).trim();
+        return s.length > 0 ? s : fallback;
+    }
+
+    /**
+     * Extract top-level diagram objects and visible connections into an in-memory graph.
+     *
+     * Scope policy (v1): only top-level nodes are considered layout participants.
+     * Nested children are intentionally ignored to avoid mixing parent-relative coordinates.
+     *
+     * Returns:
+     * - nodes: real visual nodes with width/height and original bounds snapshot
+     * - nodeById: id lookup map for fast edge filtering
+     * - edges: directed edges between included nodes (self-loops excluded)
+     * - connections: unique connection visuals for bendpoint cleanup phase
+     */
+    function collectTopLevelGraph(view) {
+        var children = view.getChildren();
+        var nodes = [];
+        var nodeById = {};
+        var connections = [];
+        var seenConnections = {};
+
+        for (var i = 0; i < children.size(); i++) {
+            var child = children.get(i);
+            if (child instanceof IDiagramModelConnection) continue;
+
+            var bounds = child.getBounds();
+            if (!bounds) continue;
+
+            var width = bounds.getWidth();
+            var height = bounds.getHeight();
+
+            var node = {
+                id: child.getId(),
+                element: child,
+                width: width > 0 ? width : 120,
+                height: height > 0 ? height : 55,
+                oldBounds: bounds,
+                isDummy: false
+            };
+            nodes.push(node);
+            nodeById[node.id] = node;
+        }
+
+        var edges = [];
+        for (var n = 0; n < nodes.length; n++) {
+            var srcObj = nodes[n].element;
+            var sourceConns = srcObj.getSourceConnections();
+            if (!sourceConns) continue;
+
+            for (var c = 0; c < sourceConns.size(); c++) {
+                var conn = sourceConns.get(c);
+                if (!conn) continue;
+
+                var target = conn.getTarget();
+                if (!target) continue;
+
+                var sourceId = srcObj.getId();
+                var targetId = target.getId();
+
+                if (!nodeById[sourceId] || !nodeById[targetId]) continue;
+                if (sourceId === targetId) continue;
+
+                var connId = conn.getId ? conn.getId() : (sourceId + "->" + targetId + "#" + c);
+                edges.push({
+                    id: connId,
+                    sourceId: sourceId,
+                    targetId: targetId,
+                    connection: conn,
+                    reversed: false,
+                    isDummy: false
+                });
+
+                if (!seenConnections[connId]) {
+                    seenConnections[connId] = true;
+                    connections.push(conn);
+                }
+            }
+        }
+
+        return {
+            nodes: nodes,
+            nodeById: nodeById,
+            edges: edges,
+            connections: connections
+        };
+    }
+
+    /**
+     * Build a vertex ordering for cycle breaking.
+     *
+     * Heuristic:
+     * - repeatedly remove sinks and sources
+     * - when none exist, remove node with max(outdegree - indegree)
+     *
+     * The resulting order is used to identify back-edges that must be reversed
+     * to obtain a DAG for downstream Sugiyama phases.
+     */
+    function computeOrderForCycleBreaking(nodes, edges) {
+        var remaining = {};
+        var indegree = {};
+        var outdegree = {};
+        var incoming = {};
+        var outgoing = {};
+
+        for (var i = 0; i < nodes.length; i++) {
+            var nodeId = nodes[i].id;
+            remaining[nodeId] = true;
+            indegree[nodeId] = 0;
+            outdegree[nodeId] = 0;
+            incoming[nodeId] = [];
+            outgoing[nodeId] = [];
+        }
+
+        for (var e = 0; e < edges.length; e++) {
+            var edge = edges[e];
+            if (!remaining[edge.sourceId] || !remaining[edge.targetId]) continue;
+            outdegree[edge.sourceId]++;
+            indegree[edge.targetId]++;
+            outgoing[edge.sourceId].push(edge.targetId);
+            incoming[edge.targetId].push(edge.sourceId);
+        }
+
+        var left = [];
+        var right = [];
+        var remainingCount = nodes.length;
+
+        function removeNode(nodeId) {
+            if (!remaining[nodeId]) return;
+            remaining[nodeId] = false;
+            remainingCount--;
+
+            var outs = outgoing[nodeId];
+            for (var oi = 0; oi < outs.length; oi++) {
+                var t = outs[oi];
+                if (remaining[t]) indegree[t]--;
+            }
+
+            var ins = incoming[nodeId];
+            for (var ii = 0; ii < ins.length; ii++) {
+                var s = ins[ii];
+                if (remaining[s]) outdegree[s]--;
+            }
+        }
+
+        while (remainingCount > 0) {
+            var changed = true;
+            while (changed) {
+                changed = false;
+
+                for (var ni = 0; ni < nodes.length; ni++) {
+                    var sinkId = nodes[ni].id;
+                    if (remaining[sinkId] && outdegree[sinkId] === 0) {
+                        right.push(sinkId);
+                        removeNode(sinkId);
+                        changed = true;
+                    }
+                }
+
+                for (var nj = 0; nj < nodes.length; nj++) {
+                    var sourceId = nodes[nj].id;
+                    if (remaining[sourceId] && indegree[sourceId] === 0) {
+                        left.push(sourceId);
+                        removeNode(sourceId);
+                        changed = true;
+                    }
+                }
+            }
+
+            if (remainingCount === 0) break;
+
+            var bestId = null;
+            var bestScore = -Infinity;
+            for (var nk = 0; nk < nodes.length; nk++) {
+                var candidate = nodes[nk].id;
+                if (!remaining[candidate]) continue;
+                var score = outdegree[candidate] - indegree[candidate];
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestId = candidate;
+                }
+            }
+
+            if (bestId !== null) {
+                left.push(bestId);
+                removeNode(bestId);
+            } else {
+                break;
+            }
+        }
+
+        var order = [];
+        for (var li = 0; li < left.length; li++) order.push(left[li]);
+        for (var ri = right.length - 1; ri >= 0; ri--) order.push(right[ri]);
+
+        var orderIndex = {};
+        for (var oi = 0; oi < order.length; oi++) orderIndex[order[oi]] = oi;
+        return orderIndex;
+    }
+
+    /**
+     * Reverse edges that go against the chosen acyclic ordering.
+     *
+     * This mutates edge endpoints in-place and marks the edge as reversed.
+     * Returns the number of reversals for diagnostics/logging.
+     */
+    function reverseBackEdges(edges, orderIndex) {
+        var reversedCount = 0;
+        for (var i = 0; i < edges.length; i++) {
+            var edge = edges[i];
+            var s = orderIndex[edge.sourceId];
+            var t = orderIndex[edge.targetId];
+            if (s === undefined || t === undefined) continue;
+            if (s > t) {
+                var tmp = edge.sourceId;
+                edge.sourceId = edge.targetId;
+                edge.targetId = tmp;
+                edge.reversed = !edge.reversed;
+                reversedCount++;
+            }
+        }
+        return reversedCount;
+    }
+
+    /**
+     * Assign layers with longest-path propagation over a DAG.
+     *
+     * Sources start at layer 0; each edge enforces target >= source + 1.
+     */
+    function assignLayersLongestPath(nodes, edges) {
+        var indegree = {};
+        var layer = {};
+        var outgoing = {};
+        var queue = [];
+
+        for (var i = 0; i < nodes.length; i++) {
+            var nodeId = nodes[i].id;
+            indegree[nodeId] = 0;
+            layer[nodeId] = 0;
+            outgoing[nodeId] = [];
+        }
+
+        for (var e = 0; e < edges.length; e++) {
+            var edge = edges[e];
+            outgoing[edge.sourceId].push(edge.targetId);
+            indegree[edge.targetId]++;
+        }
+
+        for (var n = 0; n < nodes.length; n++) {
+            var id = nodes[n].id;
+            if (indegree[id] === 0) queue.push(id);
+        }
+
+        var qi = 0;
+        while (qi < queue.length) {
+            var current = queue[qi++];
+            var outs = outgoing[current];
+            for (var oi = 0; oi < outs.length; oi++) {
+                var targetId = outs[oi];
+                var candidate = layer[current] + 1;
+                if (candidate > layer[targetId]) layer[targetId] = candidate;
+                indegree[targetId]--;
+                if (indegree[targetId] === 0) queue.push(targetId);
+            }
+        }
+
+        return layer;
+    }
+
+    /**
+     * Properize the graph by inserting dummy nodes on edges spanning >1 layer.
+     *
+     * Brandes–Köpf coordinate assignment assumes proper layering where all
+     * edges connect adjacent layers. Dummy nodes are internal only.
+     */
+    function properizeGraph(nodes, edges, nodeById, layerMap) {
+        var expandedNodes = nodes.slice();
+        var expandedEdges = [];
+        var dummyCounter = 0;
+
+        for (var i = 0; i < edges.length; i++) {
+            var edge = edges[i];
+            var srcLayer = layerMap[edge.sourceId] || 0;
+            var tgtLayer = layerMap[edge.targetId] || 0;
+            var span = tgtLayer - srcLayer;
+
+            if (span <= 1) {
+                expandedEdges.push(edge);
+                continue;
+            }
+
+            var prevId = edge.sourceId;
+            for (var l = srcLayer + 1; l < tgtLayer; l++) {
+                var dummyId = "__dummy_" + (++dummyCounter);
+                var dummyNode = {
+                    id: dummyId,
+                    element: null,
+                    width: 1,
+                    height: 1,
+                    oldBounds: null,
+                    isDummy: true,
+                    layer: l
+                };
+                expandedNodes.push(dummyNode);
+                nodeById[dummyId] = dummyNode;
+                layerMap[dummyId] = l;
+
+                expandedEdges.push({
+                    id: edge.id + "::" + dummyId,
+                    sourceId: prevId,
+                    targetId: dummyId,
+                    connection: edge.connection,
+                    reversed: edge.reversed,
+                    isDummy: true
+                });
+                prevId = dummyId;
+            }
+
+            expandedEdges.push({
+                id: edge.id + "::tail",
+                sourceId: prevId,
+                targetId: edge.targetId,
+                connection: edge.connection,
+                reversed: edge.reversed,
+                isDummy: true
+            });
+        }
+
+        return {
+            nodes: expandedNodes,
+            edges: expandedEdges
+        };
+    }
+
+    /**
+     * Convert node->layer map into contiguous layer arrays.
+     */
+    function buildLayerArrays(nodes, layerMap) {
+        var maxLayer = 0;
+        for (var i = 0; i < nodes.length; i++) {
+            var layer = layerMap[nodes[i].id] || 0;
+            if (layer > maxLayer) maxLayer = layer;
+        }
+
+        var layers = [];
+        for (var l = 0; l <= maxLayer; l++) layers.push([]);
+
+        for (var n = 0; n < nodes.length; n++) {
+            var node = nodes[n];
+            layers[layerMap[node.id] || 0].push(node.id);
+        }
+
+        return layers;
+    }
+
+    /**
+     * Build incoming/outgoing adjacency maps used by sweep and coordinate phases.
+     */
+    function buildNeighbors(edges) {
+        var incoming = {};
+        var outgoing = {};
+        for (var i = 0; i < edges.length; i++) {
+            var edge = edges[i];
+            if (!incoming[edge.targetId]) incoming[edge.targetId] = [];
+            if (!outgoing[edge.sourceId]) outgoing[edge.sourceId] = [];
+            incoming[edge.targetId].push(edge.sourceId);
+            outgoing[edge.sourceId].push(edge.targetId);
+        }
+        return { incoming: incoming, outgoing: outgoing };
+    }
+
+    /**
+     * Build O(1) index lookup map for an ordered array.
+     */
+    function indexMap(array) {
+        var map = {};
+        for (var i = 0; i < array.length; i++) map[array[i]] = i;
+        return map;
+    }
+
+    /**
+     * Stable barycenter sort for one layer against its adjacent fixed layer.
+     *
+     * Tie-break keeps previous order for deterministic output.
+     */
+    function stableSortByBarycenter(layerNodes, neighbors, adjacentOrder) {
+        var adjIndex = indexMap(adjacentOrder);
+        var decorated = [];
+
+        for (var i = 0; i < layerNodes.length; i++) {
+            var nodeId = layerNodes[i];
+            var neigh = neighbors[nodeId] || [];
+            var bary;
+
+            if (neigh.length === 0) {
+                bary = i;
+            } else {
+                var sum = 0;
+                var count = 0;
+                for (var n = 0; n < neigh.length; n++) {
+                    var idx = adjIndex[neigh[n]];
+                    if (idx !== undefined) {
+                        sum += idx;
+                        count++;
+                    }
+                }
+                bary = count > 0 ? (sum / count) : i;
+            }
+
+            decorated.push({ nodeId: nodeId, bary: bary, oldIndex: i });
+        }
+
+        decorated.sort(function(a, b) {
+            if (a.bary < b.bary) return -1;
+            if (a.bary > b.bary) return 1;
+            return a.oldIndex - b.oldIndex;
+        });
+
+        for (var d = 0; d < decorated.length; d++) {
+            layerNodes[d] = decorated[d].nodeId;
+        }
+    }
+
+    /**
+     * Alternating down/up barycenter sweeps to reduce crossings.
+     */
+    function crossingMinimize(layers, neighbors, iterations) {
+        var sweeps = iterations > 0 ? iterations : 4;
+        for (var iter = 0; iter < sweeps; iter++) {
+            for (var down = 1; down < layers.length; down++) {
+                stableSortByBarycenter(layers[down], neighbors.incoming, layers[down - 1]);
+            }
+            for (var up = layers.length - 2; up >= 0; up--) {
+                stableSortByBarycenter(layers[up], neighbors.outgoing, layers[up + 1]);
+            }
+        }
+    }
+
+    /**
+     * Median helper for center alignment decisions.
+     */
+    function median(values) {
+        if (!values || values.length === 0) return null;
+        var sorted = values.slice().sort(function(a, b) { return a - b; });
+        var mid = Math.floor(sorted.length / 2);
+        if (sorted.length % 2 === 0) return (sorted[mid - 1] + sorted[mid]) / 2;
+        return sorted[mid];
+    }
+
+    /**
+     * Minimum center distance to prevent horizontal overlap between two nodes.
+     */
+    function separation(leftNode, rightNode, nodeSpacing) {
+        return (leftNode.width / 2) + (rightNode.width / 2) + nodeSpacing;
+    }
+
+    /**
+     * Enforce pairwise spacing constraints within a layer.
+     *
+     * Depending on direction, this performs a forward or reverse pass while
+     * preserving node order.
+     */
+    function enforceLayerSpacing(layerNodes, xMap, nodeById, nodeSpacing, leftToRight) {
+        if (layerNodes.length < 2) return;
+
+        if (leftToRight) {
+            for (var i = 1; i < layerNodes.length; i++) {
+                var prevId = layerNodes[i - 1];
+                var currId = layerNodes[i];
+                var minX = xMap[prevId] + separation(nodeById[prevId], nodeById[currId], nodeSpacing);
+                if (xMap[currId] < minX) xMap[currId] = minX;
+            }
+        } else {
+            for (var j = layerNodes.length - 2; j >= 0; j--) {
+                var leftId = layerNodes[j];
+                var rightId = layerNodes[j + 1];
+                var maxX = xMap[rightId] - separation(nodeById[leftId], nodeById[rightId], nodeSpacing);
+                if (xMap[leftId] > maxX) xMap[leftId] = maxX;
+            }
+        }
+    }
+
+    /**
+     * Initial x coordinates from layer order and node widths.
+     */
+    function initializeXByLayerOrder(layers, nodeById, nodeSpacing) {
+        var xMap = {};
+        for (var li = 0; li < layers.length; li++) {
+            var layer = layers[li];
+            var cursor = 0;
+            for (var ni = 0; ni < layer.length; ni++) {
+                var nodeId = layer[ni];
+                var node = nodeById[nodeId];
+                if (ni === 0) {
+                    xMap[nodeId] = node.width / 2;
+                    cursor = xMap[nodeId] + node.width / 2;
+                } else {
+                    var prevNode = nodeById[layer[ni - 1]];
+                    var sep = separation(prevNode, node, nodeSpacing);
+                    xMap[nodeId] = cursor + sep - (node.width / 2);
+                    cursor = xMap[nodeId] + node.width / 2;
+                }
+            }
+        }
+        return xMap;
+    }
+
+    /**
+     * Compute one directional x-assignment variant.
+     *
+     * Parameters choose sweep direction (down/up) and compaction direction
+     * (left-to-right or right-to-left). Multiple rounds smooth toward median
+     * neighbor positions and then re-apply spacing constraints.
+     */
+    function assignVariantX(layers, neighbors, nodeById, nodeSpacing, downward, leftToRight) {
+        var xMap = initializeXByLayerOrder(layers, nodeById, nodeSpacing);
+        var rounds = 4;
+        var alpha = 0.6;
+
+        for (var round = 0; round < rounds; round++) {
+            if (downward) {
+                for (var li = 1; li < layers.length; li++) {
+                    var layer = layers[li];
+                    for (var ni = 0; ni < layer.length; ni++) {
+                        var nodeId = layer[ni];
+                        var preds = neighbors.incoming[nodeId] || [];
+                        if (preds.length === 0) continue;
+                        var px = [];
+                        for (var pi = 0; pi < preds.length; pi++) {
+                            if (xMap[preds[pi]] !== undefined) px.push(xMap[preds[pi]]);
+                        }
+                        var med = median(px);
+                        if (med !== null) xMap[nodeId] = ((1 - alpha) * xMap[nodeId]) + (alpha * med);
+                    }
+                    enforceLayerSpacing(layer, xMap, nodeById, nodeSpacing, leftToRight);
+                }
+            } else {
+                for (var lj = layers.length - 2; lj >= 0; lj--) {
+                    var upLayer = layers[lj];
+                    for (var uj = 0; uj < upLayer.length; uj++) {
+                        var upId = upLayer[uj];
+                        var succs = neighbors.outgoing[upId] || [];
+                        if (succs.length === 0) continue;
+                        var sx = [];
+                        for (var si = 0; si < succs.length; si++) {
+                            if (xMap[succs[si]] !== undefined) sx.push(xMap[succs[si]]);
+                        }
+                        var smed = median(sx);
+                        if (smed !== null) xMap[upId] = ((1 - alpha) * xMap[upId]) + (alpha * smed);
+                    }
+                    enforceLayerSpacing(upLayer, xMap, nodeById, nodeSpacing, leftToRight);
+                }
+            }
+        }
+
+        var minX = Infinity;
+        for (var key in xMap) {
+            if (xMap.hasOwnProperty(key) && xMap[key] < minX) minX = xMap[key];
+        }
+        if (isFinite(minX)) {
+            for (var key2 in xMap) {
+                if (xMap.hasOwnProperty(key2)) xMap[key2] -= minX;
+            }
+        }
+
+        return xMap;
+    }
+
+    /**
+     * Compute four directional variants and balance with inner-median averaging.
+     *
+     * This approximates Brandes–Köpf balancing to reduce directional bias.
+     */
+    function balancedX(layers, neighbors, nodeById, nodeSpacing) {
+        var variants = [
+            assignVariantX(layers, neighbors, nodeById, nodeSpacing, true, true),
+            assignVariantX(layers, neighbors, nodeById, nodeSpacing, true, false),
+            assignVariantX(layers, neighbors, nodeById, nodeSpacing, false, true),
+            assignVariantX(layers, neighbors, nodeById, nodeSpacing, false, false)
+        ];
+
+        var result = {};
+        for (var li = 0; li < layers.length; li++) {
+            var layer = layers[li];
+            for (var ni = 0; ni < layer.length; ni++) {
+                var nodeId = layer[ni];
+                var values = [
+                    variants[0][nodeId],
+                    variants[1][nodeId],
+                    variants[2][nodeId],
+                    variants[3][nodeId]
+                ];
+                values.sort(function(a, b) { return a - b; });
+                result[nodeId] = (values[1] + values[2]) / 2;
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Final conservative overlap pass after balancing.
+     */
+    function finalOverlapPass(layers, xMap, nodeById, nodeSpacing) {
+        for (var li = 0; li < layers.length; li++) {
+            var layer = layers[li];
+            enforceLayerSpacing(layer, xMap, nodeById, nodeSpacing, true);
+        }
+    }
+
+    /**
+     * Assign y coordinates by layer max-height stacking.
+     */
+    function computeLayerY(layers, nodeById, layerSpacing) {
+        var layerY = [];
+        var y = 0;
+        for (var li = 0; li < layers.length; li++) {
+            layerY[li] = y;
+            var maxHeight = 1;
+            for (var ni = 0; ni < layers[li].length; ni++) {
+                var node = nodeById[layers[li][ni]];
+                if (node.height > maxHeight) maxHeight = node.height;
+            }
+            y += maxHeight + layerSpacing;
+        }
+        return layerY;
+    }
+
+    /**
+     * Transform canonical TB coordinates into requested rank direction.
+     *
+     * Canonical layout uses x=horizontal, y=vertical-down. LR/RL swap axes;
+     * BT/RL mirror across max extent. Margins are applied at the end.
+     */
+    function transformByRankdir(centerX, centerY, width, height, rankdir, maxX, maxY, marginx, marginy) {
+        var tx = centerX;
+        var ty = centerY;
+
+        if (rankdir === "BT") {
+            ty = maxY - centerY;
+        } else if (rankdir === "LR") {
+            tx = centerY;
+            ty = centerX;
+        } else if (rankdir === "RL") {
+            tx = maxY - centerY;
+            ty = centerX;
+        }
+
+        return {
+            x: Math.round(tx - (width / 2) + marginx),
+            y: Math.round(ty - (height / 2) + marginy)
+        };
+    }
+
+    /**
+     * Compute all node position and bendpoint-change deltas for one view.
+     *
+     * Returns a pure change set:
+     * - nodes: {element, oldBounds, newBounds}
+     * - connections: {connection, oldBendpoints}
+     * - diagnostics: reversal count and layer count
+     *
+     * No mutation is applied here; caller decides how to apply changes.
+     */
+    function computeLayout(view, options) {
+        options = options || {};
+
+        var rankdir = getOptionString(options, "rankdir", "TB").toUpperCase();
+        var nodeSpacing = getOptionInt(options, "nodesep", 50);
+        var layerSpacing = getOptionInt(options, "ranksep", 50);
+        var marginx = getOptionInt(options, "marginx", 20);
+        var marginy = getOptionInt(options, "marginy", 20);
+        var crossingIterations = getOptionInt(options, "iterations", 4);
+
+        try {
+            var graph = collectTopLevelGraph(view);
+            if (graph.nodes.length === 0) {
+                return { nodes: [], connections: [], diagnostics: { reversedEdges: 0, layers: 0 } };
+            }
+
+            if (graph.nodes.length === 1) {
+                var onlyNode = graph.nodes[0];
+                var singleBounds = factory.createBounds();
+                singleBounds.setX(marginx);
+                singleBounds.setY(marginy);
+                singleBounds.setWidth(onlyNode.width);
+                singleBounds.setHeight(onlyNode.height);
+                return {
+                    nodes: [{ element: onlyNode.element, oldBounds: onlyNode.oldBounds, newBounds: singleBounds }],
+                    connections: [],
+                    diagnostics: { reversedEdges: 0, layers: 1 }
+                };
+            }
+
+            // 1) Cycle handling
+            var orderIndex = computeOrderForCycleBreaking(graph.nodes, graph.edges);
+            var reversedEdges = reverseBackEdges(graph.edges, orderIndex);
+
+            // 2) Layer assignment
+            var layerMap = assignLayersLongestPath(graph.nodes, graph.edges);
+
+            // 3) Properization + crossing minimization
+            var proper = properizeGraph(graph.nodes, graph.edges, graph.nodeById, layerMap);
+            var layers = buildLayerArrays(proper.nodes, layerMap);
+            var neighbors = buildNeighbors(proper.edges);
+
+            crossingMinimize(layers, neighbors, crossingIterations);
+
+            // 4) Coordinate assignment + overlap enforcement
+            var xMap = balancedX(layers, neighbors, graph.nodeById, nodeSpacing);
+            finalOverlapPass(layers, xMap, graph.nodeById, nodeSpacing);
+            var layerY = computeLayerY(layers, graph.nodeById, layerSpacing);
+
+            var centers = {};
+            var maxX = 0;
+            var maxY = 0;
+
+            for (var li = 0; li < layers.length; li++) {
+                var layer = layers[li];
+                for (var ni = 0; ni < layer.length; ni++) {
+                    var nodeId = layer[ni];
+                    var node = graph.nodeById[nodeId];
+                    if (!node || node.isDummy) continue;
+
+                    var centerX = xMap[nodeId];
+                    var centerY = layerY[li] + (node.height / 2);
+                    centers[nodeId] = { x: centerX, y: centerY };
+
+                    if (centerX > maxX) maxX = centerX;
+                    if (centerY > maxY) maxY = centerY;
+                }
+            }
+
+            var nodeChanges = [];
+            for (var rn = 0; rn < graph.nodes.length; rn++) {
+                var realNode = graph.nodes[rn];
+                var center = centers[realNode.id];
+                if (!center) continue;
+
+                var transformed = transformByRankdir(
+                    center.x,
+                    center.y,
+                    realNode.width,
+                    realNode.height,
+                    rankdir,
+                    maxX,
+                    maxY,
+                    marginx,
+                    marginy
+                );
+
+                var newBounds = factory.createBounds();
+                newBounds.setX(transformed.x);
+                newBounds.setY(transformed.y);
+                newBounds.setWidth(realNode.width);
+                newBounds.setHeight(realNode.height);
+
+                nodeChanges.push({
+                    element: realNode.element,
+                    oldBounds: realNode.oldBounds,
+                    newBounds: newBounds
+                });
+            }
+
+            var connectionChanges = [];
+            for (var ci = 0; ci < graph.connections.length; ci++) {
+                var conn = graph.connections[ci];
+                if (!conn || typeof conn.getBendpoints !== "function") continue;
+                var bendpoints = conn.getBendpoints();
+                if (!bendpoints || bendpoints.size() === 0) continue;
+
+                var oldBendpoints = [];
+                for (var bi = 0; bi < bendpoints.size(); bi++) {
+                    oldBendpoints.push(bendpoints.get(bi));
+                }
+
+                connectionChanges.push({
+                    connection: conn,
+                    oldBendpoints: oldBendpoints
+                });
+            }
+
+            return {
+                nodes: nodeChanges,
+                connections: connectionChanges,
+                diagnostics: {
+                    reversedEdges: reversedEdges,
+                    layers: layers.length
+                }
+            };
+        } catch (e) {
+            // Defensive runtime fallback: keep endpoint functional even if the
+            // custom algorithm hits an unexpected edge-case in model data.
+            if (typeof layoutDagreHeadless !== "undefined" && layoutDagreHeadless) {
+                return layoutDagreHeadless.computeLayout(view, options);
+            }
+            throw e;
+        }
+    }
+
+    /**
+     * Apply computed deltas directly (non-undoable convenience entrypoint).
+     *
+     * In production API flow, undoableCommands consumes computeLayout output
+     * and wraps each mutation in GEF commands for undo/redo.
+     */
+    function layoutView(view, options) {
+        var layoutResult = computeLayout(view, options);
+
+        var nodesPositioned = 0;
+        for (var n = 0; n < layoutResult.nodes.length; n++) {
+            var nodeChange = layoutResult.nodes[n];
+            nodeChange.element.setBounds(nodeChange.newBounds);
+            nodesPositioned++;
+        }
+
+        var edgesRouted = 0;
+        for (var c = 0; c < layoutResult.connections.length; c++) {
+            var connChange = layoutResult.connections[c];
+            connChange.connection.getBendpoints().clear();
+            edgesRouted++;
+        }
+
+        return {
+            nodesPositioned: nodesPositioned,
+            edgesRouted: edgesRouted,
+            diagnostics: layoutResult.diagnostics
+        };
+    }
+
+    /**
+     * Public module API.
+     */
+    var layoutSugiyamaHeadless = {
+        layoutView: layoutView,
+        computeLayout: computeLayout
+    };
+
+    if (typeof globalThis !== "undefined") {
+        globalThis.layoutSugiyamaHeadless = layoutSugiyamaHeadless;
+    } else if (typeof global !== "undefined") {
+        global.layoutSugiyamaHeadless = layoutSugiyamaHeadless;
+    }
+
+    if (typeof module !== "undefined" && module.exports) {
+        module.exports = layoutSugiyamaHeadless;
+    }
+})();

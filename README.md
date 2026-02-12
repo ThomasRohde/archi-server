@@ -312,7 +312,7 @@ Mutation/destructive tools (11):
 - `archi_export_view` — export view as PNG/JPEG
 - `archi_duplicate_view` — duplicate an existing view
 - `archi_set_view_router` — set connection routing (bendpoint/manhattan)
-- `archi_layout_view` — auto-layout with Dagre
+- `archi_layout_view` — auto-layout with Dagre or Sugiyama
 - `archi_shutdown_server` — graceful server shutdown
 
 ### Implemented MCP resources
@@ -352,6 +352,7 @@ archi-server/
 │       │   ├── apiEndpoints.js
 │       │   ├── folderCache.js
 │       │   ├── layoutDagreHeadless.js
+│       │   ├── layoutSugiyamaHeadless.js
 │       │   ├── loggingQueue.js
 │       │   ├── modelSnapshot.js
 │       │   ├── monitorUI.js
@@ -433,7 +434,7 @@ The server exposes a comprehensive REST API:
 - `POST /views` - Create new view
 - `GET /views/{id}` - Get view details with all elements
 - `DELETE /views/{id}` - Delete view
-- `POST /views/{id}/layout` - Apply Dagre layout
+- `POST /views/{id}/layout` - Apply layout (`dagre` or `sugiyama`)
 - `POST /views/{id}/export` - Export as PNG/JPEG
 
 ### Script Execution
@@ -653,7 +654,7 @@ MIT License - See [LICENSE](LICENSE) for details.
 
 - Built for [Archi](https://www.archimatetool.com/) - Open Source ArchiMate Modelling Tool
 - Powered by [jArchi](https://www.archimatetool.com/plugins/) scripting plugin
-- Layout engine: [Dagre](https://github.com/dagrejs/dagre)
+- Layout engines: [Dagre](https://github.com/dagrejs/dagre) and a built-in Sugiyama layered layouter
 
 ---
 

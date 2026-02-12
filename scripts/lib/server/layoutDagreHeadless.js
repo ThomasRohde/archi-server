@@ -138,7 +138,9 @@
             ranksep: options.ranksep || 50,
             edgesep: options.edgesep || 10,
             marginx: options.marginx || 20,
-            marginy: options.marginy || 20
+            marginy: options.marginy || 20,
+            acyclicer: options.acyclicer || undefined,
+            ranker: options.ranker || undefined
         });
         g.setDefaultEdgeLabel(function() { return {}; });
 

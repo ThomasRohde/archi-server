@@ -192,6 +192,11 @@ export function batchApplyCommand(): Command {
       'TB'
     )
     .option(
+      '--layout-algorithm <name>',
+      'layout algorithm when using --layout: dagre, sugiyama',
+      'dagre'
+    )
+    .option(
       '--continue-on-error',
       'continue processing independent chunks when a chunk fails'
     )
@@ -222,6 +227,7 @@ export function batchApplyCommand(): Command {
           allowEmpty?: boolean;
           layout?: boolean;
           rankdir: string;
+          layoutAlgorithm: string;
           continueOnError?: boolean;
           validateConnections: boolean;
           throttle?: string;
@@ -645,10 +651,17 @@ export function batchApplyCommand(): Command {
             }
             if (viewIdsToLayout.size > 0) {
               const rankdir = options.rankdir?.toUpperCase() ?? 'TB';
+              const layoutAlgorithm = (options.layoutAlgorithm ?? 'dagre').toLowerCase();
+              const validAlgorithms = ['dagre', 'sugiyama'];
+              if (!validAlgorithms.includes(layoutAlgorithm)) {
+                throw new ArgumentValidationError(
+                  `Invalid --layout-algorithm '${layoutAlgorithm}'. Valid: ${validAlgorithms.join(', ')}`
+                );
+              }
               for (const viewId of viewIdsToLayout) {
                 try {
                   const layoutData = await post(`/views/${encodeURIComponent(viewId)}/layout`, {
-                    algorithm: 'dagre',
+                    algorithm: layoutAlgorithm,
                     rankdir,
                     ranksep: 80,
                     nodesep: 50,

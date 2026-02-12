@@ -74,7 +74,7 @@ Mutation tools:
 
 - `archi_save_model`, `archi_apply_model_changes`, `archi_populate_view`, `archi_run_script`
 - `archi_create_view`, `archi_delete_view`, `archi_export_view`
-- `archi_duplicate_view`, `archi_set_view_router`, `archi_layout_view`
+- `archi_duplicate_view`, `archi_set_view_router`, `archi_layout_view` (`algorithm`: `dagre` or `sugiyama`)
 - `archi_shutdown_server`
 
 ## Agent UX additions

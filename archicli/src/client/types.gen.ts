@@ -973,7 +973,7 @@ export type LayoutRequest = {
     /**
      * Layout algorithm to apply
      */
-    algorithm?: 'dagre';
+    algorithm?: 'dagre' | 'sugiyama';
     /**
      * Graph direction (TB=top-bottom, LR=left-right, etc.)
      */
@@ -1152,7 +1152,7 @@ export type CreateViewRequest = {
      */
     name: string;
     /**
-     * ArchiMate viewpoint (optional)
+     * ArchiMate viewpoint ID or label (optional, e.g., "application_cooperation" or "Application Cooperation")
      */
     viewpoint?: string;
     /**
