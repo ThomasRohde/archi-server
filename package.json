@@ -1,6 +1,6 @@
 {
   "name": "archi-server-tests",
-  "version": "1.8.0",
+  "version": "1.8.1",
   "description": "Test suite for ArchiMate Model API Server",
   "type": "module",
   "private": true,
