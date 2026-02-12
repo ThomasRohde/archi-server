@@ -90,6 +90,7 @@ The server also exposes reusable MCP prompts for common ArchiMate modeling workf
 These prompts are guidance templates only; model mutations still happen through explicit tool calls.
 
 - `archi_assess_current_state`: Baseline health, structure, diagnostics, and scoped findings before any changes.
+- `archi_general_archimate_modeling`: Run a general-purpose ArchiMate workflow for scoped modeling, refinement, or analysis tasks.
 - `archi_design_capability_map`: Design or refine capability maps with strategy traceability and optional heatmap guidance.
 - `archi_model_business_application_alignment`: Build service-mediated alignment between business processes and applications.
 - `archi_model_application_integration`: Model application integration with simple, service-based, or full-detail patterns.

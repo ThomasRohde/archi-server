@@ -278,6 +278,90 @@ export function registerArchiModelingPrompts(server: McpServer): void {
   );
 
   server.registerPrompt(
+    'archi_general_archimate_modeling',
+    {
+      title: 'General ArchiMate Modeling',
+      description:
+        'General-purpose workflow for ArchiMate modeling tasks across motivation, strategy, core, and migration layers.',
+    },
+    async () => {
+      const text = buildWorkflowPrompt({
+        goal: 'Execute ArchiMate modeling requests safely and semantically correctly from clarification through validated updates.',
+        context: {},
+        inputRequirements: [
+          {
+            key: 'modelingObjective',
+            required: true,
+            description:
+              'Concrete outcome to deliver, for example create, refine, analyze, or align architecture artifacts.',
+            askWhenMissing: 'What exact modeling objective should I deliver?',
+          },
+          {
+            key: 'scope',
+            required: true,
+            description: 'Domain/system/program boundary for the modeling activity.',
+            askWhenMissing: 'What is the exact scope boundary for this modeling task?',
+          },
+          {
+            key: 'targetLayers',
+            required: false,
+            description: 'Primary ArchiMate layers involved in the task.',
+            askWhenMissing:
+              'Which layers should be in scope: motivation, strategy, business, application, technology, implementation, or cross-layer?',
+            recommendedDefault: 'business, application, technology',
+          },
+          {
+            key: 'abstractionLevel',
+            required: false,
+            description: 'Requested depth of detail for modeling output.',
+            askWhenMissing: 'What abstraction level should I use: overview, coherence, or detail?',
+            recommendedDefault: 'coherence',
+          },
+          {
+            key: 'targetViewName',
+            required: false,
+            description: 'Optional view to update or create for presenting results.',
+            askWhenMissing: 'Should I update an existing view or create a new target view name?',
+          },
+          {
+            key: 'applyChanges',
+            required: false,
+            description: 'Whether to execute model mutations after planning and review.',
+            askWhenMissing: 'Should I stop at a change plan or apply changes after confirmation?',
+            recommendedDefault: 'false',
+          },
+        ],
+        requiredToolSequence: [
+          'Call `archi_get_health` to verify server/model availability before any analysis.',
+          'Call `archi_query_model` and `archi_get_model_stats` to baseline model structure and scale.',
+          'Call `archi_search_model` to find existing elements/relationships in the requested scope and prevent duplicates.',
+          'Call `archi_list_folders` and `archi_list_views`; if a target view is involved, call `archi_get_view_summary` or `archi_get_view` for concept/visual ID mapping.',
+          'Call `archi_plan_model_changes` as semantic preflight before any mutation proposal.',
+          'If `applyChanges=true` and user confirms, call `archi_apply_model_changes` in batches of 20 or fewer operations, then track completion with `archi_wait_for_operation` (or `archi_get_operation_status`).',
+          'When view updates are required, use `archi_create_view`/`archi_populate_view`, then `archi_layout_view`, `archi_set_view_router`, and `archi_validate_view`.',
+          'Optionally call `archi_export_view` for deliverables and `archi_save_model` for persistence when explicitly requested.',
+        ],
+        activityGuidance: [
+          'Select element types deliberately: active structure (who), behavior (what happens), passive structure (what is acted on).',
+          'Model cross-layer dependencies through services and realization chains; avoid direct business-to-technology links.',
+          'Use specific relationship types with correct direction; label flow relationships with what moves.',
+          'Apply concept-first sequencing: create/update core elements and relationships before view-object styling/layout.',
+          'Reuse existing concepts when semantics match; avoid duplicates and generic associations unless meaning is truly unknown.',
+          'Maintain consistent abstraction in one task/view and keep views readable (about 20 elements, avoid exceeding 40).',
+        ],
+        expectedOutputFormat: [
+          'Clarified objective, scope, target layers, and explicit assumptions.',
+          'Proposed model delta grouped as create/reuse/update with relationship rationale.',
+          'Execution plan with tool calls, batching strategy, and validation checkpoints.',
+          'Post-execution status: operation IDs, validation results, unresolved risks, and next recommended modeling action.',
+        ],
+      });
+
+      return singleUserMessagePrompt(text);
+    },
+  );
+
+  server.registerPrompt(
     'archi_design_capability_map',
     {
       title: 'Design Capability Map',

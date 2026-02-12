@@ -518,7 +518,7 @@ test('tool metadata exposes prompts/resources and aligned schemas', async () => 
     const { resources } = await client.listResources();
 
     assert.equal(tools.length, 28);
-    assert.equal(prompts.length, 8);
+    assert.equal(prompts.length, 9);
     assert.equal(resources.length, 2);
     assert.ok(resources.some((resource) => resource.uri === 'archi://server/defaults'));
     assert.ok(resources.some((resource) => resource.uri === 'archi://agent/quickstart'));
