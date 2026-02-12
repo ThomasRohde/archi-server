@@ -352,7 +352,7 @@ const ScriptSchema = z
 const CreateViewSchema = z
   .object({
     name: z.string().min(1).max(500).describe('Name for the new view.'),
-    viewpoint: z.string().max(200).optional().describe('Optional ArchiMate viewpoint.'),
+    viewpoint: z.string().max(200).optional().describe('Optional ArchiMate viewpoint ID or label.'),
     folder: z.string().max(500).optional().describe('Optional destination folder path or ID.'),
     documentation: z.string().max(10000).optional().describe('Optional documentation text for the view.'),
     allowDuplicate: z

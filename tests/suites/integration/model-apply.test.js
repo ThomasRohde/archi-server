@@ -296,6 +296,20 @@ describe.skipIf(!serverAvailable)('Model Apply Endpoint', () => {
   });
 
   describe('Search and element/view linkage', () => {
+    it('creates view when viewpoint is provided as a label', async () => {
+      const viewName = generateUniqueName('LabelViewpointView');
+      const createViewResponse = await httpClient.post('/views', {
+        name: viewName,
+        viewpoint: 'Layered'
+      });
+
+      expectSuccessResponse(createViewResponse);
+      expect(createViewResponse.body).toHaveProperty('viewId');
+      expect(createViewResponse.body.viewpoint).toBe('layered');
+
+      await httpClient.del(`/views/${createViewResponse.body.viewId}`);
+    });
+
     it('reports views containing an element after addToView', async () => {
       const elementName = generateUniqueName('ElementWithView');
       const createElementResponse = await httpClient.post('/model/apply', createApplyRequest([

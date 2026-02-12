@@ -832,31 +832,45 @@
      */
     function normalizeViewpointId(value) {
         if (value === null || value === undefined) return null;
-        var id = String(value).trim();
-        if (!id) return null;
-        if (id.indexOf("@") !== -1) return null;
-        if (!/^[a-z0-9_]+$/.test(id)) return null;
-        return id;
+        var raw = String(value).trim();
+        if (!raw) return null;
+        if (raw.indexOf("@") !== -1) return null;
+        var token = raw.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+        return token.length > 0 ? token : null;
+    }
+
+    function stripViewpointSuffix(token) {
+        if (!token) return token;
+        return token.replace(/_viewpoint$/, "");
     }
 
     /**
-     * Resolve viewpoint object by ID.
-     * @param {string} viewpointId - Viewpoint ID
+     * Resolve viewpoint object by ID or friendly name.
+     * @param {string} viewpointInput - Viewpoint ID or label
      * @returns {{id: string|null, viewpoint: Object|null}} Resolved viewpoint and canonical ID
      */
-    function resolveViewpointById(viewpointId) {
-        var normalizedId = normalizeViewpointId(viewpointId);
-        if (!normalizedId) {
-            return { id: null, viewpoint: null };
+    function resolveViewpoint(viewpointInput) {
+        var raw = viewpointInput === null || viewpointInput === undefined ? "" : String(viewpointInput).trim();
+        if (!raw) {
+            return { id: null, viewpoint: null, invalidFormat: false };
         }
+        if (raw.indexOf("@") !== -1) {
+            return { id: null, viewpoint: null, invalidFormat: true };
+        }
+
+        var normalizedInput = normalizeViewpointId(raw);
+        var normalizedInputStripped = stripViewpointSuffix(normalizedInput);
+        var rawLower = raw.toLowerCase();
 
         try {
             var ViewpointManager = Java.type("com.archimatetool.model.viewpoints.ViewpointManager");
             var manager = ViewpointManager.INSTANCE;
 
-            var direct = manager.getViewpoint(normalizedId);
-            if (direct) {
-                return { id: normalizedId, viewpoint: direct };
+            if (normalizedInput) {
+                var direct = manager.getViewpoint(normalizedInput);
+                if (direct) {
+                    return { id: normalizedInput, viewpoint: direct, invalidFormat: false };
+                }
             }
 
             var allVPs = manager.getAllViewpoints();
@@ -868,15 +882,40 @@
                 } catch (ignoreIdErr) {
                     candidateId = null;
                 }
-                if (candidateId === normalizedId) {
-                    return { id: candidateId, viewpoint: candidate };
+                if (!candidateId) {
+                    continue;
+                }
+
+                var candidateName = null;
+                try {
+                    candidateName = candidate.getName ? String(candidate.getName()).trim() : null;
+                } catch (ignoreNameErr) {
+                    candidateName = null;
+                }
+
+                var candidateNameToken = normalizeViewpointId(candidateName);
+                var candidateIdStripped = stripViewpointSuffix(candidateId);
+                var candidateNameTokenStripped = stripViewpointSuffix(candidateNameToken);
+
+                if (candidateId === normalizedInput) {
+                    return { id: candidateId, viewpoint: candidate, invalidFormat: false };
+                }
+                if (candidateName && candidateName.toLowerCase() === rawLower) {
+                    return { id: candidateId, viewpoint: candidate, invalidFormat: false };
+                }
+                if (candidateNameToken && candidateNameToken === normalizedInput) {
+                    return { id: candidateId, viewpoint: candidate, invalidFormat: false };
+                }
+                if (normalizedInputStripped &&
+                    (candidateIdStripped === normalizedInputStripped || candidateNameTokenStripped === normalizedInputStripped)) {
+                    return { id: candidateId, viewpoint: candidate, invalidFormat: false };
                 }
             }
         } catch (e) {
-            return { id: normalizedId, viewpoint: null };
+            return { id: normalizedInput, viewpoint: null, invalidFormat: false };
         }
 
-        return { id: normalizedId, viewpoint: null };
+        return { id: normalizedInput, viewpoint: null, invalidFormat: false };
     }
 
     /**
@@ -2617,14 +2656,15 @@
                 }
                 var viewpointId = null;
                 if (operation.viewpoint !== undefined && operation.viewpoint !== null && String(operation.viewpoint).trim() !== "") {
-                    viewpointId = normalizeViewpointId(operation.viewpoint);
-                    if (!viewpointId) {
+                    var viewpointResolution = resolveViewpoint(operation.viewpoint);
+                    if (viewpointResolution.invalidFormat) {
                         throw new Error("createView: invalid viewpoint format: " + operation.viewpoint);
                     }
 
-                    var viewpointResolution = resolveViewpointById(viewpointId);
+                    viewpointId = viewpointResolution.id;
+
                     if (!viewpointResolution || !viewpointResolution.viewpoint) {
-                        throw new Error("createView: unknown viewpoint: " + viewpointId);
+                        throw new Error("createView: unknown viewpoint: " + String(operation.viewpoint).trim());
                     }
                     viewpointId = viewpointResolution.id || viewpointId;
 

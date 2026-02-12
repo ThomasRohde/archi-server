@@ -1,13 +1,19 @@
 /**
  * monitorUI.js - SWT monitor dialog for server status and logs
  *
- * Creates a modeless SWT dialog showing server status, operation counter,
- * log display, and control buttons. Integrates with loggingQueue for
- * real-time log updates.
+ * Creates a modeless SWT dialog with a tabbed interface showing:
+ * - Log tab: real-time log display with clear/export
+ * - Settings tab: server configuration (some editable at runtime)
+ * - Stats tab: live dashboard with server metrics, operations, model summary
+ *
+ * Global status bar and stop button remain visible across all tabs.
  *
  * @module server/monitorUI
  * @requires lib/core/swtImports
  * @requires server/loggingQueue
+ * @requires server/tabs/logTab
+ * @requires server/tabs/settingsTab
+ * @requires server/tabs/statsTab
  */
 
 (function() {
@@ -31,7 +37,6 @@
         operationCountLabel: null,
         logText: null,
         stopButton: null,
-        monoFont: null,
 
         /**
          * Configuration
@@ -50,6 +55,7 @@
         _isShuttingDown: false,
         _serverRunning: true,
         _heartbeatTimer: null,
+        _statsTab: null,
 
         /**
          * Create monitor dialog
@@ -66,17 +72,21 @@
             this.config.onStop = options.onStop || null;
             this.config.onClose = options.onClose || null;
 
+            // Load tab modules
+            load(__DIR__ + "tabs/logTab.js");
+            load(__DIR__ + "tabs/settingsTab.js");
+            load(__DIR__ + "tabs/statsTab.js");
+
             // Get SWT types
             var SWT = swtImports.SWT;
             var Display = swtImports.Display;
             var Shell = swtImports.Shell;
             var Composite = swtImports.Composite;
             var Label = swtImports.Label;
-            var Text = swtImports.Text;
             var Button = swtImports.Button;
             var GridLayout = swtImports.GridLayout;
             var GridData = swtImports.GridData;
-            var Font = swtImports.Font;
+            var TabFolder = swtImports.TabFolder;
 
             var display = Display.getDefault();
 
@@ -102,7 +112,7 @@
 
             // Server status with color indicator
             var statusIndicator = new Label(statusBar, SWT.NONE);
-            statusIndicator.setText("● ");
+            statusIndicator.setText("\u25CF ");
             statusIndicator.setForeground(display.getSystemColor(SWT.COLOR_GREEN));
 
             this.statusLabel = new Label(statusBar, SWT.NONE);
@@ -118,52 +128,45 @@
             var separator1 = new Label(this.shell, SWT.SEPARATOR | SWT.HORIZONTAL);
             separator1.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
 
-            // Log text area
-            this.logText = new Text(this.shell, SWT.MULTI | SWT.READ_ONLY | SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL);
-            var logGridData = new GridData(SWT.FILL, SWT.FILL, true, true);
-            logGridData.heightHint = 300;
-            this.logText.setLayoutData(logGridData);
+            // --- TabFolder ---
+            var tabFolder = new TabFolder(this.shell, SWT.TOP);
+            tabFolder.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
 
-            // Set monospace font
-            var fontData = this.logText.getFont().getFontData()[0];
-            this.monoFont = new Font(display, fontData.getName(), fontData.getHeight(), SWT.NORMAL);
-            this.logText.setFont(this.monoFont);
-
-            // Add font disposal listener
             var self = this;
-            this.shell.addListener(SWT.Dispose, function() {
-                if (self.monoFont && !self.monoFont.isDisposed()) {
-                    self.monoFont.dispose();
-                }
+
+            // Create Log tab
+            var logTabResult = logTab.create(tabFolder, display, {
+                monitorUI: self
             });
+            this.logText = logTabResult.logText;
 
-            // Button container
-            var buttonContainer = new Composite(this.shell, SWT.NONE);
-            buttonContainer.setLayout(new GridLayout(3, false));
-            buttonContainer.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, true, false));
+            // Create Settings tab
+            settingsTab.create(tabFolder, display);
 
-            // Clear button
-            var clearButton = new Button(buttonContainer, SWT.PUSH);
-            clearButton.setText("Clear");
-            clearButton.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
-            clearButton.addListener(SWT.Selection, function() {
-                self.logText.setText("");
-            });
+            // Create Stats tab
+            this._statsTab = statsTab.create(tabFolder, display, {});
 
-            // Export button
-            var exportButton = new Button(buttonContainer, SWT.PUSH);
-            exportButton.setText("Export Log");
-            exportButton.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
-            exportButton.addListener(SWT.Selection, function() {
-                self._exportLog();
-            });
+            // --- Bottom bar ---
+            var separator2 = new Label(this.shell, SWT.SEPARATOR | SWT.HORIZONTAL);
+            separator2.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
 
-            // Stop button
-            this.stopButton = new Button(buttonContainer, SWT.PUSH);
+            var bottomBar = new Composite(this.shell, SWT.NONE);
+            bottomBar.setLayout(new GridLayout(1, false));
+            bottomBar.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+
+            // Stop button (always visible)
+            this.stopButton = new Button(bottomBar, SWT.PUSH);
             this.stopButton.setText("Stop Server");
-            this.stopButton.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
+            this.stopButton.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, true, false));
             this.stopButton.addListener(SWT.Selection, function() {
                 self._onStopButton();
+            });
+
+            // Dispose listener - clean up stats timer
+            this.shell.addListener(SWT.Dispose, function() {
+                if (self._statsTab && self._statsTab.dispose) {
+                    self._statsTab.dispose();
+                }
             });
 
             // Close handler
@@ -187,6 +190,16 @@
         },
 
         /**
+         * Set server state for the Stats tab
+         * @param {Object} serverState - Server state with startTime and serverInstance
+         */
+        setServerState: function(serverState) {
+            if (this._statsTab && this._statsTab.setServerState) {
+                this._statsTab.setServerState(serverState);
+            }
+        },
+
+        /**
          * Start heartbeat timer to prevent ghost window during idle periods
          * @param {org.eclipse.swt.widgets.Display} display - SWT Display
          * @private
@@ -194,14 +207,14 @@
         _startHeartbeat: function(display) {
             var self = this;
             var Runnable = Java.type("java.lang.Runnable");
-            
+
             var HeartbeatRunnable = Java.extend(Runnable, {
                 run: function() {
                     // Check if shell is disposed or shutting down
                     if (!self.shell || self.shell.isDisposed() || self._isShuttingDown) {
                         return;
                     }
-                    
+
                     try {
                         // Force a minimal update to keep the Display thread active
                         // This prevents Windows from marking the window as unresponsive
@@ -211,14 +224,14 @@
                     } catch (e) {
                         // Silently ignore errors during heartbeat
                     }
-                    
+
                     // Reschedule heartbeat
                     if (!self._isShuttingDown && !self.shell.isDisposed()) {
                         display.timerExec(2000, new HeartbeatRunnable());
                     }
                 }
             });
-            
+
             // Initial heartbeat schedule (every 2 seconds)
             display.timerExec(2000, new HeartbeatRunnable());
         },
@@ -248,7 +261,10 @@
          * Close the monitor dialog
          */
         close: function() {
-            this._isShuttingDown = true;  // Signal heartbeat to stop
+            this._isShuttingDown = true;  // Signal heartbeat and stats timer to stop
+            if (this._statsTab && this._statsTab.dispose) {
+                this._statsTab.dispose();
+            }
             if (this.shell && !this.shell.isDisposed()) {
                 this.shell.close();
             }

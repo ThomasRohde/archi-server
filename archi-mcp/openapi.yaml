@@ -2522,7 +2522,7 @@ components:
         viewpoint:
           type: string
           nullable: true
-          description: ArchiMate viewpoint (optional)
+          description: ArchiMate viewpoint ID or label (optional, e.g., "application_cooperation" or "Application Cooperation")
         folder:
           type: string
           nullable: true

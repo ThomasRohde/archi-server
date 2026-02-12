@@ -32,13 +32,25 @@
     // Viewpoint manager for resolving viewpoint IDs
     var ViewpointManagerClass = Java.type("com.archimatetool.model.viewpoints.ViewpointManager");
 
+    function normalizeViewpointToken(value) {
+        if (value === null || value === undefined) return null;
+        var token = String(value).trim().toLowerCase();
+        if (!token) return null;
+        token = token.replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+        return token.length > 0 ? token : null;
+    }
+
+    function stripViewpointSuffix(token) {
+        if (!token) return token;
+        return token.replace(/_viewpoint$/, "");
+    }
+
     function normalizeViewpointId(value) {
         if (value === null || value === undefined) return null;
-        var id = String(value).trim();
-        if (!id) return null;
-        if (id.indexOf("@") !== -1) return null;
-        if (!/^[a-z0-9_]+$/.test(id)) return null;
-        return id;
+        var raw = String(value).trim();
+        if (!raw) return null;
+        if (raw.indexOf("@") !== -1) return null;
+        return normalizeViewpointToken(raw);
     }
 
     function safeViewpointId(viewpointObj) {
@@ -73,23 +85,55 @@
         }
     }
 
-    function getViewpointById(viewpointId) {
-        var normalizedId = normalizeViewpointId(viewpointId);
-        if (!normalizedId) return null;
-        try {
-            var direct = ViewpointManagerClass.INSTANCE.getViewpoint(normalizedId);
-            if (direct) return direct;
+    function resolveViewpointInput(viewpointInput) {
+        var raw = viewpointInput === null || viewpointInput === undefined ? "" : String(viewpointInput).trim();
+        if (!raw) return { id: null, viewpoint: null, invalidFormat: false };
+        if (raw.indexOf("@") !== -1) return { id: null, viewpoint: null, invalidFormat: true };
 
-            var allVPs = ViewpointManagerClass.INSTANCE.getAllViewpoints();
+        var normalizedInput = normalizeViewpointToken(raw);
+        var normalizedInputStripped = stripViewpointSuffix(normalizedInput);
+        var rawLower = raw.toLowerCase();
+
+        try {
+            var manager = ViewpointManagerClass.INSTANCE;
+
+            if (normalizedInput) {
+                var direct = manager.getViewpoint(normalizedInput);
+                if (direct) {
+                    return { id: normalizedInput, viewpoint: direct, invalidFormat: false };
+                }
+            }
+
+            var allVPs = manager.getAllViewpoints();
             for (var i = 0; i < allVPs.size(); i++) {
                 var candidate = allVPs.get(i);
                 var candidateId = safeViewpointId(candidate);
-                if (candidateId === normalizedId) return candidate;
+                if (!candidateId) continue;
+
+                var candidateName = safeViewpointName(candidate);
+                var candidateNameToken = normalizeViewpointToken(candidateName);
+                var candidateIdStripped = stripViewpointSuffix(candidateId);
+                var candidateNameTokenStripped = stripViewpointSuffix(candidateNameToken);
+
+                if (candidateId === normalizedInput) {
+                    return { id: candidateId, viewpoint: candidate, invalidFormat: false };
+                }
+                if (candidateName && candidateName.toLowerCase() === rawLower) {
+                    return { id: candidateId, viewpoint: candidate, invalidFormat: false };
+                }
+                if (candidateNameToken && candidateNameToken === normalizedInput) {
+                    return { id: candidateId, viewpoint: candidate, invalidFormat: false };
+                }
+                if (normalizedInputStripped &&
+                    (candidateIdStripped === normalizedInputStripped || candidateNameTokenStripped === normalizedInputStripped)) {
+                    return { id: candidateId, viewpoint: candidate, invalidFormat: false };
+                }
             }
         } catch (e) {
-            // ignore and return null
+            // ignore and return unknown
         }
-        return null;
+
+        return { id: normalizedInput, viewpoint: null, invalidFormat: false };
     }
 
     // EMF types for view detection
@@ -579,8 +623,8 @@
 
             var viewpointId = null;
             if (body.viewpoint !== undefined && body.viewpoint !== null && String(body.viewpoint).trim() !== "") {
-                viewpointId = normalizeViewpointId(body.viewpoint);
-                if (!viewpointId) {
+                var viewpointResolution = resolveViewpointInput(body.viewpoint);
+                if (viewpointResolution.invalidFormat) {
                     response.statusCode = 400;
                     response.body = {
                         error: {
@@ -590,12 +634,14 @@
                     };
                     return;
                 }
-                if (!getViewpointById(viewpointId)) {
+
+                viewpointId = viewpointResolution.id;
+                if (!viewpointResolution.viewpoint) {
                     response.statusCode = 400;
                     response.body = {
                         error: {
                             code: "ValidationError",
-                            message: "Unknown viewpoint: " + viewpointId
+                            message: "Unknown viewpoint: " + String(body.viewpoint).trim()
                         }
                     };
                     return;

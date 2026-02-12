@@ -476,12 +476,55 @@
             return state;
         }
 
+        /**
+         * Get rate limit statistics for monitoring
+         * @returns {Object} Rate limit stats
+         */
+        function getRateLimitStats() {
+            var rateLimitConfig = (typeof serverConfig !== "undefined") ? serverConfig.rateLimit : {
+                windowMs: 60000
+            };
+
+            var now = Date.now();
+            var windowStart = now - rateLimitConfig.windowMs;
+            var totalClients = 0;
+            var blockedClients = 0;
+            var requestsInWindow = 0;
+
+            var iterator = rateLimitState.entrySet().iterator();
+            while (iterator.hasNext()) {
+                var entry = iterator.next();
+                var ipState = entry.getValue();
+                totalClients++;
+
+                if (ipState.blockedUntil > now) {
+                    blockedClients++;
+                }
+
+                var timestamps = ipState.timestamps;
+                if (timestamps && timestamps.length) {
+                    for (var i = 0; i < timestamps.length; i++) {
+                        if (timestamps[i] > windowStart) {
+                            requestsInWindow++;
+                        }
+                    }
+                }
+            }
+
+            return {
+                totalTrackedClients: totalClients,
+                blockedClients: blockedClients,
+                requestsInCurrentWindow: requestsInWindow
+            };
+        }
+
         // Public API
         var api = {
             addHandler: addHandler,
             start: start,
             stop: stop,
-            getState: getState
+            getState: getState,
+            getRateLimitStats: getRateLimitStats
         };
 
         return api;

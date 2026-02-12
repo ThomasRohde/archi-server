@@ -462,6 +462,9 @@ function routeModelEndpoint(req, res, state, apiEndpoints) {
                 onClose: function(callback) { shutdown(callback); }
             });
 
+            // 9b. Pass server state to monitor for stats tab
+            monitorUI.setServerState(state);
+
             // 10. Start operation processor
             operationQueue.startProcessor(state.displayRef, {
                 modelRef: state.modelRef,

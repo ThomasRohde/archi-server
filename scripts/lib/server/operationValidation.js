@@ -865,7 +865,7 @@
                     );
                 }
                 var viewpointValue = String(change.viewpoint).trim();
-                if (viewpointValue.indexOf("@") !== -1 || !/^[a-z0-9_]+$/.test(viewpointValue)) {
+                if (viewpointValue.indexOf("@") !== -1) {
                     throw this.createValidationError(
                         "Change " + index + " (createView): invalid viewpoint format '" + change.viewpoint + "'"
                     );
