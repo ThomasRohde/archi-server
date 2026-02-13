@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.0](https://github.com/ThomasRohde/archi-server/compare/v1.10.0...v1.11.0) (2026-02-13)
+
+
+### Features
+
+* **archi-mcp-modeling:** add JArchi to ArchiMate concept mapping reference document ([ae24520](https://github.com/ThomasRohde/archi-server/commit/ae2452063ab73eb825382c1edf8b29a4a9499337))
+* **idempotency:** implement in-memory idempotency store for /model/apply operations ([ae24520](https://github.com/ThomasRohde/archi-server/commit/ae2452063ab73eb825382c1edf8b29a4a9499337))
+* **routing:** add progressive discovery workflow and mandatory loading order ([9b2738d](https://github.com/ThomasRohde/archi-server/commit/9b2738d4f386ef4f9a22b9e96d1da783c81ba915))
+
+
+### Bug Fixes
+
+* **integration:** resolve idempotency/upsert integration issues with detailed root cause analysis ([ae24520](https://github.com/ThomasRohde/archi-server/commit/ae2452063ab73eb825382c1edf8b29a4a9499337))
+
+
+### Documentation
+
+* **prd:** create Product Requirements Document for MCP tooling improvements ([ae24520](https://github.com/ThomasRohde/archi-server/commit/ae2452063ab73eb825382c1edf8b29a4a9499337))
+
 ## [Unreleased]
 
 ### Server/API
