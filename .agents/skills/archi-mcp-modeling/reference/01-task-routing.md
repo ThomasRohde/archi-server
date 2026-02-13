@@ -93,10 +93,11 @@ User asks for something only achievable via `archi_run_script` or raw model insp
 
 | Rule | Detail |
 |---|---|
-| **Read before write** | Always search/query before creating. Duplicates are a top-quality concern. |
+| **Read before write** | Always search/query before creating. Duplicates are a top-quality concern. For idempotent workflows, use `createOrGetElement`/`createOrGetRelationship` with `onDuplicate: reuse` instead. |
 | **Wait after every mutation** | `archi_apply_model_changes` and `archi_populate_view` are async. Call `archi_wait_for_operation` before dependent ops. |
 | **No guessing** | If the user's architectural intent is unclear, ask. Do not infer element types or relationship directions. |
 | **No unnecessary destruction** | Deleting elements, relationships, or views requires explicit user confirmation. |
 | **Batch discipline** | Keep batches ≤8 operations. The MCP layer auto-chunks larger batches, but smaller is more reliable for relationship-heavy work. |
+| **Idempotency for pipelines** | When modeling is part of a rerunnable pipeline, add `idempotencyKey` to `archi_apply_model_changes` and use upsert ops. See Recipe 9 in `30-operation-recipes.md`. |
 | **Save only on request** | Never auto-save the model. Only call `archi_save_model` when the user explicitly asks. |
 | **Summary at completion** | Always report: what was created/changed, element counts, view names, and any unresolved concerns. |

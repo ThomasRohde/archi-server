@@ -134,11 +134,35 @@ Authoritative reference for every available Archi MCP tool: when to use it, requ
 
 | Family | Operations |
 |---|---|
-| **Elements** | `createElement`, `updateElement`, `deleteElement`, `setProperty`, `moveToFolder` |
-| **Relationships** | `createRelationship`, `updateRelationship`, `deleteRelationship` |
+| **Elements** | `createElement`, `createOrGetElement`, `updateElement`, `deleteElement`, `setProperty`, `moveToFolder` |
+| **Relationships** | `createRelationship`, `createOrGetRelationship`, `updateRelationship`, `deleteRelationship` |
 | **Folders** | `createFolder` |
 | **View content** | `addToView`, `addConnectionToView`, `nestInView`, `moveViewObject`, `styleViewObject`, `styleConnection`, `deleteConnectionFromView`, `createNote`, `createGroup` |
 | **Views** | `createView`, `deleteView` |
+
+#### Request-Level Fields
+
+| Field | Type | Default | Detail |
+|---|---|---|---|
+| **idempotencyKey** | string (1–128 chars, `[A-Za-z0-9:_-]+`) | — | Replay-safe key. Same key + same payload replays the cached result. Same key + different payload returns 409 conflict. 24h in-memory window. For chunked batches the MCP layer derives per-chunk keys as `${base}:chunk:${index}:of:${total}`. |
+| **duplicateStrategy** | `error` \| `reuse` \| `rename` | `error` | Request-level default. Individual operations can override with `onDuplicate`. Precedence: `onDuplicate` (op) > `duplicateStrategy` (request) > `error`. |
+
+#### Upsert Operations
+
+##### `createOrGetElement`
+- **When:** Creating an element that may already exist. Avoids search-then-create race condition.
+- **Input:** `create` (same fields as `createElement`: type, name, tempId?, documentation?, folder?, properties?), `match` (type + name), optional `onDuplicate`.
+- **Behavior by strategy:**
+  - `error` (default) — fail if a matching element exists.
+  - `reuse` — return the existing element's ID; skip creation.
+  - `rename` — create a new element with a disambiguated name (e.g., "Customer (2)").
+- **Output:** tempId resolves to either the new or the existing element ID. Result includes `reused: true` when an existing element was returned.
+
+##### `createOrGetRelationship`
+- **When:** Creating a relationship that may already exist between two elements.
+- **Input:** `create` (same fields as `createRelationship`: type, sourceId, targetId, tempId?, name?, accessType?, strength?), `match` (type + sourceId + targetId, optional accessType/strength), optional `onDuplicate`.
+- **⚠ `rename` is NOT supported** for relationships — only `error` or `reuse`.
+- **Output:** tempId resolves to either the new or the existing relationship ID.
 
 #### Key Usage Rules
 
@@ -151,6 +175,7 @@ Authoritative reference for every available Archi MCP tool: when to use it, requ
 | **createNote params** | Use `content`, NOT `text`. |
 | **Batch size** | ≤8 operations per batch. The MCP layer auto-chunks larger batches across chunk boundaries, resolving tempIds. |
 | **Connections not auto-created** | Adding elements to a view does NOT auto-create relationship connections. You must explicitly call `addConnectionToView`. |
+| **Upsert vs search-first** | Prefer `createOrGetElement`/`createOrGetRelationship` with `onDuplicate: reuse` over manual search-then-create when you want idempotent creation. Use search-first when you need to inspect or selectively reuse existing elements. |
 
 ---
 

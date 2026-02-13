@@ -43,7 +43,8 @@ Model ArchiMate content through the Archi MCP server with task-routed reference 
 These rules are non-negotiable for every task:
 
 1. **Read before write.** Always search/query existing model content before creating anything.
-2. **Async awareness.** Every `archi_apply_model_changes` call returns an `operationId`. Call `archi_wait_for_operation` before any dependent operation (layout, validate, export, next batch).
+2. **Prefer upsert for idempotent workflows.** When a workflow may be re-invoked, use `createOrGetElement`/`createOrGetRelationship` with `onDuplicate: reuse` instead of search-then-create. Add `idempotencyKey` for full replay safety.
+3. **Async awareness.** Every `archi_apply_model_changes` call returns an `operationId`. Call `archi_wait_for_operation` before any dependent operation (layout, validate, export, next batch).
 3. **`archi_populate_view` is also async.** Wait for its `operationId` before layout or validation.
 4. **tempId discipline.** Assign a `tempId` to every created element/relationship. Use resolved IDs from wait results for subsequent operations.
 5. **Visual vs concept IDs.** `addConnectionToView` requires visual object IDs (from `addToView` results), never concept IDs.
@@ -52,6 +53,7 @@ These rules are non-negotiable for every task:
 8. **No viewpoint guessing.** When creating views, omit the `viewpoint` parameter unless you know the exact supported key. Plain labels like "Application Usage" cause validation errors.
 9. **Confirm destructive ops.** Never delete elements, relationships, or views without explicit user intent.
 10. **Ambiguity = ask.** Treat unclear requirements as blocking. Ask clarifying questions rather than guessing architecture intent.
+11. **Relationship upsert limits.** `createOrGetRelationship` only supports `onDuplicate: error` or `reuse` — `rename` is invalid for relationships.
 
 ## Outcome Standard
 

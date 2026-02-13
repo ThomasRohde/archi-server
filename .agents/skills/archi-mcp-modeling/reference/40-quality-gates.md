@@ -49,6 +49,16 @@ Verify that mutations did not create orphans, duplicates, or ghosts.
 | **Batch completed cleanly** | `archi_get_operation_status` | All operations show `complete` status, no partial failures |
 | **No rollback artifacts** | `archi_get_model_diagnostics` | GEF rollback can leave partially created objects |
 
+### Duplicate prevention strategies
+
+| Strategy | When to use |
+|---|---|
+| **Search before create** | Default for interactive modeling. `archi_search_model` by type/name before `createElement`. |
+| **`createOrGetElement` + `reuse`** | Idempotent pipelines, retries, or merging from external sources. Atomically returns existing or creates new. |
+| **`duplicateStrategy: reuse`** | Request-level default that applies to all upsert ops in the batch. |
+| **`duplicateStrategy: rename`** | When duplicates are intentional (e.g., creating "Payment Service (2)" as a variant). Not available for relationships. |
+| **`idempotencyKey`** | Full replay safety — same key + same payload returns cached result without re-mutation. |
+
 ### If diagnostics show problems
 
 1. Report the exact diagnostic output to the user.

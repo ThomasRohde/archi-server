@@ -20,6 +20,8 @@ Step 5  Repeat steps 3-4          If more than 8 operations, submit additional b
 Step 6  archi_get_model_diagnostics  Verify no orphans or ghosts.
 ```
 
+**Idempotent variant:** If repeated invocations should be safe (e.g., rerunnable pipelines), use `createOrGetElement`/`createOrGetRelationship` with `onDuplicate: reuse` instead of `createElement`/`createRelationship`. This eliminates the need for step 1 search and avoids duplicates even on retry. See Recipe 9.
+
 **tempId naming convention:** Use descriptive prefixes for readability:
 - Elements: `e-customer`, `e-order-service`, `e-payment-process`
 - Relationships: `r-serves-customer`, `r-realizes-payment`
@@ -199,4 +201,62 @@ The MCP layer handles automatic retry with exponential backoff. If you receive a
 If `addConnectionToView` fails because visual IDs don't exist:
 1. Run `archi_get_view_summary` to check which visuals are actually on the view.
 2. Verify you used the visual IDs from `addToView` wait results, not concept IDs.
+3. If the element was never added to the view, add it first via `addToView`.
+
+---
+
+## Recipe 9: Idempotent / Upsert Creation
+
+**Use when:** The same modeling workflow may be re-invoked (pipelines, retries, automation scripts) and must not create duplicates.
+
+```
+Step 1  Plan batch              Use createOrGetElement / createOrGetRelationship instead of
+                                createElement / createRelationship. Assign tempIds as usual.
+                                Set onDuplicate: 'reuse' on each operation (or set request-level
+                                duplicateStrategy: 'reuse').
+Step 2  archi_apply_model_changes  Submit batch. Include idempotencyKey for full replay safety.
+                                Example: idempotencyKey='modeling-session-20260213-batch1'
+Step 3  archi_wait_for_operation   Result includes reused:true on ops that matched existing
+                                concepts. tempId → realId mapping works identically whether
+                                the element was created or reused.
+Step 4  Continue with view ops   Use resolved IDs for addToView / addConnectionToView as normal.
+Step 5  On re-run:              If exact same idempotencyKey + payload is sent again, the server
+                                replays the cached result (no model mutation). If the payload
+                                differs, a 409 Idempotency Conflict is returned.
+```
+
+**Operation structure examples:**
+
+```json
+{
+  "op": "createOrGetElement",
+  "create": { "type": "application-component", "name": "Order Service", "tempId": "e-order" },
+  "match": { "type": "application-component", "name": "Order Service" },
+  "onDuplicate": "reuse"
+}
+```
+
+```json
+{
+  "op": "createOrGetRelationship",
+  "create": { "type": "serving-relationship", "sourceId": "e-order", "targetId": "e-customer", "tempId": "r-serves" },
+  "match": { "type": "serving-relationship", "sourceId": "e-order", "targetId": "e-customer" },
+  "onDuplicate": "reuse"
+}
+```
+
+**When to use upsert vs search-first:**
+
+| Scenario | Approach |
+|---|---|
+| Automation pipeline that may re-run | `createOrGetElement` + `reuse` + `idempotencyKey` |
+| Interactive modeling with user review | Search first, then `createElement` for new concepts |
+| Merging concepts from an external source | `createOrGetElement` + `reuse` to deduplicate against existing model |
+| One-time bulk creation | `createElement` is sufficient (simpler syntax) |
+
+**Key rules:**
+- `createOrGetRelationship` does NOT support `onDuplicate: rename` — only `error` or `reuse`.
+- `onDuplicate` on individual operations overrides the request-level `duplicateStrategy`.
+- `idempotencyKey` has a 24h replay window. After that, the key expires and a new request with the same key is treated as fresh.
+- Chunked batches: the MCP layer derives per-chunk keys as `${base}:chunk:${index}:of:${total}`.
 3. If the element was never added to the view, add it first via `addToView`.
