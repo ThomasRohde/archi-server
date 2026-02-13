@@ -611,6 +611,30 @@ queryModel();
 **Problem:** "Cannot find lib/..." errors  
 **Solution:** Verify all files are in correct relative paths. The `lib/` folder must be at `scripts/lib/`.
 
+## AI Agent Skills
+
+This project includes reusable agent skills following the [Agent Skills](https://agentskills.io) open standard. Skills enable AI agents to perform complex modeling workflows, select correct ArchiMate element types, and apply established architecture patterns.
+
+### Installing Skills
+
+You can add skills to your AI agent environment using the Agent Skills registry:
+
+```bash
+# Install the ArchiMate modeling skill
+npx skills add ThomasRohde/archi-server --skill archi-mcp-modeling
+```
+
+Once installed, skills are auto-discovered by both **Claude Code** and **GitHub Copilot**.
+
+### Available Skills
+
+| Skill | Description |
+|-------|-------------|
+| **archi-mcp-modeling** | Model and evolve ArchiMate architectures through the local Archi MCP server with semantically correct element and relationship choices |
+| **mcp-builder** | Guide for creating high-quality MCP servers that enable LLMs to interact with external services |
+
+Skills are located in `.agents/skills/` and contain structured prompts, examples, and domain-specific guidance that help AI agents make correct modeling decisions.
+
 ## Development
 
 ### Architecture
