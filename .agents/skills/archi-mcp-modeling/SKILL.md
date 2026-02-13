@@ -1,4 +1,3 @@
-```skill
 ---
 name: archi-mcp-modeling
 description: 'Model and evolve ArchiMate architectures through the local Archi MCP server with semantically correct element and relationship choices. Use when asked to create/update Archi models, generate views, map capabilities to applications/technology, or apply migration roadmaps using safe async operations.'
@@ -90,4 +89,3 @@ Examples of things worth capturing:
 - [Allowed relationship matrix](./reference/allowed-relationships.md)
 - [Archi API OpenAPI spec](../../../openapi.yaml)
 - [Project-level runtime instructions](../../../.github/copilot-instructions.md)
-```
