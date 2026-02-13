@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.13.0](https://github.com/ThomasRohde/archi-server/compare/v1.12.0...v1.13.0) (2026-02-13)
+
+
+### Features
+
+* **ai-agent-skills:** add documentation for reusable agent skills and installation instructions ([49242f1](https://github.com/ThomasRohde/archi-server/commit/49242f1a78659d2e6a7bbc42d4e1cb76b06223a7))
+
+
+### Documentation
+
+* **archi-mcp-modeling:** remove unnecessary code block from SKILL.md ([989de80](https://github.com/ThomasRohde/archi-server/commit/989de80fcaa77682e6f1601523517bfda23485a5))
+
 ## [1.12.0](https://github.com/ThomasRohde/archi-server/compare/v1.11.0...v1.12.0) (2026-02-13)
 
 
