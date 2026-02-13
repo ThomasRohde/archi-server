@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Server/API
+
+* add first-class `/model/apply` idempotency (`idempotencyKey`) with 24h in-memory TTL/LRU replay store and `409 IdempotencyConflict` on payload hash mismatch
+* add request-level `duplicateStrategy` (`error|reuse|rename`) and per-operation `onDuplicate` precedence for upsert operations
+* add upsert operations `createOrGetElement` and `createOrGetRelationship` with explicit `match` contracts and deterministic `action` results (`created|reused|renamed`)
+* add validation/error codes: `InvalidDuplicateStrategy`, `InvalidMatchSpecification`, `AmbiguousMatch`, `IdempotencyConflict`
+
+### MCP
+
+* extend `archi_apply_model_changes` input contract with `idempotencyKey` and `duplicateStrategy`
+* add support for `createOrGetElement` and `createOrGetRelationship` operation types
+* derive deterministic per-chunk idempotency keys in MCP auto-chunk mode: `${idempotencyKey}:chunk:${index}:of:${total}`
+
+### CLI
+
+* add `batch apply --idempotency-key <key>` and `--duplicate-strategy <error|reuse|rename>`
+* reject combining `--skip-existing` with `--duplicate-strategy`; mark `--skip-existing` as deprecated compatibility mode
+* extend BOM/apply docs and schemas for new upsert operations and idempotency/duplicate-strategy behavior
+
 ## [1.9.0](https://github.com/ThomasRohde/archi-server/compare/v1.8.1...v1.9.0) (2026-02-12)
 
 

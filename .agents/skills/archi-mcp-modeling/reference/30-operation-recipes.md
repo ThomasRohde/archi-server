@@ -1,52 +1,202 @@
-# Operation Recipes (How to Use Tools in Sequence)
+# Operation Recipes
 
-Use these recipes for deterministic execution.
+Step-by-step sequences for common multi-step modeling tasks. Follow these recipes for deterministic, reliable execution.
 
-## Recipe 1: Add a New Capability Map Slice
+---
 
-1. `archi_search_model` for existing goal/capability/process/app components.
-2. `archi_apply_model_changes` to create missing elements and relationships with temp IDs.
-3. `archi_wait_for_operation` and collect resolved IDs.
-4. `archi_list_views` to find target map, else `archi_create_view`.
-5. `archi_apply_model_changes` with `addToView` for elements, then `addConnectionToView` for relationships.
-6. `archi_wait_for_operation` then `archi_layout_view`.
-7. `archi_validate_view` and `archi_get_model_diagnostics`.
-8. `archi_save_model` if user requested persistence.
+## Recipe 1: Create Elements and Relationships
 
-## Recipe 2: Build Application Integration View
+**Use when:** Building out a new domain, adding concepts to an existing model.
 
-1. `archi_search_model` for components/services/interfaces/data objects.
-2. Create missing concepts via `archi_apply_model_changes`.
-3. Wait via `archi_wait_for_operation`.
-4. Create/find view (`archi_create_view` or `archi_list_views`).
-5. Place visuals (`addToView`) and connect relationships (`addConnectionToView`).
-6. Apply `archi_set_view_router` (`manhattan` for orthogonal layouts).
-7. `archi_layout_view` with left-to-right rank for integration readability.
-8. Validate and optionally export via `archi_export_view`.
+```
+Step 1  archi_search_model      Search for existing elements by type/name to avoid duplicates.
+Step 2  Plan batch              Determine which elements and relationships to create.
+                                Assign a tempId to every new element and relationship.
+Step 3  archi_apply_model_changes  Submit batch (≤8 ops). Within one batch, createRelationship
+                                can reference tempIds from createElement in the same batch.
+Step 4  archi_wait_for_operation   Collect resolved IDs (tempId → realId mapping).
+Step 5  Repeat steps 3-4          If more than 8 operations, submit additional batches.
+                                Use resolved realIds from prior batches for cross-references.
+Step 6  archi_get_model_diagnostics  Verify no orphans or ghosts.
+```
 
-## Recipe 3: Repair an Existing View
+**tempId naming convention:** Use descriptive prefixes for readability:
+- Elements: `e-customer`, `e-order-service`, `e-payment-process`
+- Relationships: `r-serves-customer`, `r-realizes-payment`
+- Visuals: `v-customer`, `v-order-service`
 
-1. `archi_get_view_summary` to inspect concept coverage quickly.
-2. `archi_validate_view` to detect broken connections.
-3. `archi_get_view` when geometry-level repair is needed.
-4. `archi_apply_model_changes` to move/style/nest and reconnect visuals.
-5. `archi_wait_for_operation`, then `archi_layout_view` if broad structural changes were made.
-6. Re-run `archi_validate_view`.
+---
 
-## Recipe 4: Controlled Large Change Set
+## Recipe 2: Build a View from Existing Concepts
 
-1. Partition changes into coherent chunks (prefer ≤8 operations, especially for relationship-heavy work).
-2. For each chunk:
-   - `archi_apply_model_changes`
-   - `archi_wait_for_operation`
-   - Optional `archi_get_model_diagnostics`
-3. On any failure, stop immediately, capture diagnostics/model snapshot, and report exact failing chunk + operation context.
-4. Continue only when prior chunk is complete and clean.
+**Use when:** Creating a new diagram from elements that already exist in the model.
 
-## Recipe 5: Read-Only Audit
+```
+Step 1  archi_list_views           Check if a similar view already exists.
+Step 2  archi_search_model         Gather element IDs for concepts to include.
+Step 3  archi_create_view          Create the new view (omit viewpoint to avoid validation errors).
+Step 4  archi_populate_view        Pass elementIds + viewId with autoConnect=true.
+                                   This places elements and auto-connects existing relationships.
+Step 5  archi_wait_for_operation   populate_view is async — MUST wait before layout.
+Step 6  archi_set_view_router      Optional: set to 'manhattan' for clean orthogonal routing.
+Step 7  archi_layout_view          Auto-arrange. Use rankdir='TB' for layered, 'LR' for flow.
+Step 8  archi_validate_view        Check for broken connections.
+Step 9  archi_export_view          Optional: export PNG/JPG if user requested.
+```
 
-1. `archi_get_model_stats` and `archi_query_model`.
-2. `archi_search_model` for naming and type consistency checks.
-3. `archi_get_relationships_between_elements` for suspicious clusters.
-4. `archi_get_model_diagnostics` for orphans/ghosts.
-5. Summarize issues and propose minimal remediation steps.
+---
+
+## Recipe 3: Build a View from New Concepts (End-to-End)
+
+**Use when:** User describes a scenario and expects both elements and a view.
+
+```
+Step 1   archi_search_model         Search broadly for reusable existing elements.
+Step 2   archi_apply_model_changes  Create missing elements + relationships (batch ≤8).
+Step 3   archi_wait_for_operation   Collect tempId → realId mappings.
+Step 4   Repeat 2-3                 For additional batches if needed.
+Step 5   archi_create_view          Create the target view.
+Step 6   archi_apply_model_changes  addToView for all elements. Assign tempId to each visual.
+                                    Use parentVisualId for nesting (e.g., node containing device).
+Step 7   archi_wait_for_operation   Collect visual tempId → visual realId mappings.
+Step 8   archi_apply_model_changes  addConnectionToView for relationships.
+                                    Use sourceVisualId/targetVisualId from step 7 results.
+Step 9   archi_wait_for_operation   Confirm connections placed.
+Step 10  archi_set_view_router      Optional: 'manhattan' for technical views.
+Step 11  archi_layout_view          Auto-arrange.
+Step 12  archi_validate_view        Verify integrity.
+Step 13  archi_get_model_diagnostics  Optional: broader model health check.
+```
+
+**Critical:** Steps 6-7 and 8-9 cannot be merged. You need visual IDs from addToView before you can create connections.
+
+---
+
+## Recipe 4: Repair or Extend an Existing View
+
+**Use when:** Fixing broken connections, adding missing elements, or restyling.
+
+```
+Step 1  archi_get_view_summary     Quick concept coverage check. Note what's present/missing.
+Step 2  archi_validate_view        Detect broken connections or violations.
+Step 3  archi_get_view             Full detail only if geometry-level repair is needed.
+Step 4  archi_apply_model_changes  Fix issues: add missing visuals, reconnect, restyle, move.
+Step 5  archi_wait_for_operation   Confirm changes applied.
+Step 6  archi_layout_view          Only if broad structural changes were made.
+Step 7  archi_validate_view        Re-validate to confirm fixes.
+```
+
+---
+
+## Recipe 5: Controlled Large Change Set (20+ operations)
+
+**Use when:** Bulk creation of many elements, relationships, or view objects.
+
+```
+Step 1  Partition changes           Split into coherent chunks of ≤8 operations.
+                                    Group by: elements first, then relationships, then view ops.
+Step 2  For each chunk:
+        a. archi_apply_model_changes  Submit chunk. All tempId references from prior chunks
+                                      should use resolved realIds.
+        b. archi_wait_for_operation   Confirm completion, collect new ID mappings.
+        c. archi_get_model_diagnostics  Optional: check health after each chunk.
+Step 3  On any failure:              STOP immediately. Do not continue with remaining chunks.
+                                    Capture: failing chunk index, operation that failed,
+                                    diagnostic output, and operation status detail.
+                                    Report to user with remediation options.
+Step 4  After all chunks complete:  Run final diagnostics and validation.
+```
+
+**Chunking strategy for view assembly:**
+1. First batch: all `addToView` operations (get visual IDs).
+2. Second batch: all `addConnectionToView` operations (using visual IDs from step 1).
+3. Third batch: any `nestInView`, `moveViewObject`, `styleViewObject` operations.
+
+---
+
+## Recipe 6: Read-Only Model Audit
+
+**Use when:** User wants quality assessment without changes.
+
+```
+Step 1  archi_get_model_stats        Get overall model shape and counts.
+Step 2  archi_query_model            Sample elements for naming/typing spot-checks.
+Step 3  archi_search_model           Targeted searches for anti-patterns:
+                                     - Search by type to check naming consistency within a type.
+                                     - Search for elements with generic names.
+Step 4  archi_get_relationships_between_elements  Check suspicious clusters for
+                                     circular dependencies or missing links.
+Step 5  archi_get_model_diagnostics  Check for orphans, ghosts, rollback artifacts.
+Step 6  archi_list_views             Identify views. Run archi_validate_view on key views.
+Step 7  Report:                      Summarize findings with severity, provide remediation steps.
+                                     Do not apply fixes without explicit user approval.
+```
+
+---
+
+## Recipe 7: Capability Map View
+
+**Use when:** Building a structured capability overview with optional heat mapping.
+
+```
+Step 1  archi_search_model type='capability'  Find existing capabilities.
+Step 2  archi_search_model type='goal'        Find goals that capabilities realize.
+Step 3  Create missing capabilities and goals via archi_apply_model_changes.
+Step 4  Create realization relationships (capability → goal, process → capability).
+Step 5  archi_wait_for_operation.
+Step 6  archi_create_view name='Capability Map'.
+Step 7  archi_apply_model_changes: addToView for top-level capabilities.
+        Use parentVisualId to nest sub-capabilities inside parent visual objects.
+Step 8  archi_wait_for_operation → get visual IDs.
+Step 9  archi_apply_model_changes: addConnectionToView for realization relationships.
+Step 10 archi_wait_for_operation.
+Step 11 archi_layout_view algorithm='dagre' rankdir='TB'.
+Step 12 Optional: archi_apply_model_changes with styleViewObject to color-code
+        capabilities by maturity (green=#00CC66, yellow=#FFCC00, red=#FF3333).
+Step 13 archi_validate_view.
+```
+
+---
+
+## Recipe 8: Migration Roadmap View
+
+**Use when:** Modeling architecture transitions with plateaus, gaps, and work packages.
+
+```
+Step 1  Create plateaus: Baseline, Transition(s), Target.
+Step 2  Create gap elements linking plateaus.
+Step 3  Create work packages and deliverables.
+Step 4  Create relationships:
+        - plateau → [triggering] → plateau (timeline sequence)
+        - gap → [association] → plateau pairs
+        - work-package → [realizes] → deliverable
+        - deliverable → [realizes] → plateau
+Step 5  archi_wait_for_operation.
+Step 6  Create view, add all elements, add connections.
+Step 7  Layout with rankdir='LR' for timeline flow.
+Step 8  Optional: style plateaus with distinct colors per state.
+Step 9  Validate.
+```
+
+---
+
+## Error Recovery
+
+### Batch failure mid-sequence
+
+1. Note the exact chunk number and operation that failed.
+2. Run `archi_get_operation_status` with the failed `operationId` for error detail.
+3. Run `archi_get_model_diagnostics` to check for partial application / orphans.
+4. Report to user: what succeeded, what failed, what the model state is.
+5. Do not retry the failed batch automatically — let the user decide.
+
+### Rate limiting (HTTP 429)
+
+The MCP layer handles automatic retry with exponential backoff. If you receive a 429 error directly, wait 30 seconds before retrying.
+
+### Missing visual IDs for connections
+
+If `addConnectionToView` fails because visual IDs don't exist:
+1. Run `archi_get_view_summary` to check which visuals are actually on the view.
+2. Verify you used the visual IDs from `addToView` wait results, not concept IDs.
+3. If the element was never added to the view, add it first via `addToView`.

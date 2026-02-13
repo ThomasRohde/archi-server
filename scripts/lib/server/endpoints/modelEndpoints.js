@@ -590,6 +590,8 @@
          * @param {Object} serverState - Server state object (unused)
          */
         handleApply: function(request, response, serverState) {
+            var body = request.body || {};
+
             // Get current model snapshot for duplicate checking
             var snapshot = null;
             if (typeof modelSnapshot !== "undefined" && modelSnapshot) {
@@ -597,26 +599,92 @@
             }
 
             try {
-                operationValidation.validateApplyRequest(request.body, snapshot);
+                operationValidation.validateApplyRequest(body, snapshot);
             } catch (e) {
                 response.statusCode = 400;
                 response.body = {
                     error: {
-                        code: "ValidationError",
+                        code: e && e.code ? String(e.code) : "ValidationError",
                         message: String(e)
                     }
                 };
                 return;
             }
 
-            var changes = request.body.changes;
+            var changes = body.changes;
+            var duplicateStrategy = body.duplicateStrategy || "error";
+            var idempotencyKey = body.idempotencyKey || null;
+            var idempotencyReservation = null;
+            var idempotencyMeta = null;
+
+            if (idempotencyKey &&
+                typeof idempotencyStore !== "undefined" &&
+                idempotencyStore &&
+                typeof idempotencyStore.validateKey === "function" &&
+                typeof idempotencyStore.hashApplyRequestBody === "function" &&
+                typeof idempotencyStore.reserve === "function") {
+                try {
+                    idempotencyKey = idempotencyStore.validateKey(idempotencyKey);
+                    var payloadHash = idempotencyStore.hashApplyRequestBody(body);
+                    idempotencyReservation = idempotencyStore.reserve(idempotencyKey, payloadHash);
+                } catch (idempotencyErr) {
+                    response.statusCode = 400;
+                    response.body = {
+                        error: {
+                            code: idempotencyErr && idempotencyErr.code ? String(idempotencyErr.code) : "ValidationError",
+                            message: String(idempotencyErr)
+                        }
+                    };
+                    return;
+                }
+
+                if (idempotencyReservation && idempotencyReservation.status === "conflict") {
+                    response.statusCode = 409;
+                    response.body = {
+                        error: {
+                            code: "IdempotencyConflict",
+                            message: "idempotencyKey '" + idempotencyKey + "' was already used with a different payload."
+                        },
+                        operationId: idempotencyReservation.record ? idempotencyReservation.record.operationId : null,
+                        idempotency: idempotencyStore.buildResponseMeta(idempotencyReservation.record, false)
+                    };
+                    return;
+                }
+
+                if (idempotencyReservation && idempotencyReservation.status === "replay") {
+                    var replayRecord = idempotencyReservation.record;
+                    var replayOperationId = replayRecord ? replayRecord.operationId : null;
+                    var replayOperation = replayOperationId ? operationQueue.getOperationStatus(replayOperationId) : null;
+                    var replayStatus = replayOperation ? replayOperation.status : (replayRecord ? replayRecord.status : "queued");
+
+                    response.body = {
+                        operationId: replayOperationId,
+                        status: replayStatus || "queued",
+                        message: replayOperationId
+                            ? "Idempotent replay. Returning existing operation: " + replayOperationId
+                            : "Idempotent replay. Existing operation is reserved but not yet assigned.",
+                        digest: replayOperation ? (replayOperation.digest || null) : null,
+                        tempIdMap: replayOperation ? (replayOperation.tempIdMap || {}) : {},
+                        tempIdMappings: replayOperation ? (replayOperation.tempIdMappings || []) : [],
+                        idempotency: idempotencyStore.buildResponseMeta(replayRecord, true)
+                    };
+                    return;
+                }
+
+                if (idempotencyReservation && idempotencyReservation.record) {
+                    idempotencyMeta = idempotencyStore.buildResponseMeta(idempotencyReservation.record, false);
+                }
+            }
 
             if (typeof loggingQueue !== "undefined" && loggingQueue) {
                 loggingQueue.log("[" + request.requestId + "] Apply: Queuing " + changes.length + " change(s) for processing");
             }
 
             // Create operation descriptor
-            var operation = operationQueue.createOperation(changes);
+            var operation = operationQueue.createOperation(changes, {
+                idempotencyKey: idempotencyKey || null,
+                duplicateStrategy: duplicateStrategy
+            });
             operation.requestId = request.requestId;  // Track originating request
 
             var requestedByType = {};
@@ -627,6 +695,22 @@
 
             // Queue for processing
             operationQueue.queueOperation(operation);
+
+            if (idempotencyKey &&
+                typeof idempotencyStore !== "undefined" &&
+                idempotencyStore &&
+                typeof idempotencyStore.attachOperation === "function") {
+                try {
+                    var attachedRecord = idempotencyStore.attachOperation(idempotencyKey, operation.id);
+                    if (attachedRecord) {
+                        idempotencyMeta = idempotencyStore.buildResponseMeta(attachedRecord, false);
+                    }
+                } catch (idempotencyAttachErr) {
+                    if (typeof loggingQueue !== "undefined" && loggingQueue) {
+                        loggingQueue.warn("[" + request.requestId + "] Idempotency attach failed: " + idempotencyAttachErr);
+                    }
+                }
+            }
 
             if (typeof loggingQueue !== "undefined" && loggingQueue) {
                 loggingQueue.log("[" + request.requestId + "] Apply: Operation queued: " + operation.id);
@@ -655,7 +739,8 @@
                     }
                 },
                 tempIdMap: {},
-                tempIdMappings: []
+                tempIdMappings: [],
+                idempotency: idempotencyMeta || undefined
             };
         },
 

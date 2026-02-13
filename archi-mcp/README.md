@@ -83,6 +83,8 @@ Mutation tools:
 - `archi_get_operation_status` accepts both `operationId` and `opId` for compatibility, plus `summaryOnly`, `cursor`, and `pageSize` for compact paged reads.
 - `archi_list_operations` supports `cursor` and `summaryOnly`, and returns `hasMore`/`nextCursor` for deterministic paging.
 - Operation responses include additive metadata blocks: `digest`, `timeline`, `tempIdMap`, `tempIdMappings`, and `retryHints` (when applicable).
+- `archi_apply_model_changes` accepts request-level `idempotencyKey` and `duplicateStrategy` (`error|reuse|rename`).
+- In auto-chunk mode, MCP derives deterministic keys per chunk: `${idempotencyKey}:chunk:${index}:of:${total}`.
 - `archi_list_views` supports name/type/viewpoint filtering plus pagination metadata to reduce context bloat.
 - MCP resources `archi://server/defaults` (runtime config) and `archi://agent/quickstart` (recommended workflow) provide agent bootstrapping context.
 
@@ -94,6 +96,7 @@ Mutation tools:
 - Geometry typing: `x`, `y`, `width`, and `height` must be numeric values (not quoted strings).
 - Folder operations: `createFolder` supports `parentId`, `parentType`, or `parentFolder`; same-batch `moveToFolder.folderId` can reference a `createFolder` `tempId`.
 - `archi_populate_view` may return `status: "no-op"` with no `operationId` when nothing needs to change.
+- Upsert operations are supported: `createOrGetElement` and `createOrGetRelationship` (`onDuplicate` overrides request-level strategy).
 
 ### Operation response notes
 

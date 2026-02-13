@@ -14,7 +14,7 @@ export function modelApplyCommand(): Command {
   return new Command('apply')
     .description(
       'Apply a single JSON file of changes (up to 1000 operations per request).\n\n' +
-        'File format: { "changes": [ ...operations... ] }\n\n' +
+        'File format: { "changes": [ ...operations... ], "idempotencyKey"?: "...", "duplicateStrategy"?: "error|reuse|rename" }\n\n' +
         'This is a low-level command. For most use cases prefer "batch apply" which\n' +
         'handles validation, chunking, polling, and tempId→realId persistence.\n\n' +
         'The apply operation is ASYNC. Without --poll the response contains only\n' +

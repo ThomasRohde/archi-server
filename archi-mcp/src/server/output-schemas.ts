@@ -278,6 +278,14 @@ export const ApplyDataSchema = z
     chunks: z.array(z.unknown()).optional(),
     digest: LooseObjectSchema.optional(),
     tempIdMappings: LooseObjectArraySchema.optional(),
+    idempotency: z
+      .object({
+        key: z.string(),
+        replayed: z.boolean(),
+        firstSeenAt: z.string(),
+        expiresAt: z.string(),
+      })
+      .optional(),
     hasMore: z.boolean().optional(),
     nextCursor: z.string().nullable().optional(),
   })

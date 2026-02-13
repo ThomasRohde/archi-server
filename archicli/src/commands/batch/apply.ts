@@ -159,9 +159,9 @@ async function collectRecoverySnapshot(): Promise<Record<string, unknown>> {
 export function batchApplyCommand(): Command {
   return new Command('apply')
     .description(
-      'Apply a BOM file to the ArchiMate model.\n\n' +
+        'Apply a BOM file to the ArchiMate model.\n\n' +
         'CORRECTNESS-FIRST: Operations are submitted in small deterministic batches\n' +
-        '(default chunk-size 8) and verified via polling by default. This reduces\n' +
+        '(default chunk-size 8). Polling is enabled by default. This reduces\n' +
         'GEF CompoundCommand rollback risk while keeping throughput practical.\n\n' +
         'TEMPID RESOLUTION ORDER (per chunk submission):\n' +
         '  1. Declared "idFiles" in the BOM (loaded upfront)\n' +
@@ -176,9 +176,11 @@ export function batchApplyCommand(): Command {
         '  archicli batch apply model/elements.json --fast\n' +
         '  # chunk-size 20, no connection validation — for bulk creates where speed matters\n\n' +
         'IDEMPOTENT RE-APPLY:\n' +
+        '  archicli batch apply model/elements.json --idempotency-key run-20260213 --duplicate-strategy reuse\n' +
+        '  # safely re-run: same key + same payload replays existing operation IDs; duplicate creates are reused\n\n' +
+        'LEGACY MODE (deprecated):\n' +
         '  archicli batch apply model/elements.json --skip-existing\n' +
-        '  # safely re-run: skips createElement ops that already exist,\n' +
-        '  # recovers their real IDs, and continues with remaining ops'
+        '  # fallback duplicate-skip behavior kept for backward compatibility'
     )
     .argument('<file>', 'path to BOM JSON file')
     .option('-c, --chunk-size <n>', 'operations per API request (default 8 for reliability, max 1000)', '8')
@@ -189,6 +191,14 @@ export function batchApplyCommand(): Command {
     .option('--save-ids [path]', 'save tempId→realId map after apply (default: <file>.ids.json)')
     .option('--no-save-ids', 'skip saving the ID map after apply')
     .option(
+      '--idempotency-key <key>',
+      'caller-provided idempotency key (chunked requests derive deterministic per-chunk keys)'
+    )
+    .option(
+      '--duplicate-strategy <strategy>',
+      'request-level duplicate strategy: error, reuse, rename'
+    )
+    .option(
       '--resolve-names',
       'query model by exact name for unresolved concept tempIds (does not resolve visual IDs)'
     )
@@ -198,7 +208,7 @@ export function batchApplyCommand(): Command {
     )
     .option(
       '--skip-existing',
-      'on duplicate create validation errors, skip only the duplicate change and continue'
+      '(deprecated) on duplicate create validation errors, skip only the duplicate change and continue'
     )
     .option(
       '--allow-empty',
@@ -243,6 +253,8 @@ export function batchApplyCommand(): Command {
           poll: boolean;
           pollTimeout: string;
           saveIds?: string | boolean;
+          idempotencyKey?: string;
+          duplicateStrategy?: string;
           resolveNames?: boolean;
           allowIncompleteIdfiles?: boolean;
           skipExisting?: boolean;
@@ -304,6 +316,41 @@ export function batchApplyCommand(): Command {
             warnings.push(
               '`batch apply` already polls by default. `--poll` is deprecated; remove it or use `--no-poll` to disable polling.'
             );
+          }
+
+          const idempotencyKey =
+            typeof options.idempotencyKey === 'string' && options.idempotencyKey.trim().length > 0
+              ? options.idempotencyKey.trim()
+              : undefined;
+          if (idempotencyKey && !/^[A-Za-z0-9:_-]{1,128}$/.test(idempotencyKey)) {
+            throw new ArgumentValidationError(
+              "Invalid --idempotency-key. Must match ^[A-Za-z0-9:_-]+$ and be 1-128 characters."
+            );
+          }
+
+          const duplicateStrategyRaw =
+            typeof options.duplicateStrategy === 'string' && options.duplicateStrategy.trim().length > 0
+              ? options.duplicateStrategy.trim().toLowerCase()
+              : undefined;
+          const duplicateStrategy =
+            duplicateStrategyRaw as 'error' | 'reuse' | 'rename' | undefined;
+          if (
+            duplicateStrategyRaw !== undefined &&
+            duplicateStrategyRaw !== 'error' &&
+            duplicateStrategyRaw !== 'reuse' &&
+            duplicateStrategyRaw !== 'rename'
+          ) {
+            throw new ArgumentValidationError(
+              "Invalid --duplicate-strategy. Valid values: error, reuse, rename."
+            );
+          }
+          if (options.skipExisting && duplicateStrategy) {
+            throw new ArgumentValidationError(
+              'Cannot combine --skip-existing with --duplicate-strategy. Choose one duplicate handling mode.'
+            );
+          }
+          if (options.skipExisting) {
+            warnings.push('`--skip-existing` is deprecated. Prefer `--duplicate-strategy reuse` for deterministic behavior.');
           }
 
           // --fast mode: override to batch-oriented defaults for speed
@@ -524,7 +571,20 @@ export function batchApplyCommand(): Command {
               }
 
               try {
-                resp = await post<ApplyResponse>('/model/apply', { changes: currentChunk });
+                const applyPayload: {
+                  changes: unknown[];
+                  idempotencyKey?: string;
+                  duplicateStrategy?: 'error' | 'reuse' | 'rename';
+                } = {
+                  changes: currentChunk,
+                };
+                if (duplicateStrategy) {
+                  applyPayload.duplicateStrategy = duplicateStrategy;
+                }
+                if (idempotencyKey) {
+                  applyPayload.idempotencyKey = `${idempotencyKey}:chunk:${i + 1}:of:${chunks.length}`;
+                }
+                resp = await post<ApplyResponse>('/model/apply', applyPayload);
                 break;
               } catch (err) {
                 if (

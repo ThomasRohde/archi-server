@@ -171,6 +171,31 @@
             return null;
         },
 
+        _normalizeDuplicateStrategy: function(value, allowRename) {
+            var raw = value === undefined || value === null ? "" : String(value).trim().toLowerCase();
+            if (raw === "") return null;
+            if (raw !== "error" && raw !== "reuse" && raw !== "rename") {
+                throw this.createValidationError(
+                    "Invalid duplicate strategy '" + value + "'. Valid values: error, reuse, rename.",
+                    "InvalidDuplicateStrategy"
+                );
+            }
+            if (!allowRename && raw === "rename") {
+                throw this.createValidationError(
+                    "Duplicate strategy 'rename' is not valid for relationship upsert operations.",
+                    "InvalidDuplicateStrategy"
+                );
+            }
+            return raw;
+        },
+
+        _resolveDuplicateStrategyForOperation: function(change, batchContext, allowRename) {
+            var requestDefault = (batchContext && batchContext.defaultDuplicateStrategy) ?
+                batchContext.defaultDuplicateStrategy : "error";
+            var operationOverride = this._normalizeDuplicateStrategy(change.onDuplicate, allowRename);
+            return operationOverride || requestDefault || "error";
+        },
+
         /**
          * Validate apply request body
          * @param {Object} body - Request body to validate
@@ -198,11 +223,26 @@
                 );
             }
 
+            if (body.idempotencyKey !== undefined && body.idempotencyKey !== null && body.idempotencyKey !== "") {
+                var key = String(body.idempotencyKey).trim();
+                if (!/^[A-Za-z0-9:_-]{1,128}$/.test(key)) {
+                    throw this.createValidationError(
+                        "Invalid idempotencyKey. Must match ^[A-Za-z0-9:_-]+$ and be 1-128 characters.",
+                        "ValidationError"
+                    );
+                }
+                body.idempotencyKey = key;
+            }
+
+            var requestDuplicateStrategy = this._normalizeDuplicateStrategy(body.duplicateStrategy, true) || "error";
+            body.duplicateStrategy = requestDuplicateStrategy;
+
             // Track elements and relationships created within this batch for intra-batch duplicate detection
             var batchContext = {
                 createdElements: [],  // Array of {name, type, tempId}
                 createdRelationships: [],  // Array of {sourceId, targetId, type, tempId}
-                tempIdMap: {}  // Map tempId to {name, type} for relationship resolution
+                tempIdMap: {},  // Map tempId to {name, type} for relationship resolution
+                defaultDuplicateStrategy: requestDuplicateStrategy
             };
 
             // Validate each change
@@ -239,6 +279,12 @@
                     break;
                 case "createRelationship":
                     this.validateCreateRelationship(change, index, modelSnapshot, batchContext);
+                    break;
+                case "createOrGetElement":
+                    this.validateCreateOrGetElement(change, index, modelSnapshot, batchContext);
+                    break;
+                case "createOrGetRelationship":
+                    this.validateCreateOrGetRelationship(change, index, modelSnapshot, batchContext);
                     break;
                 case "setProperty":
                     this.validateSetProperty(change, index);
@@ -475,6 +521,152 @@
                     accessType: change.accessType,
                     strength: change.strength
                 });
+            }
+        },
+
+        /**
+         * Validate createOrGetElement operation.
+         * Requires explicit match keys and deterministic duplicate strategy.
+         */
+        validateCreateOrGetElement: function(change, index, modelSnapshot, batchContext) {
+            if (!change.create || typeof change.create !== "object") {
+                throw this.createValidationError(
+                    "Change " + index + " (createOrGetElement): missing 'create' object",
+                    "InvalidMatchSpecification"
+                );
+            }
+            if (!change.match || typeof change.match !== "object") {
+                throw this.createValidationError(
+                    "Change " + index + " (createOrGetElement): missing 'match' object",
+                    "InvalidMatchSpecification"
+                );
+            }
+
+            var create = change.create;
+            var match = change.match;
+            if (!create.type || !create.name) {
+                throw this.createValidationError(
+                    "Change " + index + " (createOrGetElement): create requires 'type' and 'name'",
+                    "InvalidMatchSpecification"
+                );
+            }
+            if (!match.type || !match.name) {
+                throw this.createValidationError(
+                    "Change " + index + " (createOrGetElement): match requires explicit 'type' and 'name'",
+                    "InvalidMatchSpecification"
+                );
+            }
+
+            var normalizedCreateType = this.normalizeElementType(create.type);
+            var normalizedMatchType = this.normalizeElementType(match.type);
+            if (!this.isValidElementType(normalizedCreateType)) {
+                throw this.createValidationError(
+                    "Change " + index + " (createOrGetElement): invalid element type '" + create.type + "'",
+                    "InvalidMatchSpecification"
+                );
+            }
+            if (!this.isValidElementType(normalizedMatchType)) {
+                throw this.createValidationError(
+                    "Change " + index + " (createOrGetElement): invalid match type '" + match.type + "'",
+                    "InvalidMatchSpecification"
+                );
+            }
+            if (normalizedCreateType !== normalizedMatchType) {
+                throw this.createValidationError(
+                    "Change " + index + " (createOrGetElement): create.type and match.type must match",
+                    "InvalidMatchSpecification"
+                );
+            }
+            if (String(create.name) !== String(match.name)) {
+                throw this.createValidationError(
+                    "Change " + index + " (createOrGetElement): create.name and match.name must match",
+                    "InvalidMatchSpecification"
+                );
+            }
+
+            create.type = normalizedCreateType;
+            match.type = normalizedMatchType;
+            change.onDuplicate = this._resolveDuplicateStrategyForOperation(change, batchContext, true);
+        },
+
+        /**
+         * Validate createOrGetRelationship operation.
+         * Requires explicit relationship match keys and disallows rename strategy.
+         */
+        validateCreateOrGetRelationship: function(change, index, modelSnapshot, batchContext) {
+            if (!change.create || typeof change.create !== "object") {
+                throw this.createValidationError(
+                    "Change " + index + " (createOrGetRelationship): missing 'create' object",
+                    "InvalidMatchSpecification"
+                );
+            }
+            if (!change.match || typeof change.match !== "object") {
+                throw this.createValidationError(
+                    "Change " + index + " (createOrGetRelationship): missing 'match' object",
+                    "InvalidMatchSpecification"
+                );
+            }
+
+            var create = change.create;
+            var match = change.match;
+            if (!create.type || !create.sourceId || !create.targetId) {
+                throw this.createValidationError(
+                    "Change " + index + " (createOrGetRelationship): create requires 'type', 'sourceId', 'targetId'",
+                    "InvalidMatchSpecification"
+                );
+            }
+            if (!match.type || !match.sourceId || !match.targetId) {
+                throw this.createValidationError(
+                    "Change " + index + " (createOrGetRelationship): match requires explicit 'type', 'sourceId', 'targetId'",
+                    "InvalidMatchSpecification"
+                );
+            }
+            if (!this.isValidRelationshipType(create.type)) {
+                throw this.createValidationError(
+                    "Change " + index + " (createOrGetRelationship): invalid relationship type '" + create.type + "'",
+                    "InvalidMatchSpecification"
+                );
+            }
+            if (!this.isValidRelationshipType(match.type)) {
+                throw this.createValidationError(
+                    "Change " + index + " (createOrGetRelationship): invalid match type '" + match.type + "'",
+                    "InvalidMatchSpecification"
+                );
+            }
+            if (String(create.type) !== String(match.type)) {
+                throw this.createValidationError(
+                    "Change " + index + " (createOrGetRelationship): create.type and match.type must match",
+                    "InvalidMatchSpecification"
+                );
+            }
+            if (String(create.sourceId) !== String(match.sourceId) ||
+                String(create.targetId) !== String(match.targetId)) {
+                throw this.createValidationError(
+                    "Change " + index + " (createOrGetRelationship): create and match endpoints must match",
+                    "InvalidMatchSpecification"
+                );
+            }
+            if (match.accessType !== undefined && create.accessType !== undefined &&
+                String(match.accessType) !== String(create.accessType)) {
+                throw this.createValidationError(
+                    "Change " + index + " (createOrGetRelationship): create.accessType and match.accessType must match",
+                    "InvalidMatchSpecification"
+                );
+            }
+            if (match.strength !== undefined && create.strength !== undefined &&
+                String(match.strength) !== String(create.strength)) {
+                throw this.createValidationError(
+                    "Change " + index + " (createOrGetRelationship): create.strength and match.strength must match",
+                    "InvalidMatchSpecification"
+                );
+            }
+
+            change.onDuplicate = this._resolveDuplicateStrategyForOperation(change, batchContext, false);
+            if (change.onDuplicate === "rename") {
+                throw this.createValidationError(
+                    "Change " + index + " (createOrGetRelationship): duplicate strategy 'rename' is not supported",
+                    "InvalidDuplicateStrategy"
+                );
             }
         },
 
@@ -917,11 +1109,12 @@
         /**
          * Create a validation error with consistent format
          * @param {string} message - Error message
+         * @param {string} [code] - Optional error code
          * @returns {Error} Error object
          */
-        createValidationError: function(message) {
+        createValidationError: function(message, code) {
             var error = new Error(message);
-            error.code = "ValidationError";
+            error.code = code || "ValidationError";
             return error;
         }
     };

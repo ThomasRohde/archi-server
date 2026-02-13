@@ -478,6 +478,11 @@ interface ChunkedApplyResult {
   mcp?: Record<string, unknown>;
 }
 
+interface ApplyExecutionOptions {
+  idempotencyKey?: string;
+  duplicateStrategy?: 'error' | 'reuse' | 'rename';
+}
+
 async function buildRecoverySnapshot(
   api: ArchiApiClient,
   params: {
@@ -521,6 +526,7 @@ async function buildRecoverySnapshot(
 export async function executeChunkedApply(
   api: ArchiApiClient,
   allChanges: Array<Record<string, unknown>>,
+  requestOptions?: ApplyExecutionOptions,
 ): Promise<ChunkedApplyResult> {
   const MAX_CHUNK_SIZE = RELIABLE_BATCH_SIZE;
 
@@ -543,7 +549,22 @@ export async function executeChunkedApply(
     totalAliasesResolved += chunkAliases;
 
     try {
-      const applyResult = await api.postModelApply({ changes: normalizedChunk });
+      const applyPayload: {
+        changes: Array<Record<string, unknown>>;
+        idempotencyKey?: string;
+        duplicateStrategy?: 'error' | 'reuse' | 'rename';
+      } = {
+        changes: normalizedChunk,
+      };
+
+      if (requestOptions?.duplicateStrategy) {
+        applyPayload.duplicateStrategy = requestOptions.duplicateStrategy;
+      }
+      if (requestOptions?.idempotencyKey) {
+        applyPayload.idempotencyKey = `${requestOptions.idempotencyKey}:chunk:${i + 1}:of:${rawChunks.length}`;
+      }
+
+      const applyResult = await api.postModelApply(applyPayload);
       const operationId = getNonEmptyString((applyResult as Record<string, unknown>).operationId);
 
       if (!operationId) {

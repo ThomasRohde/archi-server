@@ -86,11 +86,19 @@ Example BOM:
 Useful apply flags:
 
 - `--fast`: chunk-size 20, disables connection validation/throttle
-- `--skip-existing`: idempotent re-apply behavior for duplicate creates
+- `--idempotency-key <key>`: caller-provided idempotency key (batch mode derives deterministic per-chunk keys)
+- `--duplicate-strategy <error|reuse|rename>`: request-level duplicate handling strategy for apply
+- `--skip-existing`: deprecated compatibility mode for duplicate-create re-runs
 - `--layout`: auto-layout views created/populated in this run
 - `--layout-algorithm <name>`: layout algorithm for `--layout` (`dagre` or `sugiyama`)
 - `--continue-on-error`: keep processing independent chunks
 - `--resolve-names`: resolve unresolved concept tempIds by exact name lookup (not visual IDs)
+
+Example idempotent replay-safe run:
+
+```bash
+archicli batch apply changes.json --idempotency-key run-20260213 --duplicate-strategy reuse
+```
 
 ### All commands
 
@@ -98,7 +106,7 @@ Useful apply flags:
 archicli health                       Check server connectivity and health payload
 archicli verify <file>                Validate JSON schema (and optional BOM semantics)
 archicli model query                  Get model overview and sample data
-archicli model apply <file>           Submit raw /model/apply payload from file
+archicli model apply <file>           Submit raw /model/apply payload from file (changes + optional idempotencyKey/duplicateStrategy)
 archicli model search                 Search by type/name/property filters
 archicli model element <id>           Get one element (supports --id-file tempId resolution)
 archicli model save                   Save current model (optional --path)

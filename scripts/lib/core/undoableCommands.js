@@ -1100,13 +1100,221 @@
         return results;
     }
 
+    function getConceptTypeName(concept) {
+        if (!concept || !concept.eClass) return null;
+        var className = concept.eClass().getName();
+        return className.replace(/([A-Z])/g, function(m, p, offset) {
+            return (offset > 0 ? '-' : '') + p.toLowerCase();
+        });
+    }
+
+    function isRelationshipConcept(concept) {
+        return concept && typeof concept.getSource === "function" && typeof concept.getTarget === "function";
+    }
+
+    function isViewConcept(concept) {
+        return concept && typeof concept.getChildren === "function" && !isRelationshipConcept(concept);
+    }
+
+    function findElementsByTypeAndName(model, type, name) {
+        var targetType = String(type || "").toLowerCase();
+        var targetName = String(name || "");
+        var matches = [];
+
+        function searchFolder(folder) {
+            var elements = folder.getElements();
+            for (var i = 0; i < elements.size(); i++) {
+                var concept = elements.get(i);
+                if (!concept || isRelationshipConcept(concept) || isViewConcept(concept)) continue;
+                var conceptType = getConceptTypeName(concept);
+                if (String(conceptType || "").toLowerCase() !== targetType) continue;
+                var conceptName = concept.getName ? String(concept.getName() || "") : "";
+                if (conceptName === targetName) {
+                    matches.push(concept);
+                }
+            }
+            var subfolders = folder.getFolders();
+            for (var j = 0; j < subfolders.size(); j++) {
+                searchFolder(subfolders.get(j));
+            }
+        }
+
+        var folders = model.getFolders();
+        for (var k = 0; k < folders.size(); k++) {
+            searchFolder(folders.get(k));
+        }
+
+        return matches;
+    }
+
+    function findElementsInIdMapByTypeAndName(idMap, type, name) {
+        var targetType = String(type || "").toLowerCase();
+        var targetName = String(name || "");
+        var matches = [];
+
+        for (var key in idMap) {
+            if (!idMap.hasOwnProperty(key)) continue;
+            var concept = idMap[key];
+            if (!concept || isRelationshipConcept(concept) || isViewConcept(concept)) continue;
+            if (typeof concept.getName !== "function" || typeof concept.getId !== "function") continue;
+            var conceptType = getConceptTypeName(concept);
+            if (String(conceptType || "").toLowerCase() !== targetType) continue;
+            if (String(concept.getName() || "") !== targetName) continue;
+            matches.push(concept);
+        }
+
+        return matches;
+    }
+
+    function findRelationshipsBySignature(model, signature) {
+        var targetType = String(signature.type || "").toLowerCase();
+        var sourceId = String(signature.sourceId || "");
+        var targetId = String(signature.targetId || "");
+        var accessType = signature.accessType;
+        var strength = signature.strength;
+        var matches = [];
+
+        function searchFolder(folder) {
+            var elements = folder.getElements();
+            for (var i = 0; i < elements.size(); i++) {
+                var concept = elements.get(i);
+                if (!concept || !isRelationshipConcept(concept)) continue;
+                var conceptType = String(getConceptTypeName(concept) || "").toLowerCase();
+                if (conceptType !== targetType) continue;
+
+                var src = concept.getSource ? concept.getSource() : null;
+                var tgt = concept.getTarget ? concept.getTarget() : null;
+                var srcId = src && src.getId ? src.getId() : null;
+                var tgtId = tgt && tgt.getId ? tgt.getId() : null;
+                if (String(srcId || "") !== sourceId || String(tgtId || "") !== targetId) continue;
+
+                if (accessType !== undefined && typeof concept.getAccessType === "function") {
+                    if (String(concept.getAccessType()) !== String(accessType)) continue;
+                }
+                if (strength !== undefined && typeof concept.getStrength === "function") {
+                    if (String(concept.getStrength()) !== String(strength)) continue;
+                }
+                matches.push(concept);
+            }
+            var subfolders = folder.getFolders();
+            for (var j = 0; j < subfolders.size(); j++) {
+                searchFolder(subfolders.get(j));
+            }
+        }
+
+        var folders = model.getFolders();
+        for (var k = 0; k < folders.size(); k++) {
+            searchFolder(folders.get(k));
+        }
+
+        return matches;
+    }
+
+    function findRelationshipsInIdMapBySignature(idMap, signature) {
+        var targetType = String(signature.type || "").toLowerCase();
+        var sourceId = String(signature.sourceId || "");
+        var targetId = String(signature.targetId || "");
+        var accessType = signature.accessType;
+        var strength = signature.strength;
+        var matches = [];
+
+        for (var key in idMap) {
+            if (!idMap.hasOwnProperty(key)) continue;
+            var concept = idMap[key];
+            if (!concept || !isRelationshipConcept(concept)) continue;
+            if (typeof concept.getId !== "function") continue;
+            var conceptType = String(getConceptTypeName(concept) || "").toLowerCase();
+            if (conceptType !== targetType) continue;
+
+            var src = concept.getSource ? concept.getSource() : null;
+            var tgt = concept.getTarget ? concept.getTarget() : null;
+            var srcId = src && src.getId ? src.getId() : null;
+            var tgtId = tgt && tgt.getId ? tgt.getId() : null;
+            if (String(srcId || "") !== sourceId || String(tgtId || "") !== targetId) continue;
+
+            if (accessType !== undefined && typeof concept.getAccessType === "function") {
+                if (String(concept.getAccessType()) !== String(accessType)) continue;
+            }
+            if (strength !== undefined && typeof concept.getStrength === "function") {
+                if (String(concept.getStrength()) !== String(strength)) continue;
+            }
+            matches.push(concept);
+        }
+
+        return matches;
+    }
+
+    function resolveElementCreationFolder(model, type, folderHint, idMap) {
+        if (!folderHint) {
+            return getFolderForType(model, type);
+        }
+
+        var folder =
+            (idMap && idMap[folderHint]) ||
+            findFolderById(model, folderHint) ||
+            findFolderByName(model, folderHint) ||
+            getFolderByType(model, folderHint);
+
+        if (folder) return folder;
+        return getFolderForType(model, type);
+    }
+
+    function dedupeConceptsById(concepts) {
+        var result = [];
+        var seen = {};
+        for (var i = 0; i < concepts.length; i++) {
+            var concept = concepts[i];
+            if (!concept || typeof concept.getId !== "function") continue;
+            var id = concept.getId();
+            if (!id || seen[id]) continue;
+            seen[id] = true;
+            result.push(concept);
+        }
+        return result;
+    }
+
+    function resolveDuplicateStrategy(operation, defaultStrategy, allowRename) {
+        var strategy = operation && operation.onDuplicate ? String(operation.onDuplicate).toLowerCase() : null;
+        if (!strategy || strategy.length === 0) {
+            strategy = String(defaultStrategy || "error").toLowerCase();
+        }
+        if (strategy !== "error" && strategy !== "reuse" && strategy !== "rename") {
+            var invalid = new Error("Invalid duplicate strategy '" + strategy + "'");
+            invalid.code = "InvalidDuplicateStrategy";
+            throw invalid;
+        }
+        if (!allowRename && strategy === "rename") {
+            var renameErr = new Error("Duplicate strategy 'rename' is not supported for relationships");
+            renameErr.code = "InvalidDuplicateStrategy";
+            throw renameErr;
+        }
+        return strategy;
+    }
+
+    function buildUniqueElementName(model, idMap, type, baseName) {
+        var currentName = String(baseName || "");
+        if (!currentName) return currentName;
+
+        var suffix = 2;
+        while (true) {
+            var matches = findElementsByTypeAndName(model, type, currentName);
+            var batchMatches = findElementsInIdMapByTypeAndName(idMap, type, currentName);
+            if ((matches.length + batchMatches.length) === 0) {
+                return currentName;
+            }
+            currentName = String(baseName) + " (" + suffix + ")";
+            suffix++;
+        }
+    }
+
     // =========================================================================
     function executeBatch(model, label, operations, batchConfig) {
         // Merge config: caller overrides > serverConfig > defaults
         var config = {
             maxSubCommandsPerBatch: 50,
             postExecuteVerify: true,
-            granularity: null // R2: "per-operation" to execute each op as its own CompoundCommand
+            granularity: null, // R2: "per-operation" to execute each op as its own CompoundCommand
+            defaultDuplicateStrategy: "error"
         };
         if (typeof serverConfig !== "undefined" && serverConfig.operations) {
             if (serverConfig.operations.maxSubCommandsPerBatch !== undefined) {
@@ -1126,6 +1334,19 @@
             if (batchConfig.granularity !== undefined) {
                 config.granularity = batchConfig.granularity;
             }
+            if (batchConfig.duplicateStrategy !== undefined && batchConfig.duplicateStrategy !== null) {
+                config.defaultDuplicateStrategy = String(batchConfig.duplicateStrategy).toLowerCase();
+            }
+        }
+
+        if (config.defaultDuplicateStrategy !== "error" &&
+            config.defaultDuplicateStrategy !== "reuse" &&
+            config.defaultDuplicateStrategy !== "rename") {
+            var strategyErr = new Error(
+                "Invalid duplicate strategy '" + config.defaultDuplicateStrategy + "' supplied to executeBatch"
+            );
+            strategyErr.code = "InvalidDuplicateStrategy";
+            throw strategyErr;
         }
 
         var compound = new CompoundCommand(label);
@@ -1136,6 +1357,74 @@
         // Track created object IDs for post-execution verification
         var createdElementIds = [];
         var createdRelationshipIds = [];
+
+        function queuePropertiesOnConcept(concept, propertiesObj) {
+            if (!propertiesObj || typeof propertiesObj !== "object") return;
+            var props = concept.getProperties ? concept.getProperties() : null;
+            if (!props) return;
+
+            for (var propKey in propertiesObj) {
+                if (!propertiesObj.hasOwnProperty(propKey)) continue;
+                var propValue = propertiesObj[propKey];
+                var existingProp = null;
+
+                for (var pi = 0; pi < props.size(); pi++) {
+                    var prop = props.get(pi);
+                    if (prop.getKey() === propKey) {
+                        existingProp = prop;
+                        break;
+                    }
+                }
+
+                if (existingProp) {
+                    var updateCmd = new EObjectFeatureCommand(
+                        "Set Property",
+                        existingProp,
+                        pkg.getProperty_Value(),
+                        String(propValue)
+                    );
+                    compound.add(updateCmd);
+                } else {
+                    var newProperty = factory.createProperty();
+                    var propKeyCmd = new EObjectFeatureCommand(
+                        "Set Key",
+                        newProperty,
+                        pkg.getProperty_Key(),
+                        String(propKey)
+                    );
+                    compound.add(propKeyCmd);
+
+                    var propValueCmd = new EObjectFeatureCommand(
+                        "Set Value",
+                        newProperty,
+                        pkg.getProperty_Value(),
+                        String(propValue)
+                    );
+                    compound.add(propValueCmd);
+
+                    (function(capturedProps, capturedNewProp) {
+                        var AddPropCmd = Java.extend(GEFCommand, {
+                            execute: function() {
+                                capturedProps.add(capturedNewProp);
+                            },
+                            undo: function() {
+                                capturedProps.remove(capturedNewProp);
+                            },
+                            canExecute: function() {
+                                return true;
+                            },
+                            canUndo: function() {
+                                return true;
+                            },
+                            getLabel: function() {
+                                return "Add Property";
+                            }
+                        });
+                        compound.add(new AddPropCmd());
+                    })(props, newProperty);
+                }
+            }
+        }
 
         // R1: Track operation boundaries for operation-aligned chunking
         // Each entry is the sub-command index where a logical operation starts
@@ -1169,8 +1458,11 @@
                     compound.add(docCmd);
                 }
 
+                // Set properties if provided
+                queuePropertiesOnConcept(element, op.properties);
+
                 // Add to folder
-                var folder = getFolderForType(model, op.type);
+                var folder = resolveElementCreationFolder(model, op.type, op.folder, idMap);
                 var addCmd = createAddToFolderCommand(
                     "Add " + op.name,
                     folder,
@@ -1195,6 +1487,97 @@
                 // Track for post-execution verification
                 createdElementIds.push(element.getId());
             }
+            else if (op.op === "createOrGetElement") {
+                opBoundaries.push(compound.size()); // R1: mark operation boundary
+                var createSpec = op.create || {};
+                var matchSpec = op.match || {};
+                var strategy = resolveDuplicateStrategy(op, config.defaultDuplicateStrategy, true);
+                var matchType = matchSpec.type || createSpec.type;
+                var matchName = matchSpec.name || createSpec.name;
+                var tempId = createSpec.tempId || op.tempId || null;
+
+                var matches = dedupeConceptsById(
+                    findElementsInIdMapByTypeAndName(idMap, matchType, matchName)
+                        .concat(findElementsByTypeAndName(model, matchType, matchName))
+                );
+
+                var selected = null;
+                var action = "created";
+                var plannedName = createSpec.name;
+
+                if (matches.length > 0) {
+                    if (strategy === "error") {
+                        throw new Error(
+                            "createOrGetElement: element '" + matchName + "' of type '" + matchType +
+                            "' already exists (id: " + matches[0].getId() + ")"
+                        );
+                    }
+                    if (strategy === "reuse") {
+                        if (matches.length > 1) {
+                            var ambErr = new Error(
+                                "createOrGetElement: multiple matches for '" + matchName + "' of type '" + matchType +
+                                "' (" + matches.length + " matches)"
+                            );
+                            ambErr.code = "AmbiguousMatch";
+                            throw ambErr;
+                        }
+                        selected = matches[0];
+                        action = "reused";
+                    } else if (strategy === "rename") {
+                        plannedName = buildUniqueElementName(model, idMap, createSpec.type, createSpec.name);
+                        action = (plannedName === createSpec.name) ? "created" : "renamed";
+                    }
+                }
+
+                if (!selected) {
+                    selected = createElementByType(createSpec.type);
+
+                    var coeNameCmd = new EObjectFeatureCommand(
+                        "Set Name",
+                        selected,
+                        pkg.getNameable_Name(),
+                        plannedName
+                    );
+                    compound.add(coeNameCmd);
+
+                    if (createSpec.documentation) {
+                        var coeDocCmd = new EObjectFeatureCommand(
+                            "Set Documentation",
+                            selected,
+                            pkg.getDocumentable_Documentation(),
+                            createSpec.documentation
+                        );
+                        compound.add(coeDocCmd);
+                    }
+
+                    queuePropertiesOnConcept(selected, createSpec.properties);
+
+                    var coeFolder = resolveElementCreationFolder(model, createSpec.type, createSpec.folder, idMap);
+                    var coeAddCmd = createAddToFolderCommand(
+                        "Add " + plannedName,
+                        coeFolder,
+                        selected
+                    );
+                    compound.add(coeAddCmd);
+
+                    createdElementIds.push(selected.getId());
+                }
+
+                if (tempId) {
+                    idMap[tempId] = selected;
+                }
+
+                var selectedName = selected.getName ? (selected.getName() || plannedName || createSpec.name || "") : (plannedName || "");
+                results.push({
+                    op: "createOrGetElement",
+                    action: action,
+                    tempId: tempId,
+                    realId: selected.getId(),
+                    name: selectedName,
+                    type: createSpec.type,
+                    element: action === "reused" ? undefined : selected
+                });
+            }
         }
 
         // Second pass: mutations (no deletes — deletes handled in third pass)
@@ -1205,7 +1588,7 @@
         var batchNameMap = {};
         for (var ni = 0; ni < results.length; ni++) {
             var r = results[ni];
-            if (r.op === "createElement" && r.name) {
+            if ((r.op === "createElement" || r.op === "createOrGetElement") && r.name) {
                 batchNameMap[r.realId] = r.name;
                 if (r.tempId) batchNameMap[r.tempId] = r.name;
             }
@@ -1217,6 +1600,9 @@
             // Deletes go to third pass so creates are fully committed first
             if (operation.op === "deleteConnectionFromView" || operation.op === "deleteElement" ||
                 operation.op === "deleteRelationship" || operation.op === "deleteView") {
+                continue;
+            }
+            if (operation.op === "createElement" || operation.op === "createOrGetElement") {
                 continue;
             }
 
@@ -1329,6 +1715,149 @@
 
                 // Track for post-execution verification
                 createdRelationshipIds.push(rel.getId());
+            }
+            else if (operation.op === "createOrGetRelationship") {
+                var createRel = operation.create || {};
+                var matchRel = operation.match || {};
+                var relStrategy = resolveDuplicateStrategy(operation, config.defaultDuplicateStrategy, false);
+
+                var relSource = idMap[createRel.sourceId] || findElementById(model, createRel.sourceId);
+                var relTarget = idMap[createRel.targetId] || findElementById(model, createRel.targetId);
+                if (!relSource || !relTarget) {
+                    throw new Error("createOrGetRelationship: cannot resolve source/target");
+                }
+
+                var relSignature = {
+                    type: matchRel.type || createRel.type,
+                    sourceId: relSource.getId ? relSource.getId() : createRel.sourceId,
+                    targetId: relTarget.getId ? relTarget.getId() : createRel.targetId,
+                    accessType: matchRel.accessType !== undefined ? matchRel.accessType : createRel.accessType,
+                    strength: matchRel.strength !== undefined ? matchRel.strength : createRel.strength
+                };
+
+                var relMatches = dedupeConceptsById(
+                    findRelationshipsInIdMapBySignature(idMap, relSignature)
+                        .concat(findRelationshipsBySignature(model, relSignature))
+                );
+
+                var selectedRel = null;
+                var relAction = "created";
+                var relTempId = createRel.tempId || operation.tempId || null;
+
+                if (relMatches.length > 0) {
+                    if (relStrategy === "error") {
+                        throw new Error(
+                            "createOrGetRelationship: relationship '" + relSignature.type + "' from '" +
+                            relSignature.sourceId + "' to '" + relSignature.targetId +
+                            "' already exists (id: " + relMatches[0].getId() + ")"
+                        );
+                    }
+                    if (relStrategy === "reuse") {
+                        if (relMatches.length > 1) {
+                            var relAmbErr = new Error(
+                                "createOrGetRelationship: multiple matches for '" + relSignature.type +
+                                "' from '" + relSignature.sourceId + "' to '" + relSignature.targetId +
+                                "' (" + relMatches.length + " matches)"
+                            );
+                            relAmbErr.code = "AmbiguousMatch";
+                            throw relAmbErr;
+                        }
+                        selectedRel = relMatches[0];
+                        relAction = "reused";
+                    }
+                }
+
+                if (!selectedRel) {
+                    selectedRel = createRelationshipByType(createRel.type);
+
+                    var coRelSrcCmd = new EObjectFeatureCommand(
+                        "Set Source",
+                        selectedRel,
+                        pkg.getArchimateRelationship_Source(),
+                        relSource
+                    );
+                    compound.add(coRelSrcCmd);
+
+                    var coRelTgtCmd = new EObjectFeatureCommand(
+                        "Set Target",
+                        selectedRel,
+                        pkg.getArchimateRelationship_Target(),
+                        relTarget
+                    );
+                    compound.add(coRelTgtCmd);
+
+                    if (createRel.name) {
+                        var coRelNameCmd = new EObjectFeatureCommand(
+                            "Set Name",
+                            selectedRel,
+                            pkg.getNameable_Name(),
+                            createRel.name
+                        );
+                        compound.add(coRelNameCmd);
+                    }
+
+                    if (createRel.documentation) {
+                        var coRelDocCmd = new EObjectFeatureCommand(
+                            "Set Documentation",
+                            selectedRel,
+                            pkg.getDocumentable_Documentation(),
+                            createRel.documentation
+                        );
+                        compound.add(coRelDocCmd);
+                    }
+
+                    if (createRel.accessType !== undefined && typeof selectedRel.setAccessType === "function") {
+                        (function(capturedRel, capturedAccessType) {
+                            var oldAccessType = capturedRel.getAccessType();
+                            var SetAccessCmd = Java.extend(GEFCommand, {
+                                execute: function() { capturedRel.setAccessType(capturedAccessType); },
+                                undo: function() { capturedRel.setAccessType(oldAccessType); },
+                                canExecute: function() { return true; },
+                                canUndo: function() { return true; },
+                                getLabel: function() { return "Set Access Type"; }
+                            });
+                            compound.add(new SetAccessCmd());
+                        })(selectedRel, createRel.accessType);
+                    }
+
+                    if (createRel.strength !== undefined && typeof selectedRel.setStrength === "function") {
+                        var coRelStrengthPkg = pkg.getInfluenceRelationship_Strength();
+                        var coRelStrengthCmd = new EObjectFeatureCommand(
+                            "Set Influence Strength",
+                            selectedRel,
+                            coRelStrengthPkg,
+                            createRel.strength
+                        );
+                        compound.add(coRelStrengthCmd);
+                    }
+
+                    var coRelFolder = getFolderForType(model, createRel.type);
+                    var coRelAddCmd = createAddToFolderCommand(
+                        "Add Relationship",
+                        coRelFolder,
+                        selectedRel
+                    );
+                    compound.add(coRelAddCmd);
+                    createdRelationshipIds.push(selectedRel.getId());
+                }
+
+                if (relTempId) {
+                    idMap[relTempId] = selectedRel;
+                }
+                relEndpoints[selectedRel.getId()] = { src: relSource, tgt: relTarget };
+
+                results.push({
+                    op: "createOrGetRelationship",
+                    action: relAction,
+                    tempId: relTempId,
+                    realId: selectedRel.getId(),
+                    type: createRel.type,
+                    source: relSource.getId(),
+                    sourceName: (relSource.getName && relSource.getName()) || batchNameMap[createRel.sourceId] || '',
+                    target: relTarget.getId(),
+                    targetName: (relTarget.getName && relTarget.getName()) || batchNameMap[createRel.targetId] || '',
+                    relationship: relAction === "reused" ? undefined : selectedRel
+                });
             }
             else if (operation.op === "setProperty") {
                 var elem = idMap[operation.id] || findElementById(model, operation.id);
@@ -3196,6 +3725,10 @@
         // R1: Splits only at operation boundaries — never mid-operation.
         var maxSubCmds = config.maxSubCommandsPerBatch;
         var totalSubCmds = compound.size();
+
+        if (totalSubCmds === 0) {
+            return results;
+        }
 
         if (totalSubCmds <= maxSubCmds || maxSubCmds <= 0) {
             // Small enough — execute as single compound command (original behavior)

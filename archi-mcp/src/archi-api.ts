@@ -75,7 +75,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 const SupportedApplyOperations = new Set<ApplyRequest['changes'][number]['op']>([
   'createElement',
+  'createOrGetElement',
   'createRelationship',
+  'createOrGetRelationship',
   'setProperty',
   'updateElement',
   'deleteElement',
@@ -96,12 +98,18 @@ const SupportedApplyOperations = new Set<ApplyRequest['changes'][number]['op']>(
   'deleteView',
 ]);
 
-function isApplyRequest(body: { changes: Array<Record<string, unknown>> }): body is ApplyRequest {
-  if (body.changes.length === 0) {
+const DuplicateStrategies = new Set(['error', 'reuse', 'rename']);
+
+function isApplyRequest(body: {
+  changes: Array<Record<string, unknown>>;
+  idempotencyKey?: unknown;
+  duplicateStrategy?: unknown;
+}): body is ApplyRequest {
+  if (!Array.isArray(body.changes) || body.changes.length === 0) {
     return false;
   }
 
-  return body.changes.every((change) => {
+  const operationsValid = body.changes.every((change) => {
     if (!isRecord(change)) {
       return false;
     }
@@ -109,6 +117,29 @@ function isApplyRequest(body: { changes: Array<Record<string, unknown>> }): body
     const { op } = change;
     return typeof op === 'string' && SupportedApplyOperations.has(op as ApplyRequest['changes'][number]['op']);
   });
+
+  if (!operationsValid) {
+    return false;
+  }
+
+  if (
+    body.idempotencyKey !== undefined &&
+    (typeof body.idempotencyKey !== 'string' ||
+      body.idempotencyKey.length === 0 ||
+      body.idempotencyKey.length > 128 ||
+      !/^[A-Za-z0-9:_-]+$/.test(body.idempotencyKey))
+  ) {
+    return false;
+  }
+
+  if (
+    body.duplicateStrategy !== undefined &&
+    (typeof body.duplicateStrategy !== 'string' || !DuplicateStrategies.has(body.duplicateStrategy))
+  ) {
+    return false;
+  }
+
+  return true;
 }
 
 function createTimeoutFetch(timeoutMs: number): typeof fetch {
@@ -286,7 +317,11 @@ export class ArchiApiClient {
     return this.unwrap<FolderListResponse>(getFolders({ client: this.apiClient }));
   }
 
-  postModelApply(body: { changes: Array<Record<string, unknown>> }): Promise<ApplyResponse> {
+  postModelApply(body: {
+    changes: Array<Record<string, unknown>>;
+    idempotencyKey?: string;
+    duplicateStrategy?: 'error' | 'reuse' | 'rename';
+  }): Promise<ApplyResponse> {
     if (!isApplyRequest(body)) {
       throw new ArchiApiError(
         'Invalid apply request payload. Each change must include a supported "op" value.',

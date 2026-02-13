@@ -740,4 +740,74 @@ describe('operationValidation', () => {
       expect(() => operationValidation.validateCreateNote(change, 0)).not.toThrow();
     });
   });
+
+  describe('idempotency and upsert validation', () => {
+    it('accepts request-level idempotencyKey and duplicateStrategy', () => {
+      const request = {
+        idempotencyKey: 'batch:claims:2026-02-13',
+        duplicateStrategy: 'reuse',
+        changes: [
+          { op: 'createElement', type: 'application-component', name: 'Claims API' }
+        ]
+      };
+      expect(() => operationValidation.validateApplyRequest(request)).not.toThrow();
+    });
+
+    it('rejects invalid idempotencyKey format', () => {
+      const request = {
+        idempotencyKey: 'invalid key with spaces',
+        changes: [
+          { op: 'createElement', type: 'application-component', name: 'Claims API' }
+        ]
+      };
+      expect(() => operationValidation.validateApplyRequest(request))
+        .toThrow('Invalid idempotencyKey');
+    });
+
+    it('validates createOrGetElement with explicit create/match', () => {
+      const request = {
+        changes: [
+          {
+            op: 'createOrGetElement',
+            create: {
+              type: 'application-component',
+              name: 'Claims API',
+              tempId: 'claims-api',
+              folder: 'Application/Services',
+              properties: { externalId: 'APP-42' }
+            },
+            match: {
+              type: 'application-component',
+              name: 'Claims API'
+            },
+            onDuplicate: 'reuse'
+          }
+        ]
+      };
+      expect(() => operationValidation.validateApplyRequest(request)).not.toThrow();
+    });
+
+    it('rejects createOrGetRelationship with rename strategy', () => {
+      const request = {
+        changes: [
+          {
+            op: 'createOrGetRelationship',
+            create: {
+              type: 'serving-relationship',
+              sourceId: 'app-a',
+              targetId: 'app-b'
+            },
+            match: {
+              type: 'serving-relationship',
+              sourceId: 'app-a',
+              targetId: 'app-b'
+            },
+            onDuplicate: 'rename'
+          }
+        ]
+      };
+      expect(() => operationValidation.validateApplyRequest(request))
+        .toThrow(/Duplicate strategy 'rename'/);
+    });
+  });
 });

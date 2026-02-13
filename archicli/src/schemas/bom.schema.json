@@ -37,6 +37,18 @@
       "items": {
         "$ref": "#/definitions/ChangeOperation"
       }
+    },
+    "idempotencyKey": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9:_-]+$",
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "Caller-provided idempotency key for replay-safe apply requests."
+    },
+    "duplicateStrategy": {
+      "type": "string",
+      "enum": ["error", "reuse", "rename"],
+      "description": "Request-level duplicate strategy default. Per-operation onDuplicate overrides."
     }
   },
   "anyOf": [
@@ -112,7 +124,9 @@
           "description": "Operation type",
           "enum": [
             "createElement",
+            "createOrGetElement",
             "createRelationship",
+            "createOrGetRelationship",
             "updateElement",
             "updateRelationship",
             "deleteElement",
@@ -135,47 +149,129 @@
         }
       },
       "if": {
-        "properties": { "op": { "const": "createElement" } }
+        "properties": { "op": { "const": "createOrGetElement" } }
       },
       "then": {
-        "required": ["op", "type", "name"],
+        "required": ["op", "create", "match"],
         "properties": {
           "op": { "type": "string" },
-          "type": { "$ref": "#/definitions/ElementType" },
-          "name": { "type": "string", "minLength": 1 },
-          "tempId": { "type": "string", "description": "Temporary ID for cross-referencing within the same batch" },
-          "documentation": { "type": "string" },
-          "folder": { "type": "string", "description": "Target folder path or ID" }
+          "create": {
+            "type": "object",
+            "required": ["type", "name"],
+            "properties": {
+              "type": { "$ref": "#/definitions/ElementType" },
+              "name": { "type": "string", "minLength": 1 },
+              "tempId": { "type": "string" },
+              "documentation": { "type": "string" },
+              "folder": { "type": "string" },
+              "properties": {
+                "type": "object",
+                "additionalProperties": { "type": "string" }
+              }
+            },
+            "additionalProperties": false
+          },
+          "match": {
+            "type": "object",
+            "required": ["type", "name"],
+            "properties": {
+              "type": { "$ref": "#/definitions/ElementType" },
+              "name": { "type": "string", "minLength": 1 }
+            },
+            "additionalProperties": false
+          },
+          "onDuplicate": {
+            "type": "string",
+            "enum": ["error", "reuse", "rename"]
+          }
         },
         "additionalProperties": false
       },
       "else": {
         "if": {
-          "properties": { "op": { "const": "createRelationship" } }
+          "properties": { "op": { "const": "createElement" } }
         },
         "then": {
-          "required": ["op", "type", "sourceId", "targetId"],
+          "required": ["op", "type", "name"],
           "properties": {
             "op": { "type": "string" },
-            "type": { "$ref": "#/definitions/RelationshipType" },
-            "sourceId": { "type": "string", "description": "Source element ID or tempId" },
-            "targetId": { "type": "string", "description": "Target element ID or tempId" },
+            "type": { "$ref": "#/definitions/ElementType" },
+            "name": { "type": "string", "minLength": 1 },
             "tempId": { "type": "string", "description": "Temporary ID for cross-referencing within the same batch" },
-            "name": { "type": "string" },
-            "documentation": { "type": "string", "description": "Documentation text for the relationship" },
-            "accessType": {
-              "type": "integer",
-              "enum": [0, 1, 2, 3],
-              "description": "Access type for access-relationship: 0=write, 1=read, 2=access, 3=readwrite"
-            },
-            "strength": {
-              "type": "string",
-              "description": "Influence strength for influence-relationship (e.g., '+', '-', '++', '--', or custom)"
-            }
+            "documentation": { "type": "string" },
+            "folder": { "type": "string", "description": "Target folder path or ID" }
           },
           "additionalProperties": false
         },
         "else": {
+          "if": {
+            "properties": { "op": { "const": "createOrGetRelationship" } }
+          },
+          "then": {
+            "required": ["op", "create", "match"],
+            "properties": {
+              "op": { "type": "string" },
+              "create": {
+                "type": "object",
+                "required": ["type", "sourceId", "targetId"],
+                "properties": {
+                  "type": { "$ref": "#/definitions/RelationshipType" },
+                  "sourceId": { "type": "string" },
+                  "targetId": { "type": "string" },
+                  "tempId": { "type": "string" },
+                  "name": { "type": "string" },
+                  "documentation": { "type": "string" },
+                  "accessType": { "type": "integer", "enum": [0, 1, 2, 3] },
+                  "strength": { "type": "string" }
+                },
+                "additionalProperties": false
+              },
+              "match": {
+                "type": "object",
+                "required": ["type", "sourceId", "targetId"],
+                "properties": {
+                  "type": { "$ref": "#/definitions/RelationshipType" },
+                  "sourceId": { "type": "string" },
+                  "targetId": { "type": "string" },
+                  "accessType": { "type": "integer", "enum": [0, 1, 2, 3] },
+                  "strength": { "type": "string" }
+                },
+                "additionalProperties": false
+              },
+              "onDuplicate": {
+                "type": "string",
+                "enum": ["error", "reuse"]
+              }
+            },
+            "additionalProperties": false
+          },
+          "else": {
+            "if": {
+              "properties": { "op": { "const": "createRelationship" } }
+            },
+            "then": {
+              "required": ["op", "type", "sourceId", "targetId"],
+              "properties": {
+                "op": { "type": "string" },
+                "type": { "$ref": "#/definitions/RelationshipType" },
+                "sourceId": { "type": "string", "description": "Source element ID or tempId" },
+                "targetId": { "type": "string", "description": "Target element ID or tempId" },
+                "tempId": { "type": "string", "description": "Temporary ID for cross-referencing within the same batch" },
+                "name": { "type": "string" },
+                "documentation": { "type": "string", "description": "Documentation text for the relationship" },
+                "accessType": {
+                  "type": "integer",
+                  "enum": [0, 1, 2, 3],
+                  "description": "Access type for access-relationship: 0=write, 1=read, 2=access, 3=readwrite"
+                },
+                "strength": {
+                  "type": "string",
+                  "description": "Influence strength for influence-relationship (e.g., '+', '-', '++', '--', or custom)"
+                }
+              },
+              "additionalProperties": false
+            },
+            "else": {
           "if": {
             "properties": { "op": { "const": "createView" } }
           },
@@ -510,4 +606,6 @@
       }
     }
   }
+}
+}
 }

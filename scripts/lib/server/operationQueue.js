@@ -283,6 +283,18 @@
             operation.tempIdMappings = mappingReport.tempIdMappings;
             operation.digest = this._buildOperationDigest(operation, results);
             operation.retryHints = this._buildRetryHints(operation);
+            if (operation && operation.idempotencyKey &&
+                typeof idempotencyStore !== "undefined" &&
+                idempotencyStore &&
+                typeof idempotencyStore.markTerminal === "function") {
+                try {
+                    idempotencyStore.markTerminal(operation.idempotencyKey, operation.id, operation.status);
+                } catch (idempotencyErr) {
+                    if (loggingQueue) {
+                        loggingQueue.warn("Failed to update idempotency terminal status: " + idempotencyErr);
+                    }
+                }
+            }
         },
 
         /**
@@ -492,6 +504,10 @@
             var details = {
                 message: message
             };
+            if (error && typeof error === "object" &&
+                typeof error.code === "string" && error.code.length > 0) {
+                details.code = error.code;
+            }
 
             var refInfo = this._extractReferenceFromMessage(message);
             var context = this._findChangeContext(operation && operation.changes ? operation.changes : [], refInfo);
@@ -540,11 +556,14 @@
          * @param {Array} changes - Array of change descriptors
          * @returns {Object} Operation descriptor with id, status, changes, timestamps
          */
-        createOperation: function(changes) {
+        createOperation: function(changes, metadata) {
+            metadata = metadata || {};
             var opId = "op_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
             var operation = {
                 id: opId,
                 changes: changes,
+                idempotencyKey: metadata.idempotencyKey || null,
+                duplicateStrategy: metadata.duplicateStrategy || "error",
                 status: "queued",
                 result: null,
                 error: null,
@@ -856,7 +875,14 @@
 
                         // Use undoableCommands.executeBatch for proper undo/redo support
                         var batchLabel = "API Operation " + operation.id;
-                        var results = undoableCommands.executeBatch(self._modelRef, batchLabel, operation.changes);
+                        var results = undoableCommands.executeBatch(
+                            self._modelRef,
+                            batchLabel,
+                            operation.changes,
+                            {
+                                duplicateStrategy: operation.duplicateStrategy
+                            }
+                        );
 
                         self._isProcessingBatch = false;
 
@@ -940,6 +966,17 @@
                 // Cleanup old operations periodically
                 if (self._processorCycleCount % config.cleanupInterval === 0) {
                     self.cleanupOldOperations(config.maxOperationAge);
+                    if (typeof idempotencyStore !== "undefined" &&
+                        idempotencyStore &&
+                        typeof idempotencyStore.cleanupExpired === "function") {
+                        try {
+                            idempotencyStore.cleanupExpired();
+                        } catch (idempotencyCleanupErr) {
+                            if (loggingQueue) {
+                                loggingQueue.warn("Idempotency cleanup failed: " + idempotencyCleanupErr);
+                            }
+                        }
+                    }
                 }
 
                 self._processorCycleCount++;

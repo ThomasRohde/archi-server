@@ -81,6 +81,7 @@ load(__DIR__ + "lib/core/requireModel.js");
 
 // Load server modules (order matters - dependencies first!)
 load(__DIR__ + "lib/server/serverConfig.js");  // Config must be loaded first
+load(__DIR__ + "lib/server/idempotencyStore.js");
 load(__DIR__ + "lib/server/loggingQueue.js");
 load(__DIR__ + "lib/server/folderCache.js");
 load(__DIR__ + "lib/server/modelSnapshot.js");

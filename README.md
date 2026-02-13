@@ -85,7 +85,7 @@ archicli verify changes.json                     # validate a BOM file
 archicli verify changes.json --semantic          # semantic tempId checks
 archicli batch apply changes.json                # apply atomically with polling + validation
 archicli batch apply changes.json --fast          # fast mode: chunk-size 20
-archicli batch apply changes.json --skip-existing
+archicli batch apply changes.json --duplicate-strategy reuse --idempotency-key run-20260213
 archicli view create "Application Overview" --viewpoint application_cooperation
 archicli view delete id-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 archicli ops list                                # list recent operation IDs
@@ -108,7 +108,7 @@ archicli view export --all --dir exports
 
 ### Bill of Materials (BOM) files
 
-Changes are described in JSON BOM files. The `batch apply` command handles validation, chunking (default chunk-size 1 for atomic safety), polling, connection cross-validation, and tempId→realId persistence automatically. Use `--fast` for larger chunk sizes when speed matters.
+Changes are described in JSON BOM files. The `batch apply` command handles validation, chunking (default chunk-size 8 for reliability), polling, connection cross-validation, and tempId→realId persistence automatically. Use `--fast` for larger chunk sizes when speed matters.
 
 Validation is strict: unknown top-level and operation fields are rejected. For `archicli verify` auto-detection, BOM files should include `version: "1.0"` and either a `changes` array or an `includes` array.
 
@@ -146,7 +146,8 @@ archicli batch apply changes.json --save-ids out/my-mappings.ids.json
 
 To skip polling and ID tracking, use `--no-poll` (not recommended for most workflows).
 
-For idempotent re-runs, use `--skip-existing` to skip duplicate create operations and continue processing the rest of the BOM.
+For idempotent re-runs, prefer `--idempotency-key` with `--duplicate-strategy reuse` or `--duplicate-strategy rename`.
+`--skip-existing` is still supported for compatibility, but deprecated.
 
 ### Key concepts
 
@@ -171,7 +172,7 @@ archicli model search [options]       Search by type, name, or property (--stric
 archicli model element <id>           Full detail for one element
 archicli model save [--path <file>]   Save the current model to disk
 archicli model stats                  Get model statistics by type
-archicli batch apply <file>           Apply BOM atomically (chunk-size 1, polls, validates connections)
+archicli batch apply <file>           Apply BOM in reliable chunks (default chunk-size 8, polls, validates connections)
 archicli batch apply <file> --fast    Apply BOM in fast mode (chunk-size 20, no validation)
 archicli batch split <file>           Split large BOM into linked chunk files (--chunk-size)
 archicli view list                    List all views
@@ -427,6 +428,8 @@ The server exposes a comprehensive REST API:
 - `GET /health` - Server health and diagnostics
 - `POST /model/query` - Query model elements/relationships
 - `POST /model/apply` - Modify model (create, update, delete)
+  - Supports `idempotencyKey` (caller-provided, 24h in-memory replay window) and request-level `duplicateStrategy` (`error|reuse|rename`)
+  - Supports upsert ops: `createOrGetElement`, `createOrGetRelationship` (relationship `rename` is invalid)
 - `POST /model/search` - Search by name, type, or properties (`includeRelationships` supported)
 
 ### View Management

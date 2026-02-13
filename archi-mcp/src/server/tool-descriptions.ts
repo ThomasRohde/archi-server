@@ -3,9 +3,14 @@ export const APPLY_MODEL_CHANGES_DESCRIPTION =
   'for completion via archi_wait_for_operation. Batches exceeding 8 operations are auto-chunked: the ' +
   'MCP layer splits, submits sequentially, polls each chunk, resolves tempIds across chunks, and ' +
   'returns merged results directly (no separate archi_wait_for_operation call needed).\n\n' +
+  'Request-level fields:\n' +
+  '- idempotencyKey?: caller-provided key; chunked mode derives per-chunk keys as `${base}:chunk:${index}:of:${total}`\n' +
+  '- duplicateStrategy?: "error" | "reuse" | "rename" (default "error")\n\n' +
   'Operation field reference (aliases auto-normalized):\n' +
   '- createElement: type, name, tempId?, documentation?, properties?, folder?\n' +
+  '- createOrGetElement: create{type,name,tempId?,documentation?,folder?,properties?}, match{type,name}, onDuplicate?\n' +
   '- createRelationship: type, sourceId, targetId, tempId?, name?, accessType?\n' +
+  '- createOrGetRelationship: create{type,sourceId,targetId,tempId?,name?,accessType?,strength?}, match{type,sourceId,targetId,accessType?,strength?}, onDuplicate? ("rename" invalid)\n' +
   '- updateElement: id (or elementId), name?, documentation?\n' +
   '- updateRelationship: id (or relationshipId), name?, accessType?\n' +
   '- deleteElement: id (or elementId)\n' +

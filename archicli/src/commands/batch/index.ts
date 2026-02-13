@@ -19,7 +19,9 @@ export function batchCommand(): Command {
         '  }\n\n' +
         'OPERATION TYPES (each object has an "op" field plus required fields):\n' +
         '  createElement          type, name, [tempId, documentation, folder]\n' +
+        '  createOrGetElement     create{type,name,...}, match{type,name}, [onDuplicate]\n' +
         '  createRelationship     type, sourceId, targetId, [tempId, name]\n' +
+        '  createOrGetRelationship create{type,sourceId,targetId,...}, match{type,sourceId,targetId,...}, [onDuplicate]\n' +
         '  updateElement          id, [name, documentation]\n' +
         '  updateRelationship     id, [name, documentation]\n' +
         '  deleteElement          id [cascade]  (default: cascade=true, removes related\n' +
@@ -41,9 +43,9 @@ export function batchCommand(): Command {
         'TEMPID SYSTEM: Assign "tempId" on any create op. Later ops in the same batch\n' +
         '  can use that tempId as the value for id/sourceId/targetId/viewId/elementId.\n' +
         '  After --poll completes, mappings are saved to <file>.ids.json automatically.\n\n' +
-        'IDEMPOTENT RE-APPLY: Use --skip-existing with "batch apply" to safely re-run\n' +
-        '  a BOM that was already applied. Duplicate create ops are skipped and their\n' +
-        '  real IDs are recovered so downstream ops still resolve correctly.\n\n' +
+        'IDEMPOTENT RE-APPLY: Use --idempotency-key with optional --duplicate-strategy\n' +
+        '  to safely re-run a BOM. For chunked apply, deterministic per-chunk keys are derived.\n' +
+        '  Legacy --skip-existing remains available but is deprecated.\n\n' +
         'SPLITTING: Use "batch split --chunk-size <n>" to split large BOM files.\n' +
         '  Legacy "--size" is accepted for compatibility only and should be avoided in new scripts.'
     )

@@ -371,6 +371,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApplyResponse'
+        '409':
+          description: Idempotency conflict (same key with different payload)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdempotencyConflictErrorResponse'
         '400':
           description: Validation error
           content:
@@ -1238,6 +1244,14 @@ components:
       required:
         - changes
       properties:
+        idempotencyKey:
+          type: string
+          minLength: 1
+          maxLength: 128
+          pattern: '^[A-Za-z0-9:_-]+$'
+          description: Caller-provided idempotency key for replay-safe /model/apply requests.
+        duplicateStrategy:
+          $ref: '#/components/schemas/DuplicateStrategy'
         changes:
           type: array
           minItems: 1
@@ -1253,7 +1267,9 @@ components:
         propertyName: op
         mapping:
           createElement: '#/components/schemas/CreateElementOp'
+          createOrGetElement: '#/components/schemas/CreateOrGetElementOp'
           createRelationship: '#/components/schemas/CreateRelationshipOp'
+          createOrGetRelationship: '#/components/schemas/CreateOrGetRelationshipOp'
           setProperty: '#/components/schemas/SetPropertyOp'
           updateElement: '#/components/schemas/UpdateElementOp'
           deleteElement: '#/components/schemas/DeleteElementOp'
@@ -1274,7 +1290,9 @@ components:
           deleteView: '#/components/schemas/DeleteViewOp'
       oneOf:
         - $ref: '#/components/schemas/CreateElementOp'
+        - $ref: '#/components/schemas/CreateOrGetElementOp'
         - $ref: '#/components/schemas/CreateRelationshipOp'
+        - $ref: '#/components/schemas/CreateOrGetRelationshipOp'
         - $ref: '#/components/schemas/SetPropertyOp'
         - $ref: '#/components/schemas/UpdateElementOp'
         - $ref: '#/components/schemas/DeleteElementOp'
@@ -1293,6 +1311,140 @@ components:
         - $ref: '#/components/schemas/CreateGroupOp'
         - $ref: '#/components/schemas/CreateViewOp'
         - $ref: '#/components/schemas/DeleteViewOp'
+
+    DuplicateStrategy:
+      type: string
+      enum: [error, reuse, rename]
+      default: error
+      description: |
+        Duplicate handling strategy precedence:
+        `onDuplicate` (operation) > `duplicateStrategy` (request) > `error` (default).
+
+    ElementCreateSpec:
+      type: object
+      required:
+        - type
+        - name
+      properties:
+        type:
+          $ref: '#/components/schemas/ArchiMateElementType'
+        name:
+          type: string
+        tempId:
+          type: string
+          description: Temporary ID for referencing in subsequent operations
+        documentation:
+          type: string
+        folder:
+          type: string
+          description: Target folder path or ID
+        properties:
+          type: object
+          additionalProperties:
+            type: string
+      additionalProperties: false
+
+    ElementMatchSpec:
+      type: object
+      required:
+        - type
+        - name
+      properties:
+        type:
+          $ref: '#/components/schemas/ArchiMateElementType'
+        name:
+          type: string
+      additionalProperties: false
+
+    CreateOrGetElementOp:
+      type: object
+      required:
+        - op
+        - create
+        - match
+      properties:
+        op:
+          type: string
+          enum: [createOrGetElement]
+        create:
+          $ref: '#/components/schemas/ElementCreateSpec'
+        match:
+          $ref: '#/components/schemas/ElementMatchSpec'
+        onDuplicate:
+          $ref: '#/components/schemas/DuplicateStrategy'
+      additionalProperties: false
+
+    RelationshipCreateSpec:
+      type: object
+      required:
+        - type
+        - sourceId
+        - targetId
+      properties:
+        type:
+          $ref: '#/components/schemas/ArchiMateRelationshipType'
+        sourceId:
+          type: string
+          description: Source element ID or tempId
+        targetId:
+          type: string
+          description: Target element ID or tempId
+        tempId:
+          type: string
+          description: Temporary ID for referencing in subsequent operations
+        name:
+          type: string
+        documentation:
+          type: string
+        accessType:
+          type: integer
+          enum: [0, 1, 2, 3]
+        strength:
+          type: string
+      additionalProperties: false
+
+    RelationshipMatchSpec:
+      type: object
+      required:
+        - type
+        - sourceId
+        - targetId
+      properties:
+        type:
+          $ref: '#/components/schemas/ArchiMateRelationshipType'
+        sourceId:
+          type: string
+          description: Source element ID or tempId
+        targetId:
+          type: string
+          description: Target element ID or tempId
+        accessType:
+          type: integer
+          enum: [0, 1, 2, 3]
+        strength:
+          type: string
+      additionalProperties: false
+
+    CreateOrGetRelationshipOp:
+      type: object
+      required:
+        - op
+        - create
+        - match
+      properties:
+        op:
+          type: string
+          enum: [createOrGetRelationship]
+        create:
+          $ref: '#/components/schemas/RelationshipCreateSpec'
+        match:
+          $ref: '#/components/schemas/RelationshipMatchSpec'
+        onDuplicate:
+          type: string
+          enum: [error, reuse]
+          default: error
+          description: Relationship upsert does not support `rename`.
+      additionalProperties: false
 
     CreateElementOp:
       type: object
@@ -1841,7 +1993,7 @@ components:
           type: string
         status:
           type: string
-          enum: [queued]
+          enum: [queued, processing, complete, error]
         message:
           type: string
         digest:
@@ -1854,6 +2006,20 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/TempIdMapping'
+        idempotency:
+          type: object
+          description: Present when idempotencyKey was provided on apply.
+          properties:
+            key:
+              type: string
+            replayed:
+              type: boolean
+            firstSeenAt:
+              type: string
+              format: date-time
+            expiresAt:
+              type: string
+              format: date-time
 
     OperationStatusResponse:
       type: object
@@ -1902,6 +2068,8 @@ components:
           nullable: true
           description: Structured context for failed operations (when status is error)
           properties:
+            code:
+              type: string
             message:
               type: string
             opIndex:
@@ -2131,6 +2299,28 @@ components:
               type: string
             message:
               type: string
+
+    IdempotencyConflictErrorResponse:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponse'
+        - type: object
+          properties:
+            operationId:
+              type: string
+              nullable: true
+            idempotency:
+              type: object
+              properties:
+                key:
+                  type: string
+                replayed:
+                  type: boolean
+                firstSeenAt:
+                  type: string
+                  format: date-time
+                expiresAt:
+                  type: string
+                  format: date-time
 
     # --- Search & Element Schemas ---
 

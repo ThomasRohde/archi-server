@@ -157,14 +157,23 @@ export type PlanResponse = {
 };
 
 export type ApplyRequest = {
+    /**
+     * Caller-provided idempotency key for replay-safe /model/apply requests.
+     */
+    idempotencyKey?: string;
+    duplicateStrategy?: DuplicateStrategy;
     changes: Array<ChangeOperation>;
 };
 
 export type ChangeOperation = ({
     op: 'createElement';
 } & CreateElementOp) | ({
+    op: 'createOrGetElement';
+} & CreateOrGetElementOp) | ({
     op: 'createRelationship';
 } & CreateRelationshipOp) | ({
+    op: 'createOrGetRelationship';
+} & CreateOrGetRelationshipOp) | ({
     op: 'setProperty';
 } & SetPropertyOp) | ({
     op: 'updateElement';
@@ -201,6 +210,86 @@ export type ChangeOperation = ({
 } & CreateViewOp) | ({
     op: 'deleteView';
 } & DeleteViewOp);
+
+/**
+ * Duplicate handling strategy precedence:
+ * `onDuplicate` (operation) > `duplicateStrategy` (request) > `error` (default).
+ *
+ */
+export type DuplicateStrategy = 'error' | 'reuse' | 'rename';
+
+export type ElementCreateSpec = {
+    type: ArchiMateElementType;
+    name: string;
+    /**
+     * Temporary ID for referencing in subsequent operations
+     */
+    tempId?: string;
+    documentation?: string;
+    /**
+     * Target folder path or ID
+     */
+    folder?: string;
+    properties?: {
+        [key: string]: string;
+    };
+};
+
+export type ElementMatchSpec = {
+    type: ArchiMateElementType;
+    name: string;
+};
+
+export type CreateOrGetElementOp = {
+    op: 'createOrGetElement';
+    create: ElementCreateSpec;
+    match: ElementMatchSpec;
+    onDuplicate?: DuplicateStrategy;
+};
+
+export type RelationshipCreateSpec = {
+    type: ArchiMateRelationshipType;
+    /**
+     * Source element ID or tempId
+     */
+    sourceId: string;
+    /**
+     * Target element ID or tempId
+     */
+    targetId: string;
+    /**
+     * Temporary ID for referencing in subsequent operations
+     */
+    tempId?: string;
+    name?: string;
+    documentation?: string;
+    accessType?: 0 | 1 | 2 | 3;
+    strength?: string;
+};
+
+export type RelationshipMatchSpec = {
+    type: ArchiMateRelationshipType;
+    /**
+     * Source element ID or tempId
+     */
+    sourceId: string;
+    /**
+     * Target element ID or tempId
+     */
+    targetId: string;
+    accessType?: 0 | 1 | 2 | 3;
+    strength?: string;
+};
+
+export type CreateOrGetRelationshipOp = {
+    op: 'createOrGetRelationship';
+    create: RelationshipCreateSpec;
+    match: RelationshipMatchSpec;
+    /**
+     * Relationship upsert does not support `rename`.
+     */
+    onDuplicate?: 'error' | 'reuse';
+};
 
 export type CreateElementOp = {
     op: 'createElement';
@@ -690,13 +779,22 @@ export type DeleteViewOp = {
 
 export type ApplyResponse = {
     operationId?: string;
-    status?: 'queued';
+    status?: 'queued' | 'processing' | 'complete' | 'error';
     message?: string;
     digest?: OperationDigest;
     tempIdMap?: {
         [key: string]: string;
     };
     tempIdMappings?: Array<TempIdMapping>;
+    /**
+     * Present when idempotencyKey was provided on apply.
+     */
+    idempotency?: {
+        key?: string;
+        replayed?: boolean;
+        firstSeenAt?: string;
+        expiresAt?: string;
+    };
 };
 
 export type OperationStatusResponse = {
@@ -740,6 +838,7 @@ export type OperationStatusResponse = {
      * Structured context for failed operations (when status is error)
      */
     errorDetails?: {
+        code?: string;
         message?: string;
         /**
          * Zero-based index in /changes array
@@ -871,6 +970,16 @@ export type ErrorResponse = {
     error?: {
         code?: string;
         message?: string;
+    };
+};
+
+export type IdempotencyConflictErrorResponse = ErrorResponse & {
+    operationId?: string;
+    idempotency?: {
+        key?: string;
+        replayed?: boolean;
+        firstSeenAt?: string;
+        expiresAt?: string;
     };
 };
 
@@ -1694,6 +1803,10 @@ export type PostModelApplyErrors = {
      * Validation error
      */
     400: ErrorResponse;
+    /**
+     * Idempotency conflict (same key with different payload)
+     */
+    409: IdempotencyConflictErrorResponse;
 };
 
 export type PostModelApplyError = PostModelApplyErrors[keyof PostModelApplyErrors];

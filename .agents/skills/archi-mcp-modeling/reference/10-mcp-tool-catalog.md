@@ -1,162 +1,245 @@
-# Archi MCP Tool Catalog (Explicit Usage)
+# Archi MCP Tool Catalog
 
-Use this as the authoritative mapping of available Archi MCP tools, when to use them, and sequencing rules.
+Authoritative reference for every available Archi MCP tool: when to use it, required inputs, key outputs, and sequencing rules.
 
-## 1) Health, Discovery, and Search
+**Rule:** Do not improvise tool usage outside this catalog. If no structured tool can accomplish a task, use `archi_run_script` as a last resort.
+
+---
+
+## 1. Health and Discovery
 
 ### `archi_get_health`
-- Use when: first connectivity check before any modeling action.
-- Input: none.
-- Output: server/model summary and queue metrics.
-- Next step: if unhealthy, stop and report.
+- **When:** First call in every session, before any other tool.
+- **Input:** None.
+- **Output:** Server health, uptime, queue stats, model summary.
+- **Action:** If unhealthy → stop and report. Do not proceed with mutations.
 
 ### `archi_get_model_stats`
-- Use when: estimating model scope and complexity.
-- Input: none.
-- Output: counts by element, relationship, and view type.
+- **When:** Estimating model scope and complexity.
+- **Input:** None.
+- **Output:** Counts by element type, relationship type, view type.
+- **Use case:** "How big is this model?" / "What layers are populated?"
 
 ### `archi_query_model`
-- Use when: quick sample of model contents.
-- Input: optional element/relationship sample limits.
-- Output: summary + sampled concepts.
+- **When:** Quick sample of model contents without a specific search target.
+- **Input:** Optional `limit` (elements) and `relationshipLimit`.
+- **Output:** Summary + sampled concepts with types and names.
+- **Use case:** Getting oriented in an unfamiliar model.
+
+---
+
+## 2. Search and Element Inspection
 
 ### `archi_search_model`
-- Use when: locating existing elements/relationships by type/name/property.
-- Input: type, namePattern, case sensitivity, property filters.
-- Output: candidate concepts for reuse.
-- Rule: run before creating new elements to avoid duplicates.
+- **When:** Locating existing elements/relationships by type, name, or property before creating new ones.
+- **Input:** `type`, `namePattern` (regex), `propertyKey`/`propertyValue`, `caseSensitive`, `includeRelationships`, `limit`.
+- **Output:** Matching concepts with IDs, types, names.
+- **Critical rule:** Run this before any `createElement` to prevent duplicates.
+- **Tip:** Use `namePattern` with regex alternation (`Customer|Client`) for fuzzy matching.
 
 ### `archi_get_element`
-- Use when: validating a specific concept and its relationships/views.
-- Input: `elementId`.
-- Output: full detail of one element.
+- **When:** Deep inspection of one specific concept — its full detail, relationships, and view appearances.
+- **Input:** `elementId` (concept ID, not visual ID).
+- **Output:** Element detail + all relationships + all views containing it.
+- **Use case:** Understanding an element's role and connections before modifying or extending it.
 
 ### `archi_get_relationships_between_elements`
-- Use when: discovering existing links in a selected set.
-- Input: element IDs + optional relationship-type filter.
-- Output: existing relationship rows.
+- **When:** Discovering existing links within a set of elements.
+- **Input:** `elementIds` (2–200), optional `relationshipTypes` filter, `limit`.
+- **Output:** Relationship rows with source/target/type.
+- **Use case:** Before creating relationships — check what already exists to avoid duplicates.
 
 ### `archi_get_model_diagnostics`
-- Use when: suspected rollback/orphan/ghost issues.
-- Input: none.
-- Output: diagnostic warnings/errors.
+- **When:** After mutations to check for orphans, ghosts, or rollback artifacts.
+- **Input:** None.
+- **Output:** Diagnostic warnings/errors.
+- **Use case:** Post-mutation sanity check; audit workflows.
 
-## 2) View Discovery and Inspection
+---
+
+## 3. View Discovery and Inspection
 
 ### `archi_list_views`
-- Use when: finding target views by name/type/viewpoint.
-- Input: optional filters and pagination.
-- Output: filtered view list.
+- **When:** Finding views by name, type, or viewpoint before creating a new one.
+- **Input:** `nameContains` or `exactName`, `type`, `viewpoint`, `limit`, `offset`, `sortBy`, `sortDirection`.
+- **Output:** Filtered view list with IDs and metadata.
+- **Tip:** Always check for existing views before creating — user may want to extend rather than duplicate.
 
 ### `archi_get_view_summary`
-- Use when: fast inspection of concepts in a view.
-- Input: `viewId`, includeConnections optional.
-- Output: compact mappings concept↔visual.
+- **When:** Fast check of what concepts are on a view (visual-to-concept mappings, no geometry).
+- **Input:** `viewId`, optional `includeConnections`.
+- **Output:** Compact visual → concept mapping.
+- **Use case:** Before adding elements to a view, check what's already there.
 
 ### `archi_get_view`
-- Use when: full geometry/style/connection details are needed.
-- Input: `viewId`.
-- Output: complete view payload.
+- **When:** Full view detail needed — coordinates, styles, connections, nesting.
+- **Input:** `viewId`.
+- **Output:** Complete view payload with all visual objects.
+- **Use case:** Geometry-level repairs, style audits, precise placement planning.
+- **Tip:** Prefer `archi_get_view_summary` when you only need concept coverage.
 
 ### `archi_validate_view`
-- Use when: checking view connection integrity after edits.
-- Input: `viewId`.
-- Output: validation violations.
+- **When:** After adding/removing connections or elements on a view.
+- **Input:** `viewId`.
+- **Output:** Validation violations (broken connections, missing endpoints).
+- **Critical rule:** Always run after view mutations before declaring completion.
 
 ### `archi_export_view`
-- Use when: delivering PNG/JPG output.
-- Input: `viewId`, format, optional output path/scale/margin.
-- Output: export metadata/path.
+- **When:** User requests PNG/JPG output of a view.
+- **Input:** `viewId`, `format` (PNG/JPG), optional `outputPath`, `scale` (0.5–4), `margin`.
+- **Output:** Export file path and metadata.
 
-## 3) View Lifecycle and Layout
+---
+
+## 4. View Lifecycle and Layout
 
 ### `archi_create_view`
-- Use when: creating a new target view.
-- Input: name + optional viewpoint/folder/documentation.
-- Output: new view ID.
-- Caution: viewpoint values are strict; omit viewpoint if uncertain.
+- **When:** Creating a new empty view.
+- **Input:** `name`, optional `documentation`, `folder`.
+- **Output:** New view ID.
+- **⚠ Warning:** Omit `viewpoint` unless you know the exact supported key. Labels like "Application Usage" are rejected with ValidationError.
 
 ### `archi_duplicate_view`
-- Use when: varianting an existing view with similar structure.
+- **When:** Creating a variant of an existing view.
+- **Input:** `viewId`, optional `name`.
+- **Output:** New view ID (copy of source).
 
 ### `archi_delete_view`
-- Use when: user explicitly requests removal.
-- Safety: destructive; confirm intent first.
+- **When:** User explicitly requests view removal.
+- **Safety:** Destructive — always confirm intent first.
 
 ### `archi_set_view_router`
-- Use when: connection routing should be `bendpoint` or `manhattan`.
+- **When:** Changing connection routing style.
+- **Input:** `viewId`, `routerType` (`bendpoint` or `manhattan`).
+- **Tip:** Use `manhattan` for clean orthogonal layouts in technical views.
 
 ### `archi_layout_view`
-- Use when: auto-layout after major additions.
-- Input: rank direction and spacing options.
-- Output: updated coordinates.
+- **When:** Auto-arranging elements after additions or major structural changes.
+- **Input:** `viewId`, `algorithm` (`dagre` or `sugiyama`), `rankdir` (TB/BT/LR/RL), `nodesep`, `ranksep`, `edgesep`, `marginx`, `marginy`.
+- **Output:** Updated coordinates, count of positioned nodes.
+- **Tip:** Use `LR` (left-to-right) for integration and flow views. Use `TB` (top-to-bottom) for layered/hierarchical views.
+- **Critical rule:** Only call after `archi_wait_for_operation` has confirmed all addToView/addConnectionToView ops completed.
 
-## 4) Core Mutation Tool
+---
+
+## 5. Core Mutation Tool
 
 ### `archi_apply_model_changes`
-- Use when: creating/updating/deleting elements/relationships and editing view objects.
-- Input: array of change operations.
-- Output: async operation identifier and temp ID mapping on completion.
+- **When:** Creating, updating, or deleting elements, relationships, and view objects.
+- **Input:** Array of change operations (see operation families below).
+- **Output:** `operationId` (async). Status is `queued` initially.
+- **Critical:** Always call `archi_wait_for_operation` before any dependent operation.
 
-Supported operation families include:
-- Elements: `createElement`, `updateElement`, `deleteElement`, `setProperty`, `moveToFolder`
-- Relationships: `createRelationship`, `updateRelationship`, `deleteRelationship`
-- Views: `createView`, `deleteView`, `addToView`, `addConnectionToView`, `nestInView`, `moveViewObject`, `styleViewObject`, `styleConnection`, `deleteConnectionFromView`, `createNote`, `createGroup`
+#### Supported Operations
 
-Critical usage rules:
-- Always wait for operation completion before dependent calls.
-- Use `tempId` consistently to chain created IDs.
-- `addConnectionToView` needs visual IDs, not concept IDs.
-- For `moveViewObject`, prefer `width`/`height` keys.
-- For `createNote`, use `content` (not `text`).
+| Family | Operations |
+|---|---|
+| **Elements** | `createElement`, `updateElement`, `deleteElement`, `setProperty`, `moveToFolder` |
+| **Relationships** | `createRelationship`, `updateRelationship`, `deleteRelationship` |
+| **Folders** | `createFolder` |
+| **View content** | `addToView`, `addConnectionToView`, `nestInView`, `moveViewObject`, `styleViewObject`, `styleConnection`, `deleteConnectionFromView`, `createNote`, `createGroup` |
+| **Views** | `createView`, `deleteView` |
 
-## 5) Async Operation Control
+#### Key Usage Rules
 
-### `archi_wait_for_operation`
-- Use when: blocking until async mutation completes.
-- Input: `operationId` + optional timeout/poll interval.
-- Output: terminal status + result payload.
-- Preferred over manual polling loops.
+| Rule | Detail |
+|---|---|
+| **tempId chaining** | Assign `tempId` to every created element/relationship. Within the same batch, `createRelationship` can reference a `tempId` from `createElement`. |
+| **Visual IDs for connections** | `addConnectionToView` requires `sourceVisualId` and `targetVisualId` — these come from `addToView` results, not from concept IDs. |
+| **Nesting** | Use `parentVisualId` on `addToView` to nest children, or `nestInView` to reparent after placement. |
+| **moveViewObject params** | Use `width`/`height`, NOT `w`/`h`. Geometry fields must be numbers, not strings. |
+| **createNote params** | Use `content`, NOT `text`. |
+| **Batch size** | ≤8 operations per batch. The MCP layer auto-chunks larger batches across chunk boundaries, resolving tempIds. |
+| **Connections not auto-created** | Adding elements to a view does NOT auto-create relationship connections. You must explicitly call `addConnectionToView`. |
+
+---
+
+## 6. Async Operation Control
+
+### `archi_wait_for_operation` ← **preferred**
+- **When:** After every `archi_apply_model_changes` or `archi_populate_view` call.
+- **Input:** `operationId`, optional `timeoutMs` (default 120000), `pollIntervalMs` (default 1000).
+- **Output:** Terminal status (`complete`/`error`) + result payload with tempId → realId mappings.
+- **Why preferred:** Blocks until done. No manual polling loop needed.
 
 ### `archi_get_operation_status`
-- Use when: single status check without waiting.
+- **When:** Single status check without blocking (e.g., progress reporting).
+- **Input:** `operationId` or `opId`, optional `summaryOnly`, `cursor`, `pageSize`.
 
 ### `archi_list_operations`
-- Use when: inspecting recent operation history and failures.
+- **When:** Inspecting recent operation history, debugging failures.
+- **Input:** Optional `status` filter, `limit`, `cursor`, `summaryOnly`.
 
-## 6) Higher-Level Placement Tool
+---
+
+## 7. Bulk View Population
 
 ### `archi_populate_view`
-- Use when: adding many existing elements to a view and auto-connecting known relationships.
-- Input: `viewId`, `elementIds`, autoConnect flags/filters.
-- Output: placement and connection results.
-- Rule: use when concepts already exist and rapid view population is desired.
+- **When:** Adding many existing elements to a view and auto-connecting their known relationships.
+- **Input:** `viewId`, `elementIds` (1–200), `autoConnect` (default true), optional `relationshipTypes` filter, `skipExistingVisuals`, `skipExistingConnections`.
+- **Output:** `operationId` (async — **must wait before layout or validation**).
+- **Use case:** Rapidly populating a view with pre-existing concepts rather than manual `addToView` calls.
+- **Tip:** Set `autoConnect: true` to automatically visualize existing relationships between the placed elements.
 
-## 7) Scripting and Administrative Tools
+---
 
-### `archi_run_script`
-- Use when: structured tools cannot express required diagnostics or read tasks.
-- Caution: execute carefully; prefer structured tools first.
+## 8. Administrative and Scripting Tools
 
 ### `archi_save_model`
-- Use when: user requests persistence after successful validation.
+- **When:** User explicitly requests persistence after successful validation.
+- **Input:** Optional `path` override.
+- **Rule:** Never auto-save. Only on explicit request.
 
 ### `archi_list_folders`
-- Use when: locating destination folders for move/create operations.
+- **When:** Finding destination folders for `moveToFolder` or `createFolder`.
+- **Output:** Full folder hierarchy tree.
 
-### `archi_get_test`
-- Use when: troubleshooting server thread wiring.
-
-### `archi_shutdown_server`
-- Use when: explicit admin shutdown requested.
-- Safety: destructive to session availability.
+### `archi_run_script`
+- **When:** No structured tool can accomplish the required task. Last resort.
+- **Input:** `code` — GraalVM JavaScript executed inside Archi JVM.
+- **Available helpers:** `model`, `findElements(type?)`, `findViews(name?)`, `findRelationships(type?)`, `$(selector)`.
+- **⚠ Caution:** This runs arbitrary code on the model. Prefer structured tools for all routine operations.
 
 ### `archi_plan_model_changes`
-- Use when: generating a non-mutating plan preview for simple create operations.
-- Note: do not treat as execution.
+- **When:** Generating a dry-run preview of a simple create operation.
+- **Important:** This does NOT execute anything. Do not treat as a mutation.
 
-## Canonical Sequence Patterns
+### `archi_get_test`
+- **When:** Troubleshooting server thread availability.
 
-- Read-only analysis: health → search/query → view summary/detail → diagnostics.
-- Model mutation: search → apply changes → wait → validate/diagnostics → save.
-- View build: list/create view → add visuals → add connections → layout/router → validate → export/save.
+### `archi_shutdown_server`
+- **Safety:** Destructive to session. Only on explicit admin request.
+
+---
+
+## Canonical Sequences
+
+### Read-only analysis
+```
+health → search/query → get_element → view summary → diagnostics → report
+```
+
+### Model mutation
+```
+health → search (avoid duplicates) → apply changes → wait → validate/diagnostics → report
+```
+
+### View build (from existing concepts)
+```
+list views → create view → populate_view → wait → layout → validate → export/save
+```
+
+### View build (from new concepts)
+```
+search → apply (create elements + relationships) → wait (get IDs)
+→ create view → apply (addToView) → wait (get visual IDs)
+→ apply (addConnectionToView) → wait → layout → validate → export/save
+```
+
+### Full end-to-end
+```
+health → search → apply elements + rels → wait
+→ create view → apply addToView → wait
+→ apply addConnectionToView → wait
+→ set router → layout → validate → diagnostics → report → save if requested
+```

@@ -24,6 +24,48 @@ function expectInvalid(change: Record<string, unknown>) {
   expect(result.valid).toBe(false);
 }
 
+function expectBomValid(bom: Record<string, unknown>) {
+  const result = validate('bom', bom);
+  if (!result.valid) {
+    const msgs = result.errors.map((e: { message?: string }) => e.message).join('; ');
+    throw new Error(`Expected valid BOM but got errors: ${msgs}`);
+  }
+}
+
+function expectBomInvalid(bom: Record<string, unknown>) {
+  const result = validate('bom', bom);
+  expect(result.valid).toBe(false);
+}
+
+// ── root BOM fields ──────────────────────────────────────────────────────────
+
+describe('BOM root fields', () => {
+  test('accepts idempotencyKey and duplicateStrategy', () => {
+    expectBomValid({
+      version: '1.0',
+      idempotencyKey: 'verify-test-1',
+      duplicateStrategy: 'reuse',
+      changes: [{ op: 'createElement', type: 'business-actor', name: 'Customer' }],
+    });
+  });
+
+  test('rejects invalid idempotencyKey pattern', () => {
+    expectBomInvalid({
+      version: '1.0',
+      idempotencyKey: 'invalid key with spaces',
+      changes: [{ op: 'createElement', type: 'business-actor', name: 'Customer' }],
+    });
+  });
+
+  test('rejects invalid duplicateStrategy', () => {
+    expectBomInvalid({
+      version: '1.0',
+      duplicateStrategy: 'skip',
+      changes: [{ op: 'createElement', type: 'business-actor', name: 'Customer' }],
+    });
+  });
+});
+
 // ── createElement ────────────────────────────────────────────────────────────
 
 describe('createElement', () => {

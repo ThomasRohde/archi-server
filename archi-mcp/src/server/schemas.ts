@@ -84,12 +84,16 @@ export const SaveSchema = z
   })
   .strict();
 
+const DuplicateStrategySchema = z.enum(['error', 'reuse', 'rename']);
+
 export const ChangeOperationSchema = z
   .object({
     op: z
       .enum([
         'createElement',
+        'createOrGetElement',
         'createRelationship',
+        'createOrGetRelationship',
         'setProperty',
         'updateElement',
         'deleteElement',
@@ -115,6 +119,16 @@ export const ChangeOperationSchema = z
 
 export const ApplySchema = z
   .object({
+    idempotencyKey: z
+      .string()
+      .min(1)
+      .max(128)
+      .regex(/^[A-Za-z0-9:_-]+$/)
+      .optional()
+      .describe('Caller-provided idempotency key for replay-safe apply requests.'),
+    duplicateStrategy: DuplicateStrategySchema
+      .optional()
+      .describe('Request-level duplicate strategy default. Operation onDuplicate overrides this value.'),
     changes: z
       .array(ChangeOperationSchema)
       .min(1)

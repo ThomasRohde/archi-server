@@ -64,6 +64,16 @@
         },
 
         /**
+         * Idempotency handling for POST /model/apply
+         */
+        idempotency: {
+            enabled: true,
+            ttlMs: 86400000,            // 24 hours
+            maxRecords: 10000,          // In-memory bounded registry
+            cleanupIntervalMs: 300000   // Cleanup cadence (5 minutes)
+        },
+
+        /**
          * Graceful shutdown configuration
          */
         shutdown: {

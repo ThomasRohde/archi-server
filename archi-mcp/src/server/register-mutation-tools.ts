@@ -64,12 +64,16 @@ export function registerMutationTools(server: McpServer, api: ArchiApiClient): v
       outputDataSchema: ApplyDataSchema,
       annotations: DestructiveAnnotations,
     },
-    async ({ changes }) => {
+    async ({ changes, idempotencyKey, duplicateStrategy }) => {
       const MAX_CHUNK_SIZE = RELIABLE_BATCH_SIZE;
 
       if (changes.length <= MAX_CHUNK_SIZE) {
         const { changes: normalizedChanges, aliasesResolved } = normalizeApplyChanges(changes);
-        const result = await api.postModelApply({ changes: normalizedChanges });
+        const result = await api.postModelApply({
+          changes: normalizedChanges,
+          idempotencyKey,
+          duplicateStrategy,
+        });
 
         if (aliasesResolved === 0) {
           return result;
@@ -84,7 +88,7 @@ export function registerMutationTools(server: McpServer, api: ArchiApiClient): v
         };
       }
 
-      return executeChunkedApply(api, changes);
+      return executeChunkedApply(api, changes, { idempotencyKey, duplicateStrategy });
     },
   );
 

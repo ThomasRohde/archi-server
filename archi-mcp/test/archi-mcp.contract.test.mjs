@@ -308,7 +308,11 @@ test('archi_apply_model_changes auto-chunks at 8 operations and merges results',
 
       const result = await client.callTool({
         name: 'archi_apply_model_changes',
-        arguments: { changes },
+        arguments: {
+          changes,
+          idempotencyKey: 'batch-key',
+          duplicateStrategy: 'reuse',
+        },
       });
 
       assert.equal(result.isError, undefined);
@@ -320,6 +324,10 @@ test('archi_apply_model_changes auto-chunks at 8 operations and merges results',
       assert.equal(applyPayloads.length, 2);
       assert.equal(applyPayloads[0].changes.length, 8);
       assert.equal(applyPayloads[1].changes.length, 1);
+      assert.equal(applyPayloads[0].idempotencyKey, 'batch-key:chunk:1:of:2');
+      assert.equal(applyPayloads[1].idempotencyKey, 'batch-key:chunk:2:of:2');
+      assert.equal(applyPayloads[0].duplicateStrategy, 'reuse');
+      assert.equal(applyPayloads[1].duplicateStrategy, 'reuse');
     });
   } finally {
     await closeServer(server);
