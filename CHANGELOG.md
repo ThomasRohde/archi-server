@@ -5,6 +5,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.0](https://github.com/ThomasRohde/archi-server/compare/v1.9.0...v1.10.0) (2026-02-13)
+
+
+### Features
+
+* **client:** enhance MoveToFolderOp documentation for clarity on folderId usage ([400ec3c](https://github.com/ThomasRohde/archi-server/commit/400ec3c36b33e92daa7e42990d2545ee7d9e3357))
+* **client:** update CreateFolderOp type to include optional fields and improve documentation ([400ec3c](https://github.com/ThomasRohde/archi-server/commit/400ec3c36b33e92daa7e42990d2545ee7d9e3357))
+* **operation:** add support for summaryOnly and pagination in operation status and list endpoints ([2e42e83](https://github.com/ThomasRohde/archi-server/commit/2e42e83fde515ee2aa7752349d8d7ab920c7b3a3))
+* **prompts:** refine prompts for model changes to emphasize completion methods ([400ec3c](https://github.com/ThomasRohde/archi-server/commit/400ec3c36b33e92daa7e42990d2545ee7d9e3357))
+* **server:** add read tools for Archi API interactions and resource registration ([a913ceb](https://github.com/ThomasRohde/archi-server/commit/a913cebcd3e6b9abadd5499ce675e41cf9599a75))
+* **server:** create tool runtime for handling tool registration and error management ([a913ceb](https://github.com/ThomasRohde/archi-server/commit/a913cebcd3e6b9abadd5499ce675e41cf9599a75))
+* **server:** implement schemas for input validation and data structure ([a913ceb](https://github.com/ThomasRohde/archi-server/commit/a913cebcd3e6b9abadd5499ce675e41cf9599a75))
+* **server:** introduce view helpers for managing relationships and view summaries ([a913ceb](https://github.com/ThomasRohde/archi-server/commit/a913cebcd3e6b9abadd5499ce675e41cf9599a75))
+* **server:** normalize export view format values to uppercase before API call ([400ec3c](https://github.com/ThomasRohde/archi-server/commit/400ec3c36b33e92daa7e42990d2545ee7d9e3357))
+* update chunk size to 8 operations and implement targeted recovery snapshots ([5e96256](https://github.com/ThomasRohde/archi-server/commit/5e962565bee02a5e130392ac15c1142298dcd5f2))
+
+
+### Bug Fixes
+
+* **server:** improve error handling for unsupported planning actions in model endpoints ([400ec3c](https://github.com/ThomasRohde/archi-server/commit/400ec3c36b33e92daa7e42990d2545ee7d9e3357))
+
+
+### Documentation
+
+* **server:** add descriptions for model change application and script execution ([a913ceb](https://github.com/ThomasRohde/archi-server/commit/a913cebcd3e6b9abadd5499ce675e41cf9599a75))
+
+
+### Maintenance
+
+* remove unused openapi.yaml and layout comparison images ([400ec3c](https://github.com/ThomasRohde/archi-server/commit/400ec3c36b33e92daa7e42990d2545ee7d9e3357))
+
+
+### Tests
+
+* **integration:** add integration tests for model plan endpoint behavior ([400ec3c](https://github.com/ThomasRohde/archi-server/commit/400ec3c36b33e92daa7e42990d2545ee7d9e3357))
+* **unit:** add strict geometry typing tests for moveViewObject and createNote operations ([400ec3c](https://github.com/ThomasRohde/archi-server/commit/400ec3c36b33e92daa7e42990d2545ee7d9e3357))
+
 ## [1.9.0](https://github.com/ThomasRohde/archi-server/compare/v1.8.1...v1.9.0) (2026-02-12)
 
 
