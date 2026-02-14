@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.14.0](https://github.com/ThomasRohde/archi-server/compare/v1.13.0...v1.14.0) (2026-02-14)
+
+
+### Features
+
+* **docs:** add PRD for hierarchical Sugiyama + Brandes–Köpf layout in ArchiMate views ([e61ac37](https://github.com/ThomasRohde/archi-server/commit/e61ac37c452d4abf6cecae8b01b0750ab5bdf482))
+* **settings:** add permissions for web fetching from specified domains ([e61ac37](https://github.com/ThomasRohde/archi-server/commit/e61ac37c452d4abf6cecae8b01b0750ab5bdf482))
+
 ## [1.13.0](https://github.com/ThomasRohde/archi-server/compare/v1.12.0...v1.13.0) (2026-02-13)
 
 

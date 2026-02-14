@@ -1,6 +1,6 @@
 {
   "name": "archi-server-cli",
-  "version": "1.13.0",
+  "version": "1.14.0",
   "description": "CLI for the Archi Model API Server — automation, batch operations, and model management",
   "bin": {
     "archicli": "dist/cli.js"
