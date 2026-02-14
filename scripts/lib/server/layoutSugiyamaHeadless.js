@@ -533,104 +533,416 @@
         }
     }
 
+    // =========================================================================
+    // Brandes-Koepf Horizontal Coordinate Assignment
+    // =========================================================================
+    //
+    // Implements "Fast and Simple Horizontal Coordinate Assignment" (Brandes
+    // & Koepf, 2002) using dagre-style block graph compaction (avoids known
+    // bugs in the original paper's place_block/sink/shift mechanism).
+    //
+    // Per-variant pipeline:
+    //   1. Mark type-1 conflicts (inner segment crossings)
+    //   2. Vertical alignment  (build blocks via root[]/align[])
+    //   3. Horizontal compaction (block graph + recursive placement)
+    //
+    // Four variants (up/down x left/right) are balanced via inner-median.
+    // =========================================================================
+
     /**
-     * Initial x coordinates from layer order and node widths.
+     * True when both endpoints of an edge are dummy nodes (inner segment).
      */
-    function initializeXByLayerOrder(layers, nodeById, nodeSpacing) {
-        var xMap = {};
+    function isInnerSegment(nodeById, u, v) {
+        var uNode = nodeById[u];
+        var vNode = nodeById[v];
+        return uNode && vNode && uNode.isDummy && vNode.isDummy;
+    }
+
+    /**
+     * Mark type-1 conflicts: non-inner segments that cross inner segments.
+     *
+     * A type-1 conflict is resolved in favour of the inner segment so that
+     * long-edge paths through dummy nodes are kept straight.
+     *
+     * Returns nested map: conflicts[min(u,v)][max(u,v)] = true
+     */
+    function markType1Conflicts(layers, neighbors, nodeById) {
+        var conflicts = {};
+
+        for (var li = 1; li < layers.length; li++) {
+            var prevLayer = layers[li - 1];
+            var currLayer = layers[li];
+            var prevPos = indexMap(prevLayer);
+            var k0 = 0;
+            var scanPos = 0;
+
+            for (var l = 0; l < currLayer.length; l++) {
+                var v = currLayer[l];
+                // Find inner-segment upper endpoint (if any)
+                var innerUpper = null;
+                var preds = neighbors.incoming[v] || [];
+                for (var pi = 0; pi < preds.length; pi++) {
+                    if (isInnerSegment(nodeById, preds[pi], v)) {
+                        innerUpper = preds[pi];
+                        break;
+                    }
+                }
+
+                var k1;
+                if (innerUpper !== null) {
+                    k1 = prevPos[innerUpper] !== undefined ? prevPos[innerUpper] : 0;
+                } else if (l === currLayer.length - 1) {
+                    k1 = prevLayer.length - 1;
+                } else {
+                    continue;
+                }
+
+                while (scanPos <= l) {
+                    var w = currLayer[scanPos];
+                    var wPreds = neighbors.incoming[w] || [];
+                    for (var wp = 0; wp < wPreds.length; wp++) {
+                        var u = wPreds[wp];
+                        var uPos = prevPos[u];
+                        if (uPos === undefined) continue;
+                        if (uPos < k0 || uPos > k1) {
+                            if (!isInnerSegment(nodeById, u, w)) {
+                                var a = u < w ? u : w;
+                                var b = u < w ? w : u;
+                                if (!conflicts[a]) conflicts[a] = {};
+                                conflicts[a][b] = true;
+                            }
+                        }
+                    }
+                    scanPos++;
+                }
+                k0 = k1;
+            }
+        }
+        return conflicts;
+    }
+
+    /**
+     * Check if edge (u, v) was marked as a type-1 conflict.
+     */
+    function hasConflict(conflicts, u, v) {
+        var a = u < v ? u : v;
+        var b = u < v ? v : u;
+        return conflicts[a] && conflicts[a][b] === true;
+    }
+
+    /**
+     * Vertical alignment: build blocks of vertically aligned nodes.
+     *
+     * Each node picks at most ONE median neighbor to align with, forming
+     * chains (blocks) that share the same x-coordinate.
+     *
+     * @param downward  true: sweep top-to-bottom using predecessors
+     * @param leftToRight  true: scan left-to-right, prefer left median
+     *
+     * Returns { root, align } where root[v] = block root, align[v] = next
+     * node in circular block chain.
+     */
+    function verticalAlignment(layers, nodeById, neighbors, conflicts, downward, leftToRight) {
+        var root = {};
+        var align = {};
+
+        // Every node starts as its own singleton block
+        for (var li = 0; li < layers.length; li++) {
+            for (var ni = 0; ni < layers[li].length; ni++) {
+                var id = layers[li][ni];
+                root[id] = id;
+                align[id] = id;
+            }
+        }
+
+        // Choose layer iteration direction
+        var startLayer, endLayer, layerStep;
+        if (downward) {
+            startLayer = 1;
+            endLayer = layers.length;
+            layerStep = 1;
+        } else {
+            startLayer = layers.length - 2;
+            endLayer = -1;
+            layerStep = -1;
+        }
+
+        for (var i = startLayer; i !== endLayer; i += layerStep) {
+            var layer = layers[i];
+            var adjLayerIdx = downward ? i - 1 : i + 1;
+            var adjLayer = layers[adjLayerIdx];
+            var adjPos = indexMap(adjLayer);
+            var getNeighborList = downward ? neighbors.incoming : neighbors.outgoing;
+
+            // Track rightmost (or leftmost) aligned position to prevent crossing
+            var r = leftToRight ? -1 : adjLayer.length;
+
+            // Choose node scan direction
+            var nodeStart, nodeEnd, nodeStep;
+            if (leftToRight) {
+                nodeStart = 0;
+                nodeEnd = layer.length;
+                nodeStep = 1;
+            } else {
+                nodeStart = layer.length - 1;
+                nodeEnd = -1;
+                nodeStep = -1;
+            }
+
+            for (var k = nodeStart; k !== nodeEnd; k += nodeStep) {
+                var v = layer[k];
+                var neighList = getNeighborList[v] || [];
+                if (neighList.length === 0) continue;
+
+                // Filter to neighbors actually in the adjacent layer and sort
+                var validNeighbors = [];
+                for (var vn = 0; vn < neighList.length; vn++) {
+                    if (adjPos[neighList[vn]] !== undefined) {
+                        validNeighbors.push(neighList[vn]);
+                    }
+                }
+                if (validNeighbors.length === 0) continue;
+
+                validNeighbors.sort(function(a, b) {
+                    return adjPos[a] - adjPos[b];
+                });
+
+                var d = validNeighbors.length;
+                var medLow = Math.floor((d - 1) / 2);
+                var medHigh = Math.ceil((d - 1) / 2);
+
+                // Try median(s) in order based on direction preference
+                var medStart, medEnd, medStep;
+                if (leftToRight) {
+                    medStart = medLow;
+                    medEnd = medHigh + 1;
+                    medStep = 1;
+                } else {
+                    medStart = medHigh;
+                    medEnd = medLow - 1;
+                    medStep = -1;
+                }
+
+                for (var m = medStart; m !== medEnd; m += medStep) {
+                    if (align[v] === v) { // v not yet aligned
+                        var u = validNeighbors[m];
+                        var uPos = adjPos[u];
+
+                        if (!hasConflict(conflicts, u, v)) {
+                            var canAlign;
+                            if (leftToRight) {
+                                canAlign = (r < uPos);
+                            } else {
+                                canAlign = (r > uPos);
+                            }
+
+                            if (canAlign) {
+                                align[u] = v;
+                                root[v] = root[u];
+                                align[v] = root[v];
+                                r = uPos;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return { root: root, align: align };
+    }
+
+    /**
+     * Horizontal compaction: assign x-coordinates via a block adjacency graph.
+     *
+     * All nodes in the same block (sharing the same root) receive identical
+     * x-coordinates.  The block graph encodes minimum separation constraints
+     * between adjacent blocks within each layer.
+     *
+     * Uses dagre-style recursive placeBlock (DFS topological ordering) rather
+     * than the original paper's sink/shift mechanism.
+     */
+    function horizontalCompaction(layers, root, align, nodeById, nodeSpacing, leftToRight) {
+        // Build block graph: for consecutive nodes u,v in same layer with
+        // different roots, add edge from one root to the other.
+        var blockPreds = {};   // blockPreds[toRoot][fromRoot] = maxWeight
+        var allRoots = {};
+
         for (var li = 0; li < layers.length; li++) {
             var layer = layers[li];
-            var cursor = 0;
             for (var ni = 0; ni < layer.length; ni++) {
-                var nodeId = layer[ni];
-                var node = nodeById[nodeId];
-                if (ni === 0) {
-                    xMap[nodeId] = node.width / 2;
-                    cursor = xMap[nodeId] + node.width / 2;
+                allRoots[root[layer[ni]]] = true;
+            }
+            for (var nj = 1; nj < layer.length; nj++) {
+                var uId = layer[nj - 1];
+                var vId = layer[nj];
+                var uRoot = root[uId];
+                var vRoot = root[vId];
+                if (uRoot === vRoot) continue;
+
+                var fromRoot, toRoot;
+                if (leftToRight) {
+                    fromRoot = uRoot;
+                    toRoot = vRoot;
                 } else {
-                    var prevNode = nodeById[layer[ni - 1]];
-                    var sep = separation(prevNode, node, nodeSpacing);
-                    xMap[nodeId] = cursor + sep - (node.width / 2);
-                    cursor = xMap[nodeId] + node.width / 2;
+                    fromRoot = vRoot;
+                    toRoot = uRoot;
+                }
+
+                var sep = separation(nodeById[uId], nodeById[vId], nodeSpacing);
+                if (!blockPreds[toRoot]) blockPreds[toRoot] = {};
+                if (!blockPreds[toRoot][fromRoot] || blockPreds[toRoot][fromRoot] < sep) {
+                    blockPreds[toRoot][fromRoot] = sep;
                 }
             }
         }
-        return xMap;
+
+        // Recursive DFS placement (dagre-style)
+        var xs = {};
+        var visited = {};
+
+        function placeBlock(v) {
+            if (visited[v]) return;
+            visited[v] = true;
+            xs[v] = 0;
+
+            var preds = blockPreds[v];
+            if (preds) {
+                for (var p in preds) {
+                    if (preds.hasOwnProperty(p)) {
+                        placeBlock(p);
+                        var candidate = xs[p] + preds[p];
+                        if (candidate > xs[v]) xs[v] = candidate;
+                    }
+                }
+            }
+        }
+
+        for (var rootId in allRoots) {
+            if (allRoots.hasOwnProperty(rootId)) {
+                placeBlock(rootId);
+            }
+        }
+
+        // Assign all vertices: x[v] = x[root[v]]
+        var result = {};
+        for (var lk = 0; lk < layers.length; lk++) {
+            for (var nk = 0; nk < layers[lk].length; nk++) {
+                var nodeId = layers[lk][nk];
+                result[nodeId] = xs[root[nodeId]] || 0;
+            }
+        }
+
+        return result;
     }
 
     /**
-     * Compute one directional x-assignment variant.
-     *
-     * Parameters choose sweep direction (down/up) and compaction direction
-     * (left-to-right or right-to-left). Multiple rounds smooth toward median
-     * neighbor positions and then re-apply spacing constraints.
+     * Compute one B-K directional variant (alignment + compaction + normalize).
      */
-    function assignVariantX(layers, neighbors, nodeById, nodeSpacing, downward, leftToRight) {
-        var xMap = initializeXByLayerOrder(layers, nodeById, nodeSpacing);
-        var rounds = 4;
-        var alpha = 0.6;
+    function computeVariant(layers, neighbors, nodeById, nodeSpacing, conflicts, downward, leftToRight) {
+        var alignment = verticalAlignment(layers, nodeById, neighbors, conflicts, downward, leftToRight);
+        var xs = horizontalCompaction(layers, alignment.root, alignment.align, nodeById, nodeSpacing, leftToRight);
 
-        for (var round = 0; round < rounds; round++) {
-            if (downward) {
-                for (var li = 1; li < layers.length; li++) {
-                    var layer = layers[li];
-                    for (var ni = 0; ni < layer.length; ni++) {
-                        var nodeId = layer[ni];
-                        var preds = neighbors.incoming[nodeId] || [];
-                        if (preds.length === 0) continue;
-                        var px = [];
-                        for (var pi = 0; pi < preds.length; pi++) {
-                            if (xMap[preds[pi]] !== undefined) px.push(xMap[preds[pi]]);
-                        }
-                        var med = median(px);
-                        if (med !== null) xMap[nodeId] = ((1 - alpha) * xMap[nodeId]) + (alpha * med);
-                    }
-                    enforceLayerSpacing(layer, xMap, nodeById, nodeSpacing, leftToRight);
-                }
-            } else {
-                for (var lj = layers.length - 2; lj >= 0; lj--) {
-                    var upLayer = layers[lj];
-                    for (var uj = 0; uj < upLayer.length; uj++) {
-                        var upId = upLayer[uj];
-                        var succs = neighbors.outgoing[upId] || [];
-                        if (succs.length === 0) continue;
-                        var sx = [];
-                        for (var si = 0; si < succs.length; si++) {
-                            if (xMap[succs[si]] !== undefined) sx.push(xMap[succs[si]]);
-                        }
-                        var smed = median(sx);
-                        if (smed !== null) xMap[upId] = ((1 - alpha) * xMap[upId]) + (alpha * smed);
-                    }
-                    enforceLayerSpacing(upLayer, xMap, nodeById, nodeSpacing, leftToRight);
-                }
+        // For right-to-left variants, negate x to mirror back
+        if (!leftToRight) {
+            for (var key in xs) {
+                if (xs.hasOwnProperty(key)) xs[key] = -xs[key];
             }
         }
 
+        // Normalize: shift so minimum x = 0
         var minX = Infinity;
-        for (var key in xMap) {
-            if (xMap.hasOwnProperty(key) && xMap[key] < minX) minX = xMap[key];
+        for (var k1 in xs) {
+            if (xs.hasOwnProperty(k1) && xs[k1] < minX) minX = xs[k1];
         }
-        if (isFinite(minX)) {
-            for (var key2 in xMap) {
-                if (xMap.hasOwnProperty(key2)) xMap[key2] -= minX;
+        if (isFinite(minX) && minX !== 0) {
+            for (var k2 in xs) {
+                if (xs.hasOwnProperty(k2)) xs[k2] -= minX;
             }
         }
 
-        return xMap;
+        return xs;
     }
 
     /**
-     * Compute four directional variants and balance with inner-median averaging.
+     * Align coordinate ranges of 4 variants before balancing.
      *
-     * This approximates Brandes–Köpf balancing to reduce directional bias.
+     * Shifts each variant so ranges are comparable, preventing one
+     * directional bias from dominating the inner-median.
+     */
+    function alignVariantCoordinates(variants, layers) {
+        // Find the variant with smallest width
+        var smallestWidth = Infinity;
+        var smallestIdx = 0;
+        for (var vi = 0; vi < variants.length; vi++) {
+            var vMin = Infinity;
+            var vMax = -Infinity;
+            for (var li = 0; li < layers.length; li++) {
+                for (var ni = 0; ni < layers[li].length; ni++) {
+                    var x = variants[vi][layers[li][ni]];
+                    if (x < vMin) vMin = x;
+                    if (x > vMax) vMax = x;
+                }
+            }
+            var w = vMax - vMin;
+            if (w < smallestWidth) {
+                smallestWidth = w;
+                smallestIdx = vi;
+            }
+        }
+
+        // Compute target range from smallest-width variant
+        var targetMin = Infinity;
+        var targetMax = -Infinity;
+        for (var tli = 0; tli < layers.length; tli++) {
+            for (var tni = 0; tni < layers[tli].length; tni++) {
+                var tx = variants[smallestIdx][layers[tli][tni]];
+                if (tx < targetMin) targetMin = tx;
+                if (tx > targetMax) targetMax = tx;
+            }
+        }
+
+        // Align each variant: left-biased align by min, right-biased by max
+        for (var ai = 0; ai < variants.length; ai++) {
+            if (ai === smallestIdx) continue;
+            var isRight = (ai === 1 || ai === 3);
+            var aMin = Infinity;
+            var aMax = -Infinity;
+            for (var ali = 0; ali < layers.length; ali++) {
+                for (var ani = 0; ani < layers[ali].length; ani++) {
+                    var ax = variants[ai][layers[ali][ani]];
+                    if (ax < aMin) aMin = ax;
+                    if (ax > aMax) aMax = ax;
+                }
+            }
+
+            var delta = isRight ? (targetMax - aMax) : (targetMin - aMin);
+            if (delta !== 0) {
+                for (var sli = 0; sli < layers.length; sli++) {
+                    for (var sni = 0; sni < layers[sli].length; sni++) {
+                        variants[ai][layers[sli][sni]] += delta;
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Compute four Brandes-Koepf directional variants and balance.
+     *
+     * Variants: down-left, down-right, up-left, up-right.
+     * Balance: for each node, sort the 4 x-values and average the middle two.
      */
     function balancedX(layers, neighbors, nodeById, nodeSpacing) {
+        var conflicts = markType1Conflicts(layers, neighbors, nodeById);
+
         var variants = [
-            assignVariantX(layers, neighbors, nodeById, nodeSpacing, true, true),
-            assignVariantX(layers, neighbors, nodeById, nodeSpacing, true, false),
-            assignVariantX(layers, neighbors, nodeById, nodeSpacing, false, true),
-            assignVariantX(layers, neighbors, nodeById, nodeSpacing, false, false)
+            computeVariant(layers, neighbors, nodeById, nodeSpacing, conflicts, true, true),   // down-left
+            computeVariant(layers, neighbors, nodeById, nodeSpacing, conflicts, true, false),  // down-right
+            computeVariant(layers, neighbors, nodeById, nodeSpacing, conflicts, false, true),  // up-left
+            computeVariant(layers, neighbors, nodeById, nodeSpacing, conflicts, false, false)  // up-right
         ];
+
+        alignVariantCoordinates(variants, layers);
 
         var result = {};
         for (var li = 0; li < layers.length; li++) {
@@ -662,20 +974,25 @@
 
     /**
      * Assign y coordinates by layer max-height stacking.
+     *
+     * Returns { layerY, layerMaxH } so callers can center-align nodes
+     * vertically within their layer band.
      */
     function computeLayerY(layers, nodeById, layerSpacing) {
         var layerY = [];
+        var layerMaxH = [];
         var y = 0;
         for (var li = 0; li < layers.length; li++) {
             layerY[li] = y;
             var maxHeight = 1;
             for (var ni = 0; ni < layers[li].length; ni++) {
                 var node = nodeById[layers[li][ni]];
-                if (node.height > maxHeight) maxHeight = node.height;
+                if (node && node.height > maxHeight) maxHeight = node.height;
             }
+            layerMaxH[li] = maxHeight;
             y += maxHeight + layerSpacing;
         }
-        return layerY;
+        return { layerY: layerY, layerMaxH: layerMaxH };
     }
 
     /**
@@ -705,6 +1022,127 @@
     }
 
     /**
+     * Find connected components via union-find (undirected).
+     *
+     * Returns an array of arrays, each containing the node ids of one component.
+     */
+    function findConnectedComponents(nodes, edges) {
+        var parent = {};
+
+        function find(x) {
+            if (parent[x] !== x) parent[x] = find(parent[x]);
+            return parent[x];
+        }
+
+        function union(a, b) {
+            var ra = find(a);
+            var rb = find(b);
+            if (ra !== rb) parent[ra] = rb;
+        }
+
+        for (var i = 0; i < nodes.length; i++) {
+            parent[nodes[i].id] = nodes[i].id;
+        }
+
+        for (var e = 0; e < edges.length; e++) {
+            union(edges[e].sourceId, edges[e].targetId);
+        }
+
+        var buckets = {};
+        for (var n = 0; n < nodes.length; n++) {
+            var r = find(nodes[n].id);
+            if (!buckets[r]) buckets[r] = [];
+            buckets[r].push(nodes[n].id);
+        }
+
+        var result = [];
+        for (var key in buckets) {
+            if (buckets.hasOwnProperty(key)) result.push(buckets[key]);
+        }
+        return result;
+    }
+
+    /**
+     * Run the Sugiyama pipeline on a single connected component.
+     *
+     * Returns { centers, width, height, reversedEdges, layerCount } where
+     * centers maps node id -> { x, y } in canonical TB orientation before
+     * rankdir transform.
+     */
+    function layoutComponent(compNodeIds, allEdges, nodeById, nodeSpacing, layerSpacing, crossingIterations) {
+        // Extract component nodes and edges
+        var compSet = {};
+        var compNodes = [];
+        for (var i = 0; i < compNodeIds.length; i++) {
+            compSet[compNodeIds[i]] = true;
+            compNodes.push(nodeById[compNodeIds[i]]);
+        }
+        var compEdges = [];
+        for (var e = 0; e < allEdges.length; e++) {
+            if (compSet[allEdges[e].sourceId] && compSet[allEdges[e].targetId]) {
+                compEdges.push(allEdges[e]);
+            }
+        }
+
+        // Single-node component: place at origin
+        if (compNodes.length === 1) {
+            var n = compNodes[0];
+            var centers = {};
+            centers[n.id] = { x: n.width / 2, y: n.height / 2 };
+            return { centers: centers, width: n.width, height: n.height, reversedEdges: 0, layerCount: 1 };
+        }
+
+        // 1) Cycle handling
+        var orderIndex = computeOrderForCycleBreaking(compNodes, compEdges);
+        var reversedEdges = reverseBackEdges(compEdges, orderIndex);
+
+        // 2) Layer assignment
+        var layerMap = assignLayersLongestPath(compNodes, compEdges);
+
+        // 3) Properization + crossing minimization
+        var proper = properizeGraph(compNodes, compEdges, nodeById, layerMap);
+        var layers = buildLayerArrays(proper.nodes, layerMap);
+        var neighbors = buildNeighbors(proper.edges);
+        crossingMinimize(layers, neighbors, crossingIterations);
+
+        // 4) B-K coordinate assignment + overlap enforcement
+        var xMap = balancedX(layers, neighbors, nodeById, nodeSpacing);
+        finalOverlapPass(layers, xMap, nodeById, nodeSpacing);
+        var lyResult = computeLayerY(layers, nodeById, layerSpacing);
+
+        // 5) Compute centers for real nodes (center-aligned vertically)
+        var centers = {};
+        var compWidth = 0;
+        var compHeight = 0;
+
+        for (var li = 0; li < layers.length; li++) {
+            var layer = layers[li];
+            for (var ni = 0; ni < layer.length; ni++) {
+                var nodeId = layer[ni];
+                var node = nodeById[nodeId];
+                if (!node || node.isDummy) continue;
+
+                var centerX = xMap[nodeId];
+                var centerY = lyResult.layerY[li] + (lyResult.layerMaxH[li] / 2);
+                centers[nodeId] = { x: centerX, y: centerY };
+
+                var rightEdge = centerX + node.width / 2;
+                var bottomEdge = centerY + node.height / 2;
+                if (rightEdge > compWidth) compWidth = rightEdge;
+                if (bottomEdge > compHeight) compHeight = bottomEdge;
+            }
+        }
+
+        return {
+            centers: centers,
+            width: compWidth,
+            height: compHeight,
+            reversedEdges: reversedEdges,
+            layerCount: layers.length
+        };
+    }
+
+    /**
      * Compute all node position and bendpoint-change deltas for one view.
      *
      * Returns a pure change set:
@@ -723,11 +1161,12 @@
         var marginx = getOptionInt(options, "marginx", 20);
         var marginy = getOptionInt(options, "marginy", 20);
         var crossingIterations = getOptionInt(options, "iterations", 4);
+        var componentPadding = nodeSpacing;  // gap between packed components
 
         try {
             var graph = collectTopLevelGraph(view);
             if (graph.nodes.length === 0) {
-                return { nodes: [], connections: [], diagnostics: { reversedEdges: 0, layers: 0 } };
+                return { nodes: [], connections: [], diagnostics: { reversedEdges: 0, layers: 0, components: 0 } };
             }
 
             if (graph.nodes.length === 1) {
@@ -740,53 +1179,64 @@
                 return {
                     nodes: [{ element: onlyNode.element, oldBounds: onlyNode.oldBounds, newBounds: singleBounds }],
                     connections: [],
-                    diagnostics: { reversedEdges: 0, layers: 1 }
+                    diagnostics: { reversedEdges: 0, layers: 1, components: 1 }
                 };
             }
 
-            // 1) Cycle handling
-            var orderIndex = computeOrderForCycleBreaking(graph.nodes, graph.edges);
-            var reversedEdges = reverseBackEdges(graph.edges, orderIndex);
+            // Find connected components and layout each independently
+            var components = findConnectedComponents(graph.nodes, graph.edges);
 
-            // 2) Layer assignment
-            var layerMap = assignLayersLongestPath(graph.nodes, graph.edges);
+            // Sort components by size descending for better packing
+            components.sort(function(a, b) { return b.length - a.length; });
 
-            // 3) Properization + crossing minimization
-            var proper = properizeGraph(graph.nodes, graph.edges, graph.nodeById, layerMap);
-            var layers = buildLayerArrays(proper.nodes, layerMap);
-            var neighbors = buildNeighbors(proper.edges);
+            // Layout each component
+            var compResults = [];
+            var totalReversedEdges = 0;
+            var maxLayerCount = 0;
 
-            crossingMinimize(layers, neighbors, crossingIterations);
+            for (var ci = 0; ci < components.length; ci++) {
+                var result = layoutComponent(
+                    components[ci], graph.edges, graph.nodeById,
+                    nodeSpacing, layerSpacing, crossingIterations
+                );
+                compResults.push(result);
+                totalReversedEdges += result.reversedEdges;
+                if (result.layerCount > maxLayerCount) maxLayerCount = result.layerCount;
+            }
 
-            // 4) Coordinate assignment + overlap enforcement
-            var xMap = balancedX(layers, neighbors, graph.nodeById, nodeSpacing);
-            finalOverlapPass(layers, xMap, graph.nodeById, nodeSpacing);
-            var layerY = computeLayerY(layers, graph.nodeById, layerSpacing);
+            // Pack components left-to-right with padding
+            var allCenters = {};
+            var packCursor = 0;
 
-            var centers = {};
+            for (var pi = 0; pi < compResults.length; pi++) {
+                var comp = compResults[pi];
+                var offsetX = packCursor;
+                for (var cid in comp.centers) {
+                    if (comp.centers.hasOwnProperty(cid)) {
+                        allCenters[cid] = {
+                            x: comp.centers[cid].x + offsetX,
+                            y: comp.centers[cid].y
+                        };
+                    }
+                }
+                packCursor += comp.width + componentPadding;
+            }
+
+            // Compute global extents for rankdir transform
             var maxX = 0;
             var maxY = 0;
-
-            for (var li = 0; li < layers.length; li++) {
-                var layer = layers[li];
-                for (var ni = 0; ni < layer.length; ni++) {
-                    var nodeId = layer[ni];
-                    var node = graph.nodeById[nodeId];
-                    if (!node || node.isDummy) continue;
-
-                    var centerX = xMap[nodeId];
-                    var centerY = layerY[li] + (node.height / 2);
-                    centers[nodeId] = { x: centerX, y: centerY };
-
-                    if (centerX > maxX) maxX = centerX;
-                    if (centerY > maxY) maxY = centerY;
+            for (var eid in allCenters) {
+                if (allCenters.hasOwnProperty(eid)) {
+                    if (allCenters[eid].x > maxX) maxX = allCenters[eid].x;
+                    if (allCenters[eid].y > maxY) maxY = allCenters[eid].y;
                 }
             }
 
+            // Build node changes with rankdir transform
             var nodeChanges = [];
             for (var rn = 0; rn < graph.nodes.length; rn++) {
                 var realNode = graph.nodes[rn];
-                var center = centers[realNode.id];
+                var center = allCenters[realNode.id];
                 if (!center) continue;
 
                 var transformed = transformByRankdir(
@@ -814,9 +1264,10 @@
                 });
             }
 
+            // Collect connection changes (bendpoints to clear)
             var connectionChanges = [];
-            for (var ci = 0; ci < graph.connections.length; ci++) {
-                var conn = graph.connections[ci];
+            for (var ki = 0; ki < graph.connections.length; ki++) {
+                var conn = graph.connections[ki];
                 if (!conn || typeof conn.getBendpoints !== "function") continue;
                 var bendpoints = conn.getBendpoints();
                 if (!bendpoints || bendpoints.size() === 0) continue;
@@ -832,12 +1283,31 @@
                 });
             }
 
+            // Quality metrics
+            var downwardEdges = 0;
+            var totalEdges = 0;
+            for (var qi = 0; qi < graph.edges.length; qi++) {
+                var edge = graph.edges[qi];
+                var srcCenter = allCenters[edge.sourceId];
+                var tgtCenter = allCenters[edge.targetId];
+                if (!srcCenter || !tgtCenter) continue;
+                totalEdges++;
+                // After cycle-breaking restore, "downward" means target below source
+                if (edge.reversed) {
+                    if (srcCenter.y >= tgtCenter.y) downwardEdges++;
+                } else {
+                    if (tgtCenter.y >= srcCenter.y) downwardEdges++;
+                }
+            }
+
             return {
                 nodes: nodeChanges,
                 connections: connectionChanges,
                 diagnostics: {
-                    reversedEdges: reversedEdges,
-                    layers: layers.length
+                    reversedEdges: totalReversedEdges,
+                    layers: maxLayerCount,
+                    components: components.length,
+                    downwardEdgePct: totalEdges > 0 ? Math.round((downwardEdges / totalEdges) * 100) : 100
                 }
             };
         } catch (e) {
